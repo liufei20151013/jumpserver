@@ -171,4 +171,5 @@ class Setting(models.Model):
             ('change_license', _('Can change license setting')),
             ('change_terminal', _('Can change terminal setting')),
             ('change_other', _('Can change other setting')),
+            ('change_ris', _('Can change ris setting')),
         ]
