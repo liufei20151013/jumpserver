@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-10-19 16:21+0800\n"
+"POT-Creation-Date: 2023-11-02 10:12+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -42,12 +42,13 @@ msgid "SSH key"
 msgstr "SSH キー"
 
 #: accounts/const/account.py:8 authentication/models/access_key.py:37
+#: settings/serializers/feature.py:98
 msgid "Access key"
 msgstr "アクセスキー"
 
 #: accounts/const/account.py:9 assets/models/_user.py:48
 #: authentication/backends/passkey/models.py:16
-#: authentication/models/sso_token.py:14 settings/serializers/feature.py:50
+#: authentication/models/sso_token.py:14 settings/serializers/feature.py:51
 msgid "Token"
 msgstr "トークン"
 
@@ -95,7 +96,7 @@ msgid "Update"
 msgstr "更新"
 
 #: accounts/const/account.py:33
-#: accounts/serializers/automations/change_secret.py:155 audits/const.py:62
+#: accounts/serializers/automations/change_secret.py:150 audits/const.py:62
 #: audits/signal_handlers/activity_log.py:33 common/const/choices.py:19
 #: ops/const.py:74 terminal/const.py:77 xpack/plugins/cloud/const.py:43
 msgid "Failed"
@@ -194,7 +195,7 @@ msgstr "作成のみ"
 msgid "Database"
 msgstr "データベース"
 
-#: accounts/const/vault.py:9 settings/serializers/feature.py:41
+#: accounts/const/vault.py:9 settings/serializers/feature.py:42
 msgid "HCP Vault"
 msgstr "HashiCorp Vault"
 
@@ -221,8 +222,8 @@ msgstr "ユーザー %s がパスワードを閲覧/導き出しました"
 #: accounts/serializers/account/account.py:210
 #: accounts/serializers/account/account.py:255
 #: accounts/serializers/account/gathered_account.py:10
-#: accounts/serializers/automations/change_secret.py:111
-#: accounts/serializers/automations/change_secret.py:131
+#: accounts/serializers/automations/change_secret.py:106
+#: accounts/serializers/automations/change_secret.py:126
 #: acls/serializers/base.py:123 assets/models/asset/common.py:93
 #: assets/models/asset/common.py:334 assets/models/cmd_filter.py:36
 #: assets/serializers/domain.py:19 assets/serializers/label.py:27
@@ -261,8 +262,8 @@ msgid "Source ID"
 msgstr "ソース ID"
 
 #: accounts/models/account.py:60
-#: accounts/serializers/automations/change_secret.py:112
-#: accounts/serializers/automations/change_secret.py:132
+#: accounts/serializers/automations/change_secret.py:107
+#: accounts/serializers/automations/change_secret.py:127
 #: acls/serializers/base.py:124 acls/templates/acls/asset_login_reminder.html:7
 #: assets/serializers/asset/common.py:125 assets/serializers/gateway.py:28
 #: audits/models.py:58 authentication/api/connection_token.py:406
@@ -343,8 +344,8 @@ msgid "Reason"
 msgstr "理由"
 
 #: accounts/models/automations/backup_account.py:107
-#: accounts/serializers/automations/change_secret.py:110
-#: accounts/serializers/automations/change_secret.py:133
+#: accounts/serializers/automations/change_secret.py:105
+#: accounts/serializers/automations/change_secret.py:128
 #: ops/serializers/job.py:56 terminal/serializers/session.py:49
 msgid "Is success"
 msgstr "成功は"
@@ -503,8 +504,8 @@ msgstr "アカウントの確認"
 msgid "Secret type"
 msgstr "鍵の種類"
 
-#: accounts/models/base.py:39 accounts/models/mixins/vault.py:49
-#: accounts/serializers/account/base.py:19
+#: accounts/models/base.py:39 accounts/models/mixins/ris.py:49
+#: accounts/models/mixins/vault.py:49 accounts/serializers/account/base.py:19
 #: authentication/models/temp_token.py:10
 #: authentication/templates/authentication/_access_key_modal.html:31
 #: settings/serializers/auth/radius.py:19
@@ -884,20 +885,20 @@ msgstr "自動スナップショット"
 msgid "SSH Key strategy"
 msgstr "SSHキー戦略"
 
-#: accounts/serializers/automations/change_secret.py:80
+#: accounts/serializers/automations/change_secret.py:79
 msgid "* Please enter the correct password length"
 msgstr "* 正しいパスワードの長さを入力してください"
 
-#: accounts/serializers/automations/change_secret.py:84
+#: accounts/serializers/automations/change_secret.py:83
 msgid "* Password length range 6-30 bits"
 msgstr "* パスワードの長さの範囲6-30ビット"
 
-#: accounts/serializers/automations/change_secret.py:114
+#: accounts/serializers/automations/change_secret.py:109
 #: assets/models/automations/base.py:127
 msgid "Automation task execution"
 msgstr "自動タスク実行履歴"
 
-#: accounts/serializers/automations/change_secret.py:154 audits/const.py:61
+#: accounts/serializers/automations/change_secret.py:149 audits/const.py:61
 #: audits/models.py:63 audits/signal_handlers/activity_log.py:33
 #: common/const/choices.py:18 ops/const.py:72 ops/serializers/celery.py:40
 #: terminal/const.py:76 terminal/models/session/sharing.py:121
@@ -935,6 +936,10 @@ msgstr "資産の口座番号を収集する"
 #: accounts/tasks/push_account.py:15 accounts/tasks/push_account.py:23
 msgid "Push accounts to assets"
 msgstr "アカウントをアセットにプッシュ:"
+
+#: accounts/tasks/ris.py:29
+msgid "Sync Ris PAM secret to JumpServer"
+msgstr "資産アカウントのパスワードをJumpServerに同期"
 
 #: accounts/tasks/template.py:11
 msgid "Template sync info to related accounts"
@@ -1047,7 +1052,7 @@ msgid "Regex"
 msgstr "正規情報"
 
 #: acls/models/command_acl.py:26 assets/models/cmd_filter.py:79
-#: settings/serializers/feature.py:17 xpack/plugins/license/models.py:30
+#: settings/serializers/feature.py:18 xpack/plugins/license/models.py:30
 msgid "Content"
 msgstr "コンテンツ"
 
@@ -1332,7 +1337,7 @@ msgstr "脚本"
 
 #: assets/const/category.py:10 assets/models/asset/host.py:8
 #: settings/serializers/auth/radius.py:16 settings/serializers/auth/sms.py:71
-#: settings/serializers/feature.py:47 terminal/models/component/endpoint.py:13
+#: settings/serializers/feature.py:48 terminal/models/component/endpoint.py:13
 #: terminal/serializers/applet.py:17
 #: xpack/plugins/cloud/serializers/account_attrs.py:72
 msgid "Host"
@@ -2005,7 +2010,7 @@ msgstr "プロトコルが必要です: {}"
 msgid "Invalid data"
 msgstr "無効なデータ"
 
-#: assets/serializers/asset/database.py:12
+#: assets/serializers/asset/database.py:13
 msgid "Default database"
 msgstr "デフォルト・データベース"
 
@@ -3178,7 +3183,7 @@ msgstr "コードエラー"
 #: authentication/templates/authentication/_msg_reset_password_code.html:9
 #: authentication/templates/authentication/_msg_rest_password_success.html:2
 #: authentication/templates/authentication/_msg_rest_public_key_success.html:2
-#: jumpserver/conf.py:449
+#: jumpserver/conf.py:456
 #: perms/templates/perms/_msg_item_permissions_expire.html:3
 #: perms/templates/perms/_msg_permed_items_expire.html:3
 #: tickets/templates/tickets/approve_check_password.html:33
@@ -3796,16 +3801,16 @@ msgstr "特殊文字を含むべきではない"
 msgid "The mobile phone number format is incorrect"
 msgstr "携帯電話番号の形式が正しくありません"
 
-#: jumpserver/conf.py:444
+#: jumpserver/conf.py:451
 #, python-brace-format
 msgid "The verification code is: {code}"
 msgstr "認証コードは: {code}"
 
-#: jumpserver/conf.py:448
+#: jumpserver/conf.py:455
 msgid "Create account successfully"
 msgstr "アカウントを正常に作成"
 
-#: jumpserver/conf.py:450
+#: jumpserver/conf.py:457
 msgid "Your account has been created successfully"
 msgstr "アカウントが正常に作成されました"
 
@@ -4618,7 +4623,7 @@ msgstr "リモートアプリケーション"
 msgid "Ticket comment"
 msgstr "チケットコメント"
 
-#: rbac/tree.py:127 settings/serializers/feature.py:58
+#: rbac/tree.py:127 settings/serializers/feature.py:59
 #: tickets/models/ticket/general.py:307
 msgid "Ticket"
 msgstr "チケット"
@@ -4631,7 +4636,7 @@ msgstr "共通設定"
 msgid "View permission tree"
 msgstr "権限ツリーの表示"
 
-#: settings/api/dingtalk.py:31 settings/api/feishu.py:36
+#: settings/api/dingtalk.py:31 settings/api/feishu.py:36 settings/api/ris.py:40
 #: settings/api/sms.py:160 settings/api/vault.py:40 settings/api/wecom.py:37
 msgid "Test success"
 msgstr "テストの成功"
@@ -4731,6 +4736,12 @@ msgstr "ターミナルの設定を変えることができます"
 #: settings/models.py:173
 msgid "Can change other setting"
 msgstr "他の設定を変えることができます"
+
+#: settings/models.py:174
+#, fuzzy
+#| msgid "Can change sms setting"
+msgid "Can change ris setting"
+msgstr "Smsの設定を変えることができます"
 
 #: settings/serializers/auth/base.py:12
 msgid "LDAP Auth"
@@ -5272,69 +5283,91 @@ msgstr ""
 "この期間を超えるセッション、録音、およびコマンド レコードは削除されます (デー"
 "タベースのバックアップに影響し、OSS などには影響しません)"
 
-#: settings/serializers/feature.py:16
+#: settings/serializers/feature.py:17
 msgid "Subject"
 msgstr "件名"
 
-#: settings/serializers/feature.py:20
+#: settings/serializers/feature.py:21
 msgid "More url"
 msgstr "もっとURL"
 
-#: settings/serializers/feature.py:34 settings/serializers/feature.py:37
+#: settings/serializers/feature.py:35 settings/serializers/feature.py:38
 msgid "Announcement"
 msgstr "発表"
 
-#: settings/serializers/feature.py:36
+#: settings/serializers/feature.py:37
 msgid "Enable announcement"
 msgstr "アナウンスの有効化"
 
-#: settings/serializers/feature.py:44
+#: settings/serializers/feature.py:45
 msgid "Enable Vault"
 msgstr "有効化 Vault"
 
-#: settings/serializers/feature.py:53
+#: settings/serializers/feature.py:54
 msgid "Mount Point"
 msgstr "マウントポイント"
 
-#: settings/serializers/feature.py:60
+#: settings/serializers/feature.py:61
 msgid "Enable tickets"
 msgstr "チケットを有効にする"
 
-#: settings/serializers/feature.py:63
+#: settings/serializers/feature.py:64
 msgid "Ticket authorize default time"
 msgstr "デフォルト製造オーダ承認時間"
 
-#: settings/serializers/feature.py:66
+#: settings/serializers/feature.py:67
 msgid "day"
 msgstr "日"
 
-#: settings/serializers/feature.py:66
+#: settings/serializers/feature.py:67
 msgid "hour"
 msgstr "時"
 
-#: settings/serializers/feature.py:67
+#: settings/serializers/feature.py:68
 msgid "Ticket authorize default time unit"
 msgstr "デフォルト製造オーダ承認時間単位"
 
-#: settings/serializers/feature.py:72
+#: settings/serializers/feature.py:73
 msgid "Feature"
 msgstr "機能"
 
-#: settings/serializers/feature.py:75
+#: settings/serializers/feature.py:76
 msgid "Operation center"
 msgstr "職業センター"
 
-#: settings/serializers/feature.py:76
+#: settings/serializers/feature.py:77
 msgid "Allow user run batch command or not using ansible"
 msgstr "ユーザー実行バッチコマンドを許可するか、ansibleを使用しない"
 
-#: settings/serializers/feature.py:80
+#: settings/serializers/feature.py:81
 msgid "Operation center command blacklist"
 msgstr "オペレーション センター コマンド ブラックリスト"
 
-#: settings/serializers/feature.py:81
+#: settings/serializers/feature.py:82
 msgid "Commands that are not allowed execute."
 msgstr "実行が許可されていないコマンド"
+
+#: settings/serializers/feature.py:86
+msgid "RIS"
+msgstr ""
+
+#: settings/serializers/feature.py:89
+msgid "Enable Ris"
+msgstr "斉治PAMを有効にする"
+
+#: settings/serializers/feature.py:92
+#: xpack/plugins/cloud/serializers/account_attrs.py:109
+msgid "Auth url"
+msgstr "認証アドレス"
+
+#: settings/serializers/feature.py:95
+msgid "APP ID"
+msgstr ""
+
+#: settings/serializers/feature.py:101 terminal/serializers/storage.py:36
+#: xpack/plugins/cloud/serializers/account_attrs.py:20
+msgid "Access key secret"
+msgstr "アクセスキーシークレット"
 
 #: settings/serializers/msg.py:24
 msgid "SMTP host"
@@ -6826,11 +6859,6 @@ msgstr "バケット"
 #: xpack/plugins/cloud/serializers/account_attrs.py:17
 msgid "Access key id"
 msgstr "アクセスキー"
-
-#: terminal/serializers/storage.py:36
-#: xpack/plugins/cloud/serializers/account_attrs.py:20
-msgid "Access key secret"
-msgstr "アクセスキーシークレット"
 
 #: terminal/serializers/storage.py:67 xpack/plugins/cloud/models.py:250
 msgid "Region"
@@ -8448,10 +8476,6 @@ msgstr "サブスクリプションID"
 msgid "API Endpoint"
 msgstr "APIエンドポイント"
 
-#: xpack/plugins/cloud/serializers/account_attrs.py:109
-msgid "Auth url"
-msgstr "認証アドレス"
-
 #: xpack/plugins/cloud/serializers/account_attrs.py:110
 msgid "eg: http://openstack.example.com:5000/v3"
 msgstr "例えば: http://openstack.example.com:5000/v3"
@@ -8588,7 +8612,7 @@ msgstr "ライセンスのインポートに成功"
 msgid "License is invalid"
 msgstr "ライセンスが無効です"
 
-#: xpack/plugins/license/meta.py:10 xpack/plugins/license/models.py:141
+#: xpack/plugins/license/meta.py:10 xpack/plugins/license/models.py:144
 msgid "License"
 msgstr "ライセンス"
 

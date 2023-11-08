@@ -7,7 +7,8 @@ from common.serializers.fields import EncryptedField
 
 __all__ = [
     'AnnouncementSettingSerializer', 'OpsSettingSerializer',
-    'VaultSettingSerializer', 'TicketSettingSerializer'
+    'VaultSettingSerializer', 'TicketSettingSerializer',
+    'RisSettingSerializer'
 ]
 
 
@@ -79,4 +80,23 @@ class OpsSettingSerializer(serializers.Serializer):
         child=serializers.CharField(max_length=1024, ),
         label=_('Operation center command blacklist'),
         help_text=_("Commands that are not allowed execute.")
+    )
+
+class RisSettingSerializer(serializers.Serializer):
+    PREFIX_TITLE = _('RIS')
+
+    RIS_ENABLED = serializers.BooleanField(
+        required=False, label=_('Enable Ris'), read_only=True
+    )
+    RIS_AUTH_URL = serializers.CharField(
+        max_length=128, allow_blank=True, required=False, label=_('Auth url'), default=''
+    )
+    RIS_APP_ID = serializers.CharField(
+        max_length=64, allow_blank=True, required=False, label=_('APP ID'), default=''
+    )
+    RIS_ACCESS_KEY_ID = serializers.CharField(
+        max_length=128, allow_blank=True, required=False, label=_('Access key'), default=''
+    )
+    RIS_ACCESS_KEY_SECRET = EncryptedField(
+        max_length=128, allow_blank=True, required=False, label=_('Access key secret'), default=''
     )
