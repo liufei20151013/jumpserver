@@ -1,4 +1,3 @@
-import json
 from datetime import datetime
 
 from gmssl.sm4 import CryptSM4, SM4_DECRYPT
@@ -12,6 +11,8 @@ from django.utils.translation import gettext_lazy as _
 
 from assets.models import Asset
 from common.utils import get_logger
+from ops.celery.decorator import after_app_ready_start
+from ops.celery.utils import disable_celery_periodic_task, create_or_update_celery_periodic_tasks
 from orgs.models import Organization
 from orgs.utils import set_current_org
 
@@ -119,3 +120,32 @@ def decrypt(crypt_type, key, data):
         crypt_sm4.set_key(key, SM4_DECRYPT)
         decrypt_value = crypt_sm4.crypt_cbc(iv, data).decode('utf-8')
     return decrypt_value
+
+@shared_task(verbose_name=_('Registration periodic sync account secret from ris task'))
+@after_app_ready_start
+def sync_account_secret_from_ris_periodic():
+    if not settings.RIS_ENABLED:
+        return
+    task_name = 'sync_account_secret_from_ris_periodic'
+    disable_celery_periodic_task(task_name)
+    if not settings.RIS_SYNC_IS_PERIODIC:
+        return
+
+    interval = settings.RIS_SYNC_INTERVAL
+    if isinstance(interval, int):
+        interval = interval * 3600
+    else:
+        interval = None
+    crontab = settings.AUTH_LDAP_SYNC_CRONTAB
+    if crontab:
+        # 优先使用 crontab
+        interval = None
+    tasks = {
+        task_name: {
+            'task': sync_secret_from_ris.name,
+            'interval': interval,
+            'crontab': crontab,
+            'enabled': True,
+        }
+    }
+    create_or_update_celery_periodic_tasks(tasks)
