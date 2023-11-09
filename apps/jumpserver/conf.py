@@ -266,6 +266,10 @@ class Config(dict):
         'RIS_APP_ID': '',
         'RIS_ACCESS_KEY_ID': '',
         'RIS_ACCESS_KEY_SECRET': '',
+        # 齐治 PAM 定时同步
+        'RIS_SYNC_IS_PERIODIC': False,
+        'RIS_SYNC_INTERVAL': None,
+        'RIS_SYNC_CRONTAB': None,
 
         # Cache login password
         'CACHE_LOGIN_PASSWORD_ENABLED': False,
