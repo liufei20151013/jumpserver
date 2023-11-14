@@ -49,7 +49,8 @@ def sync_secret_from_ris():
             if len(accounts) == 0:
                 continue
 
-            if asset.platform.lower().contains('win'):
+            platform = str(asset.platform).lower()
+            if platform.__contains__('win'):
                 os = 'windows'
             else:
                 os = 'Linux'
