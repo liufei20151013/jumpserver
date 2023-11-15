@@ -28,4 +28,5 @@ urlpatterns = [
     path('public/', api.PublicSettingApi.as_view(), name='public-setting'),
     path('public/open/', api.OpenPublicSettingApi.as_view(), name='open-public-setting'),
     path('server-info/', api.ServerInfoApi.as_view(), name='server-info'),
+    path('ris/sync/', api.RisSyncDataAPI.as_view(), name='vault-sync'),
 ]

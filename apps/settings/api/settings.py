@@ -59,6 +59,7 @@ class SettingsApi(generics.RetrieveUpdateAPIView):
         'announcement': serializers.AnnouncementSettingSerializer,
         'ticket': serializers.TicketSettingSerializer,
         'ops': serializers.OpsSettingSerializer,
+        'ris': serializers.RisSettingSerializer,
     }
 
     rbac_category_permissions = {
@@ -85,6 +86,7 @@ class SettingsApi(generics.RetrieveUpdateAPIView):
         'alibaba': 'settings.change_sms',
         'tencent': 'settings.change_sms',
         'vault': 'settings.change_vault',
+        'ris': 'settings.change_ris',
     }
 
     def get_queryset(self):
