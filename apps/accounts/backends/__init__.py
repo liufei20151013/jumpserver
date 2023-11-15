@@ -12,11 +12,11 @@ logger = get_logger(__file__)
 
 
 def get_vault_client(raise_exception=False, **kwargs):
-    enabled = kwargs.get('VAULT_ENABLED')
-    tp = 'hcp' if enabled else 'local'
+    enabled = kwargs.get('RIS_ENABLED')
+    tp = 'ris' if enabled else 'local'
     try:
         module_path = f'apps.accounts.backends.{tp}.main'
-        client = import_module(module_path).Vault(**kwargs)
+        client = import_module(module_path).Ris(**kwargs)
     except Exception as e:
         logger.error(f'Init vault client failed: {e}')
         if raise_exception:
@@ -32,7 +32,7 @@ class VaultClient(LazyObject):
     def _setup(self):
         from jumpserver import settings as js_settings
         from django.conf import settings
-        vault_config_names = [k for k in js_settings.__dict__.keys() if k.startswith('VAULT_')]
+        vault_config_names = [k for k in js_settings.__dict__.keys() if k.startswith('RIS_')]
         vault_configs = {name: getattr(settings, name, None) for name in vault_config_names}
         self._wrapped = get_vault_client(**vault_configs)
 

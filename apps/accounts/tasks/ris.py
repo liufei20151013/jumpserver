@@ -44,8 +44,9 @@ def sync_secret_from_ris():
             continue
 
         for asset in assets:
-            print(asset.name)
+            print("************* 资产名称：{}".format(asset.name))
             accounts = asset.accounts.all()
+            print("资产【{}】的账号数量：{}".format(asset.name, len(accounts)))
             if len(accounts) == 0:
                 continue
 
@@ -57,7 +58,7 @@ def sync_secret_from_ris():
 
             for account in accounts:
                 if account.secret_type == 'password':
-                    print(account.username)
+                    print("账号用户名：{}".format(account.username))
                     secret = get_asset_account_secret_from_ris(account.username, os, asset.address, ris_configs)
                     if secret != '':
                         account.secret = secret
@@ -94,7 +95,7 @@ def get_asset_account_secret_from_ris(username, os, address, ris_configs):
 
     secret = ''
     try:
-        response = requests.post(ris_configs.get('RIS_AUTH_URL') + '/pam/account', json=data, verify=False)
+        response = requests.post(ris_configs.get('RIS_AUTH_URL') + '/pam/account', json=data, verify=False, timeout=10)
         result = response.json()
         if result.get('extras').get('errorCode') == 0:
             if result.get('extras').get('encodeResult'):
@@ -128,7 +129,12 @@ def sync_account_secret_from_ris_periodic():
     if not settings.RIS_ENABLED:
         return
     task_name = 'sync_account_secret_from_ris_periodic'
-    disable_celery_periodic_task(task_name)
+
+    try:
+        disable_celery_periodic_task(task_name)
+    except Exception as e:
+        print('sync_account_secret_from_ris_periodic is not exist')
+
     if not settings.RIS_SYNC_IS_PERIODIC:
         return
 
@@ -137,7 +143,7 @@ def sync_account_secret_from_ris_periodic():
         interval = interval * 3600
     else:
         interval = None
-    crontab = settings.AUTH_LDAP_SYNC_CRONTAB
+    crontab = settings.RIS_SYNC_CRONTAB
     if crontab:
         # 优先使用 crontab
         interval = None
