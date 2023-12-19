@@ -1,3 +1,20 @@
+FROM debian:buster-slim as build-xpack
+
+COPY apps/xpack /opt/xpack
+
+ARG APT_MIRROR=http://mirrors.ustc.edu.cn
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked,id=xpack \
+    sed -i "s@http://.*.debian.org@${APT_MIRROR}@g" /etc/apt/sources.list \
+    && rm -f /etc/apt/apt.conf.d/docker-clean \
+    && ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends wget ca-certificates \
+    && mkdir -p /opt/xpack/plugins/license/bin \
+    && wget -O /opt/xpack/plugins/license/bin/fit2license https://fit2cloud-support.oss-cn-beijing.aliyuncs.com/xpack-license/validator_linux_amd64 \
+    && chmod 755 /opt/xpack/plugins/license/bin/fit2license \
+    && rm -rf /var/lib/apt/lists/*
+
 FROM python:3.11-slim-bullseye as stage-build
 ARG TARGETARCH
 
@@ -36,11 +53,9 @@ ARG TOOLS="                           \
         curl                          \
         default-libmysqlclient-dev    \
         default-mysql-client          \
-        iputils-ping                  \
         locales                       \
         nmap                          \
         openssh-client                \
-        patch                         \
         sshpass                       \
         telnet                        \
         vim                           \
@@ -74,7 +89,9 @@ RUN --mount=type=cache,target=/root/.cache \
     && echo > /opt/jumpserver/config.yml \
     && pip install poetry -i ${PIP_MIRROR} \
     && poetry config virtualenvs.create false \
-    && poetry install --only=main
+    && poetry install
+
+COPY --from=build-xpack /opt/xpack /opt/jumpserver/apps/xpack
 
 VOLUME /opt/jumpserver/data
 VOLUME /opt/jumpserver/logs
