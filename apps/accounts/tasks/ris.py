@@ -100,7 +100,7 @@ def get_asset_account_secret_from_ris(username, os, address, ris_configs):
         if result.get('extras').get('errorCode') == 0:
             if result.get('extras').get('encodeResult'):
                 print(f'\033[31m- 同步成功')
-                secret = decrypt('SM4', 'abcdefghijklmnop', result.get('objectContent'))
+                secret = decrypt(result.get('objectContent'))
             else:
                 print(f'\033[32m- 同步失败，原因: 未查到该账号的密码')
         else:
@@ -110,18 +110,13 @@ def get_asset_account_secret_from_ris(username, os, address, ris_configs):
     return secret
 
 
-def decrypt(crypt_type, key, data):
-    key = key.encode('utf-8')
+def decrypt(data):
+    key = 'abcdefghijklmnop'.encode('utf-8')
     iv = '0000000000000000'.encode('utf-8')
     data = b64decode(data.encode('utf-8'))
-    if crypt_type == 'AES256':
-        cipher = AES.new(key, AES.MODE_CBC, iv)
-        decrypt_value = unpad(cipher.decrypt(data), AES.block_size).decode('utf-8')
-    else:
-        crypt_sm4 = CryptSM4()
-        crypt_sm4.set_key(key, SM4_DECRYPT)
-        decrypt_value = crypt_sm4.crypt_cbc(iv, data).decode('utf-8')
-    return decrypt_value
+    crypt_sm4 = CryptSM4()
+    crypt_sm4.set_key(key, SM4_DECRYPT)
+    return crypt_sm4.crypt_cbc(iv, data).decode('utf-8')
 
 @shared_task(verbose_name=_('Registration periodic sync account secret from ris task'))
 @after_app_ready_start
