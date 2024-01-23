@@ -621,8 +621,18 @@ class Config(dict):
         'ANSIBLE_RECEPTOR_GATEWAY_PROXY_HOST': 'jms_celery',
         'ANSIBLE_RECEPTOR_TCP_LISTEN_ADDRESS': 'receptor:7521',
 
-        'FILE_UPLOAD_TEMP_DIR': None
+        'FILE_UPLOAD_TEMP_DIR': None,
 
+        'TICKET_APPLY_ASSET_SCOPE': 'all',
+
+        # ITSM
+        'ITSM_ENABLED': False,
+        'ITSM_USER': '',
+        'ITSM_ORG': '',
+        'ITSM_SERVER': '',
+        'ITSM_HOST': '',
+        'ITSM_OBJECT_ID': '',
+        'ITSM_SYNC_CRONTAB': None
     }
 
     old_config_map = {
