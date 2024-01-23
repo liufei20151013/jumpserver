@@ -613,7 +613,16 @@ class Config(dict):
 
         'FILE_UPLOAD_SIZE_LIMIT_MB': 200,
 
-        'TICKET_APPLY_ASSET_SCOPE': 'all'
+        'TICKET_APPLY_ASSET_SCOPE': 'all',
+
+        # ITSM
+        'ITSM_ENABLED': False,
+        'ITSM_USER': '',
+        'ITSM_ORG': '',
+        'ITSM_SERVER': '',
+        'ITSM_HOST': '',
+        'ITSM_OBJECT_ID': '',
+        'ITSM_SYNC_CRONTAB': None
     }
 
     old_config_map = {

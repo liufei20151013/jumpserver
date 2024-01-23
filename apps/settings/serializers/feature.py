@@ -10,6 +10,7 @@ __all__ = [
     'AnnouncementSettingSerializer', 'OpsSettingSerializer',
     'VaultSettingSerializer', 'TicketSettingSerializer',
     'ChatAISettingSerializer', 'VirtualAppSerializer',
+    'ITSMSettingSerializer'
 ]
 
 
@@ -139,4 +140,30 @@ class VirtualAppSerializer(serializers.Serializer):
 
     VIRTUAL_APP_ENABLED = serializers.BooleanField(
         required=False, label=_('Enable virtual app'),
+    )
+
+
+class ITSMSettingSerializer(serializers.Serializer):
+    PREFIX_TITLE = _('ITSM')
+
+    ITSM_ENABLED = serializers.BooleanField(
+        required=False, label=_('Enable ITSM'), read_only=True
+    )
+    ITSM_USER = serializers.CharField(
+        max_length=256, allow_blank=True, required=False, label=_('CMDB User')
+    )
+    ITSM_ORG = serializers.CharField(
+        max_length=256, allow_blank=True, required=False, label=_('CMDB Org')
+    )
+    ITSM_SERVER = serializers.CharField(
+        max_length=256, allow_blank=True, required=False, label=_('CMDB Server')
+    )
+    ITSM_HOST = serializers.CharField(
+        max_length=256, allow_blank=True, required=False, label=_('CMDB Host')
+    )
+    ITSM_OBJECT_ID = EncryptedField(
+        max_length=256, allow_blank=True, required=False, label=_('Object ID')
+    )
+    ITSM_SYNC_CRONTAB = serializers.CharField(
+        max_length=256, allow_blank=True, required=False, label=_('Cron')
     )

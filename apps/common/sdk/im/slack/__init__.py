@@ -1,3 +1,4 @@
+import requests
 import mistune
 import requests
 from django.utils.translation import gettext_lazy as _
@@ -21,7 +22,7 @@ class URL:
 
 
 class SlackRenderer(mistune.HTMLRenderer):
-    def heading(self, text, level):
+    def header(self, text, level, raw=None):
         return '*' + text + '*\n'
 
     def strong(self, text):

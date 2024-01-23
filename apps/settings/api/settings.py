@@ -63,6 +63,7 @@ class SettingsApi(generics.RetrieveUpdateAPIView):
         'ticket': serializers.TicketSettingSerializer,
         'ops': serializers.OpsSettingSerializer,
         'virtualapp': serializers.VirtualAppSerializer,
+        'itsm': serializers.ITSMSettingSerializer,
     }
 
     rbac_category_permissions = {
@@ -98,6 +99,7 @@ class SettingsApi(generics.RetrieveUpdateAPIView):
         'alibaba': 'settings.change_sms',
         'tencent': 'settings.change_sms',
         'vault': 'settings.change_vault',
+        'itsm': 'settings.change_itsm',
     }
 
     def get_queryset(self):
