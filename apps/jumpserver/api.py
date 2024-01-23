@@ -17,6 +17,7 @@ from assets.models import Asset
 from audits.api import OperateLogViewSet
 from audits.const import LoginStatusChoices
 from audits.models import UserLoginLog, PasswordChangeLog, OperateLog, FTPLog, JobLog
+from audits.utils import construct_userlogin_usernames
 from common.utils import lazyproperty
 from common.utils.timezone import local_now, local_zero_hour
 from ops.const import JobStatus
@@ -79,7 +80,7 @@ class DateTimeMixin:
         if not self.org.is_root():
             if query_params == 'username':
                 query = {
-                    f'{query_params}__in': users.values_list('username', flat=True)
+                    f'{query_params}__in': construct_userlogin_usernames(users)
                 }
             else:
                 query = {
@@ -181,14 +182,14 @@ class DatesLoginMetricMixin:
 
     def get_dates_login_times_assets(self):
         assets = self.sessions_queryset.values("asset") \
-            .annotate(total=Count("asset")) \
+            .annotate(total=Count("asset", distinct=True)) \
             .annotate(last=Cast(Max("date_start"), output_field=CharField())) \
             .order_by("-total")
         return list(assets[:10])
 
     def get_dates_login_times_users(self):
         users = self.sessions_queryset.values("user_id") \
-            .annotate(total=Count("user_id")) \
+            .annotate(total=Count("user_id", distinct=True)) \
             .annotate(user=Max('user')) \
             .annotate(last=Cast(Max("date_start"), output_field=CharField())) \
             .order_by("-total")
