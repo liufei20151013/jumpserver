@@ -22,7 +22,7 @@ class URL:
     AUTH_TEST = 'https://slack.com/api/auth.test'
 
 
-class SlackRenderer(mistune.Renderer):
+class SlackRenderer(mistune.HTMLRenderer):
     def header(self, text, level, raw=None):
         return '*' + text + '*\n'
 

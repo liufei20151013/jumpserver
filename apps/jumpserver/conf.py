@@ -600,7 +600,16 @@ class Config(dict):
         'GPT_MODEL': 'gpt-3.5-turbo',
         'VIRTUAL_APP_ENABLED': False,
 
-        'FILE_UPLOAD_SIZE_LIMIT_MB': 200
+        'FILE_UPLOAD_SIZE_LIMIT_MB': 200,
+
+        # ITSM
+        'ITSM_ENABLED': False,
+        'ITSM_USER': '',
+        'ITSM_ORG': '',
+        'ITSM_SERVER': '',
+        'ITSM_HOST': '',
+        'ITSM_OBJECT_ID': '',
+        'ITSM_SYNC_CRONTAB': None
     }
 
     old_config_map = {
