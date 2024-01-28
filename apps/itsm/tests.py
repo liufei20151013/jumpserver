@@ -168,31 +168,39 @@ class TestTaskCase(TestCase):
         #     }
 
             {
-                "asset_type": "web",
-                "asset_name": "salesview 平台23",
-                "address": "http://10.1.12.169",
-                "platform": "Website",
-                "assetnode_name": "/Default/开发/web24",
-                "protocol": ["http/80"],
+                "asset_type": "db",
+                "asset_name": "salesview 平台26",
+                "address": "10.1.12.173",
+                "platform": "Kingbase",
+                "assetnode_name": "/Default/开发/数据库",
+                "protocol": ["Kingbase/54321"],
                 "default_db": "",
-                "permission_name": "169-permission",
+                "permission_name": "173-permission",
                 "username": "liufei",
                 "account": ["@SPEC", "root"],
                 "action": ["connect", "upload", "download", "copy", "paste", "delete", "share"],
-                "date_start": "2023-02-23T10:53:23.879Z",
-                "date_expired": "2093-01-30T10:53:23.879Z",
-                "account_name": "10.1.12.169-root",
+                # "date_start": "2023-02-23T10:53:23.879Z",
+                # "date_expired": "2093-01-30T10:53:23.879Z",
+                "account_name": "10.1.12.173-root",
                 "account_username": "root",
                 "secret_type": "password",
                 "secret": "",
                 "su_from": "",
-                "is_privileged": "True"
+                "is_privileged": "True",
+                "default_db": "js_db"
             }
         ]
         save_or_update_asset(assets)
 
     def test_sync_itsm_data(self):
-        process_data()
+        # process_data()
         # sync_itsm_data()
         # sync_itsm_data_periodic()
         # sync_itsm_data.delay()
+        try:
+            print((timezone.now() + timezone.timedelta(hours=8)).strftime("%Y-%m-%d %H:%M:%S"))
+            years = 70
+            print((timezone.now() + timezone.timedelta(days=365 * years, hours=8)).strftime("%Y-%m-%d %H:%M:%S"))
+            # print(date_expired_default().strftime("%Y-%m-%d %H:%M:%S"))
+        except Exception as e:
+            print(e)
