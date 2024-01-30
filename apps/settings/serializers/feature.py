@@ -10,6 +10,7 @@ __all__ = [
     'AnnouncementSettingSerializer', 'OpsSettingSerializer',
     'VaultSettingSerializer', 'TicketSettingSerializer',
     'ChatAISettingSerializer', 'VirtualAppSerializer',
+    'PillaSettingSerializer'
 ]
 
 
@@ -138,4 +139,21 @@ class VirtualAppSerializer(serializers.Serializer):
 
     VIRTUAL_APP_ENABLED = serializers.BooleanField(
         required=False, label=_('Enable virtual app'),
+    )
+
+
+class PillaSettingSerializer(serializers.Serializer):
+    PREFIX_TITLE = _('Pilla Vault')
+
+    VAULT_ENABLED = serializers.BooleanField(
+        required=False, label=_('Enable Pilla'), read_only=True
+    )
+    VAULT_PILLA_AUTH_URL = serializers.CharField(
+        max_length=256, allow_blank=True, required=False, label=_('Auth url')
+    )
+    VAULT_PILLA_TOKEN = EncryptedField(
+        max_length=256, allow_blank=True, required=False, label=_('Token'), default=''
+    )
+    VAULT_PILLA_PRIVATE_KEY = EncryptedField(
+        max_length=256, allow_blank=True, required=False, label=_('Private Key'), default=''
     )

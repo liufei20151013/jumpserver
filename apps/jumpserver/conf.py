@@ -261,6 +261,11 @@ class Config(dict):
         'VAULT_HCP_TOKEN': '',
         'VAULT_HCP_MOUNT_POINT': 'jumpserver',
 
+        # Pilla
+        'VAULT_PILLA_AUTH_URL': '',
+        'VAULT_PILLA_TOKEN': '',
+        'VAULT_PILLA_PRIVATE_KEY': '',
+
         'HISTORY_ACCOUNT_CLEAN_LIMIT': 999,
 
         # Cache login password
