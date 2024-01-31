@@ -25,12 +25,10 @@ class Pilla(BaseVault):
             config_names = [k for k in js_settings.__dict__.keys() if k.startswith('VAULT_PILLA')]
             configs = {name: getattr(settings, name, None) for name in config_names}
             url = configs.get('VAULT_PILLA_AUTH_URL') + '/openapi/v1/uah/account/pwd'
-            headers = {
-                "Authorization": 'Bearer ' + configs.get('VAULT_PILLA_TOKEN'),
-                'Content-Type': 'application/json'
-            }
+            authorization = 'Bearer {}'.format(configs.get('VAULT_PILLA_TOKEN'))
+            headers = {'Authorization': authorization, 'Content-Type': 'application/json'}
             data = {'id': instance.id}
-            r = requests.post(url, headers=headers, data=data)
+            r = requests.post(url, headers=headers, json=data, verify=False)
             response = r.json()
             code = response["code"]
             if code != "200":
