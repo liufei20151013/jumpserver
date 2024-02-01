@@ -11,10 +11,10 @@ from django.conf import settings
 
 logger = get_logger(__name__)
 
-__all__ = ['Pilla']
+__all__ = ['Vault']
 
 
-class Pilla(BaseVault):
+class Vault(BaseVault):
 
     def is_active(self):
         return True, ''
@@ -27,7 +27,7 @@ class Pilla(BaseVault):
             url = configs.get('VAULT_PILLA_AUTH_URL') + '/openapi/v1/uah/account/pwd'
             authorization = 'Bearer {}'.format(configs.get('VAULT_PILLA_TOKEN'))
             headers = {'Authorization': authorization, 'Content-Type': 'application/json'}
-            data = {'id': instance.id}
+            data = {'id': str(instance.id)}
             r = requests.post(url, headers=headers, json=data, verify=False)
             response = r.json()
             code = response["code"]
