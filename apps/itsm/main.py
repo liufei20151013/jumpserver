@@ -50,7 +50,7 @@ def data_distribution(option):
         save_or_update_asset(data)
         check_node_assets_amount()
     elif option == '延期':
-        save_or_update_asset_permission(data)
+        extend_permission(data)
     elif option == '移除':
         remove_user_asset_permission(data)
     elif option == '注销':
@@ -59,92 +59,95 @@ def data_distribution(option):
 
 def save_or_update_asset(assets):
     for asset in assets:
-        print("Save or update asset[{}].".format(asset.get('asset_name', '')))
-        if asset.get('platform', '') == 'ElasticSearch':
-            asset['asset_type'] = 'web'
-            asset['protocol'] = ["http/80"]
-            platform = Platform.objects.filter(name='Website').first()
-        elif asset.get('platform', '') == 'Kingbase':
-            platform = Platform.objects.filter(name='PostgreSQL').first()
-            if len(asset.get('protocol', '')) == 0:
-                asset['protocol'] = ["postgresql/5432"]  # 54321 Kingbase
-            else:
-                protocols = asset['protocol']
-                asset['protocol'] = []
-                for p in protocols:
-                    asset['protocol'].append(str(p).replace('Kingbase', 'postgresql'))
-        else:
-            platforms = Platform.objects.filter(name=asset['platform'])
-            if not platforms.exists():
-                print("Platform[{}] does not exist!".format(asset.get('platform', '')))
-
-                # 更新 ITSM 记录状态?
-                continue
-            platform = platforms.first()
-
-            # 使用默认平台协议
-            if len(asset.get('protocol', '')) == 0:
-                asset['protocol'] = []
-                protocols = PlatformProtocol.objects.filter(platform=platform)
-                if len(protocols) > 0:
+        try:
+            print("Save or update asset[{}].".format(asset.get('asset_name', '')))
+            if asset.get('platform', '') == 'ElasticSearch':
+                asset['asset_type'] = 'web'
+                asset['protocol'] = ["http/80"]
+                platform = Platform.objects.filter(name='Website').first()
+            elif asset.get('platform', '') == 'Kingbase':
+                platform = Platform.objects.filter(name='PostgreSQL').first()
+                if len(asset.get('protocol', '')) == 0:
+                    asset['protocol'] = ["postgresql/5432"]  # 54321 Kingbase
+                else:
+                    protocols = asset['protocol']
+                    asset['protocol'] = []
                     for p in protocols:
-                        asset['protocol'].append("{}/{}".format(p.name, p.port))
+                        asset['protocol'].append(str(p).replace('Kingbase', 'postgresql'))
+            else:
+                platforms = Platform.objects.filter(name=asset['platform'])
+                if not platforms.exists():
+                    print("Platform[{}] does not exist!".format(asset.get('platform', '')))
 
-        assetList = Asset.objects.filter(name=asset['asset_name'], address=asset['address'])
-        if not assetList.exists():
-            try:
-                assetList = Asset.objects.filter(name=asset['asset_name'])
-                if assetList.exists():
-                    print("Asset[{}] is already exist! Can't create asset.".format(asset.get('asset_name', '')))
-                    update(asset['instanceId'])
+                    # 更新 ITSM 记录状态?
                     continue
+                platform = platforms.first()
 
-                a = Asset.objects.create(name=asset.get('asset_name', None),
-                                         address=asset.get('address', None),
-                                         platform=platform,
-                                         org_id=Organization.DEFAULT_ID)
+                # 使用默认平台协议
+                if len(asset.get('protocol', '')) == 0:
+                    asset['protocol'] = []
+                    protocols = PlatformProtocol.objects.filter(platform=platform)
+                    if len(protocols) > 0:
+                        for p in protocols:
+                            asset['protocol'].append("{}/{}".format(p.name, p.port))
 
-                if asset['asset_type'] == 'host':
-                    asset_model = Host(asset_ptr_id=a.id)
-                    asset_model.__dict__.update(a.__dict__)
-                    asset_model.save()
-                elif asset['asset_type'] == 'db':
-                    asset_model = Database(asset_ptr_id=a.id, db_name=asset.get('default_db', ''))
-                    asset_model.__dict__.update(a.__dict__)
-                    asset_model.save()
-                elif asset['asset_type'] == 'web':
-                    asset_model = Web(asset_ptr_id=a.id, autofill='no')
-                    asset_model.__dict__.update(a.__dict__)
-                    asset_model.save()
+            assetList = Asset.objects.filter(name=asset['asset_name'], address=asset['address'])
+            if not assetList.exists():
+                try:
+                    assetList = Asset.objects.filter(name=asset['asset_name'])
+                    if assetList.exists():
+                        print("Asset[{}] is already exist! Can't create asset.".format(asset.get('asset_name', '')))
+                        update(asset['instanceId'])
+                        continue
 
-                create_asset_node(asset['assetnode_name'], a)
-                relate_protocols(asset.get('protocol', ''), a.id)
-                print("Success to save asset[{}].".format(asset.get('asset_name', '')))
+                    a = Asset.objects.create(name=asset.get('asset_name', None),
+                                             address=asset.get('address', None),
+                                             platform=platform,
+                                             org_id=Organization.DEFAULT_ID)
+
+                    if asset['asset_type'] == 'host':
+                        asset_model = Host(asset_ptr_id=a.id)
+                        asset_model.__dict__.update(a.__dict__)
+                        asset_model.save()
+                    elif asset['asset_type'] == 'db':
+                        asset_model = Database(asset_ptr_id=a.id, db_name=asset.get('default_db', ''))
+                        asset_model.__dict__.update(a.__dict__)
+                        asset_model.save()
+                    elif asset['asset_type'] == 'web':
+                        asset_model = Web(asset_ptr_id=a.id, autofill='no')
+                        asset_model.__dict__.update(a.__dict__)
+                        asset_model.save()
+
+                    create_asset_node(asset['assetnode_name'], a)
+                    relate_protocols(asset.get('protocol', ''), a.id)
+                    print("Success to save asset[{}].".format(asset.get('asset_name', '')))
+
+                    process_permission_or_account(asset)
+
+                except Exception as e:
+                    print("Failed to save asset[{}], error:{}".format(asset.get('asset_name', ''), e))
+                continue
+
+            try:
+                # assetList.update(name=['asset_name'], address=asset['address'], platform=platform)
+
+                for a in assetList:
+                    if asset['asset_type'] == 'db' and len(asset['default_db']) > 0:
+                        d = Database.objects.filter(asset_ptr_id=a.id).first()
+                        if d:
+                            d.db_name = asset['default_db']
+                            d.save()
+
+                    create_asset_node(asset['assetnode_name'], a)
+                    relate_protocols(asset['protocol'], a.id)
+                print("Success to update asset[{}].".format(asset.get('asset_name', '')))
 
                 process_permission_or_account(asset)
 
             except Exception as e:
-                print("Failed to save asset[{}], error:{}".format(asset.get('asset_name', ''), e))
-            continue
-
-        try:
-            # assetList.update(name=['asset_name'], address=asset['address'], platform=platform)
-
-            for a in assetList:
-                if asset['asset_type'] == 'db' and len(asset['default_db']) > 0:
-                    d = Database.objects.filter(asset_ptr_id=a.id).first()
-                    if d:
-                        d.db_name = asset['default_db']
-                        d.save()
-
-                create_asset_node(asset['assetnode_name'], a)
-                relate_protocols(asset['protocol'], a.id)
-            print("Success to update asset[{}].".format(asset.get('asset_name', '')))
-
-            process_permission_or_account(asset)
-
+                print("Failed to update asset[{}], error:{}".format(asset.get('asset_name', ''), e))
         except Exception as e:
-            print("Failed to update asset[{}], error:{}".format(asset.get('asset_name', ''), e))
+            print("Failed to save or update asset[{}], error:{}".format(asset.get('asset_name', ''), e))
 
 
 def process_permission_or_account(asset):
@@ -189,151 +192,191 @@ def create_asset_node(assetnode_name, asset):
 
 def save_or_update_asset_account(accounts):
     for account in accounts:
-        print("Save or update asset[{}]'s account[{}], username[{}]."
-              .format(account.get('asset_name', ''), account.get('account_name', ''),
-                      account.get('account_username', '')))
-        su_from = get_object_or_none(Account, name=account['su_from'])
-        asset = get_object_or_none(Asset, name=account['asset_name'])
-        if not asset:
-            print("Asset[{}] does not exist!".format(account.get('asset_name', '')))
-            continue
-
-        accountList = Account.objects.filter(asset=asset, username=account['account_username'])
-        if not accountList.exists():
-            try:
-                Account.objects.create(asset=asset,
-                                       su_from=su_from,
-                                       name=account.get('account_name', None),
-                                       username=account.get('account_username', None),
-                                       privileged=account.get('is_privileged', False),
-                                       secret_type=account.get('secret_type', None),
-                                       _secret=account.get('secret', None),
-                                       org_id=Organization.DEFAULT_ID)
-                print("Success to save asset[{}]'s account[{}], username[{}]."
-                            .format(account.get('asset_name', ''), account.get('account_name', ''),
-                                    account.get('account_username', '')))
-
-                update(account['instanceId'])
-            except Exception as e:
-                print("Failed to save asset[{}]'s account[{}], username[{}], error:{}"
-                             .format(account.get('asset_name', ''), account.get('account_name', ''),
-                                     account.get('account_username', ''), e))
-            continue
-
         try:
-            accountList.update(asset=asset,
-                               su_from=su_from,
-                               name=account.get('account_name', None),
-                               username=account.get('account_username', None),
-                               privileged=account.get('is_privileged', False),
-                               secret_type=account.get('secret_type', None),
-                               _secret=account.get('secret', None))
-            print("Success to update asset[{}]'s account[{}], username[{}]."
-                        .format(account.get('asset_name', ''), account.get('account_name', ''),
-                                account.get('account_username', '')))
-            update(account['instanceId'])
+            print("Save or update asset[{}]'s account[{}], username[{}]."
+                  .format(account.get('asset_name', ''), account.get('account_name', ''),
+                          account.get('account_username', '')))
+            su_from = get_object_or_none(Account, name=account['su_from'])
+            asset = get_object_or_none(Asset, name=account['asset_name'])
+            if not asset:
+                print("Asset[{}] does not exist!".format(account.get('asset_name', '')))
+                continue
 
+            accountList = Account.objects.filter(asset=asset, username=account['account_username'])
+            if not accountList.exists():
+                try:
+                    Account.objects.create(asset=asset,
+                                           su_from=su_from,
+                                           name=account.get('account_name', None),
+                                           username=account.get('account_username', None),
+                                           privileged=account.get('is_privileged', False),
+                                           secret_type=account.get('secret_type', None),
+                                           _secret=account.get('secret', None),
+                                           org_id=Organization.DEFAULT_ID)
+                    print("Success to save asset[{}]'s account[{}], username[{}]."
+                          .format(account.get('asset_name', ''), account.get('account_name', ''),
+                                  account.get('account_username', '')))
+
+                    update(account['instanceId'])
+                except Exception as e:
+                    print("Failed to save asset[{}]'s account[{}], username[{}], error:{}"
+                          .format(account.get('asset_name', ''), account.get('account_name', ''),
+                                  account.get('account_username', ''), e))
+                continue
+
+            try:
+                accountList.update(asset=asset,
+                                   su_from=su_from,
+                                   name=account.get('account_name', None),
+                                   username=account.get('account_username', None),
+                                   privileged=account.get('is_privileged', False),
+                                   secret_type=account.get('secret_type', None),
+                                   _secret=account.get('secret', None))
+                print("Success to update asset[{}]'s account[{}], username[{}]."
+                      .format(account.get('asset_name', ''), account.get('account_name', ''),
+                              account.get('account_username', '')))
+                update(account['instanceId'])
+
+            except Exception as e:
+                print("Failed to update asset[{}]'s account[{}], username[{}], error:{}"
+                      .format(account.get('asset_name', ''), account.get('account_name', ''),
+                              account.get('account_username', ''), e))
         except Exception as e:
-            print("Failed to update asset[{}]'s account[{}], username[{}], error:{}"
-                         .format(account.get('asset_name', ''), account.get('account_name', ''),
-                                 account.get('account_username', ''), e))
+            print("Failed to save or update asset account[{}], error:{}".format(account.get('account_name', ''), e))
 
 
 def save_or_update_asset_permission(permissions):
     for permission in permissions:
-        print("Save or update asset[{}]'s permission[{}] for user[{}]."
-                    .format(permission.get('asset_name', ''), permission.get('permission_name', ''),
-                            permission.get('username', '')))
-        assets = Asset.objects.filter(name=permission['asset_name'])
-        if not assets.exists():
-            print("Asset[{}] does not exist!".format(permission.get('asset_name', '')))
-            # update(permission['instanceId'])
-            continue
-
-        users = User.objects.filter(username=permission['username'])
-        if not users.exists():
-            print("User[{}] does not exist!".format(permission.get('username', '')))
-            # update(permission['instanceId'])
-            continue
-
-        actions = to_internal_value(permission.get('action', ["connect", "upload", "download", "delete", "copy",
-                                                              "paste", "share"]))
-        protocols = []
-        if len(permission.get('protocol', '')) > 0:
-            for protocol in permission.get('protocol', ''):
-                arr = str(protocol).lower().split("/")
-                protocols.append(arr[0])
-        else:
-            protocols = ["all"]
-
         try:
-            date_start = permission.get('date_start') + ' 00:00:00' if len(permission.get('date_start')) > 0 \
-                else (timezone.now() + timezone.timedelta(hours=8)).strftime("%Y-%m-%d %H:%M:%S")
-        except Exception as e:
-            date_start = (timezone.now() + timezone.timedelta(hours=8)).strftime("%Y-%m-%d %H:%M:%S")
-        try:
-            date_expired = permission.get('date_expired') + ' 23:59:59' if len(permission.get('date_expired')) > 0 \
-                else (timezone.now() + timezone.timedelta(days=365 * 70, hours=8)).strftime("%Y-%m-%d %H:%M:%S")
-        except Exception as e:
-            date_expired = (timezone.now() + timezone.timedelta(days=365 * 70, hours=8)).strftime("%Y-%m-%d %H:%M:%S")
+            print("Save or update asset[{}]'s permission[{}] for user[{}]."
+                  .format(permission.get('asset_name', ''), permission.get('permission_name', ''),
+                          permission.get('username', '')))
+            assets = Asset.objects.filter(name=permission['asset_name'])
+            if not assets.exists():
+                print("Asset[{}] does not exist!".format(permission.get('asset_name', '')))
+                # update(permission['instanceId'])
+                continue
 
-        permissionList = AssetPermission.objects.filter(assets=assets.first(), users=users.first())
-        if not permissionList.exists():
+            users = User.objects.filter(username=permission['username'])
+            if not users.exists():
+                print("User[{}] does not exist!".format(permission.get('username', '')))
+                # update(permission['instanceId'])
+                continue
+
+            actions = to_internal_value(permission.get('action', ["connect", "upload", "download", "delete", "copy",
+                                                                  "paste", "share"]))
+            protocols = []
+            if len(permission.get('protocol', '')) > 0:
+                for protocol in permission.get('protocol', ''):
+                    arr = str(protocol).lower().split("/")
+                    protocols.append(arr[0])
+            else:
+                protocols = ["all"]
+
             try:
-                if len(permission.get('permission_name', '')) > 0:
-                    perms = AssetPermission.objects.filter(name=permission['permission_name'])
-                    if perms.exists():
-                        print(
-                            "AssetPermission[{}] is already exist!".format(permission.get('permission_name', '')))
-                        p = perms.first()
-                        p.users.add(users.first())
-                        p.assets.add(assets.first())
-                        update(permission['instanceId'])
-                        continue
+                date_start = permission.get('date_start') + ' 00:00:00' if len(permission.get('date_start')) > 0 \
+                    else (timezone.now() + timezone.timedelta(hours=8)).strftime("%Y-%m-%d %H:%M:%S")
+            except Exception as e:
+                date_start = (timezone.now() + timezone.timedelta(hours=8)).strftime("%Y-%m-%d %H:%M:%S")
+            try:
+                date_expired = permission.get('date_expired') + ' 23:59:59' if len(permission.get('date_expired')) > 0 \
+                    else (timezone.now() + timezone.timedelta(days=365 * 70, hours=8)).strftime("%Y-%m-%d %H:%M:%S")
+            except Exception as e:
+                date_expired = (timezone.now() + timezone.timedelta(days=365 * 70, hours=8)).strftime("%Y-%m-%d %H:%M:%S")
 
-                p = AssetPermission.objects.create(name=permission.get('permission_name', ''),
-                                                   accounts=permission.get('account', ["@INPUT"]),
-                                                   protocols=protocols,
-                                                   actions=actions,
-                                                   date_start=date_start,
-                                                   date_expired=date_expired,
-                                                   org_id=Organization.DEFAULT_ID)
-                p.users.add(users.first())
-                p.assets.add(assets.first())
-                print("Success to save asset[{}]'s permission[{}]."
-                            .format(permission.get('asset_name', ''), permission.get('permission_name', '')))
+            permissionList = AssetPermission.objects.filter(assets=assets.first(), users=users.first())
+            if not permissionList.exists():
+                try:
+                    if len(permission.get('permission_name', '')) > 0:
+                        perms = AssetPermission.objects.filter(name=permission['permission_name'])
+                        if perms.exists():
+                            print(
+                                "AssetPermission[{}] is already exist!".format(permission.get('permission_name', '')))
+                            p = perms.first()
+                            p.users.add(users.first())
+                            p.assets.add(assets.first())
+                            update(permission['instanceId'])
+                            continue
+
+                    p = AssetPermission.objects.create(name=permission.get('permission_name', ''),
+                                                       accounts=permission.get('account', ["@INPUT"]),
+                                                       protocols=protocols,
+                                                       actions=actions,
+                                                       date_start=date_start,
+                                                       date_expired=date_expired,
+                                                       org_id=Organization.DEFAULT_ID)
+                    p.users.add(users.first())
+                    p.assets.add(assets.first())
+                    print("Success to save asset[{}]'s permission[{}]."
+                          .format(permission.get('asset_name', ''), permission.get('permission_name', '')))
+
+                    update(permission['instanceId'])
+                except Exception as e:
+                    traceback.print_exc()
+                    print("Failed to save asset[{}]'s permission[{}], error:{}"
+                          .format(permission.get('asset_name', ''), permission.get('permission_name', ''), e))
+                continue
+
+            try:
+                if len(permission.get('permission_name', '')) == 0 or len(permission.get('account', '')) == 0:
+                    permissionList.update(date_start=date_start, date_expired=date_expired)
+                else:
+                    permissionList.update(name=permission.get('permission_name', ''),
+                                          accounts=permission.get('account', ["@INPUT"]),
+                                          protocols=protocols,
+                                          actions=actions,
+                                          date_start=date_start,
+                                          date_expired=date_expired)
+                print("Success to update asset[{}]'s permission[{}]."
+                      .format(permission.get('asset_name', ''), permission.get('permission_name', '')))
 
                 update(permission['instanceId'])
-            except Exception as e:
-                traceback.print_exc()
-                print("Failed to save asset[{}]'s permission[{}], error:{}"
-                             .format(permission.get('asset_name', ''), permission.get('permission_name', ''), e))
-            continue
 
+            except Exception as e:
+                print("Failed to update asset[{}]'s permission[{}], error:{}"
+                      .format(permission.get('asset_name', ''), permission.get('permission_name', ''), e))
+        except Exception as e:
+            print("Failed to save or update asset permission[{}], error:{}"
+                  .format(permission.get('permission_name', ''), e))
+
+
+def extend_permission(permissions):
+    for permission in permissions:
         try:
-            if len(permission.get('permission_name', '')) == 0 or len(permission.get('account', '')) == 0:
+            print("Extend all permissions for user[{}].".format(permission.get('username', '')))
+
+            users = User.objects.filter(username=permission['username'])
+            if not users.exists():
+                print("User[{}] does not exist!".format(permission.get('username', '')))
+                # update(permission['instanceId'])
+                continue
+
+            try:
+                date_start = permission.get('date_start') + ' 00:00:00' if len(permission.get('date_start')) > 0 \
+                    else (timezone.now() + timezone.timedelta(hours=8)).strftime("%Y-%m-%d %H:%M:%S")
+            except Exception as e:
+                date_start = (timezone.now() + timezone.timedelta(hours=8)).strftime("%Y-%m-%d %H:%M:%S")
+            try:
+                date_expired = permission.get('date_expired') + ' 23:59:59' if len(permission.get('date_expired')) > 0 \
+                    else (timezone.now() + timezone.timedelta(days=365 * 70, hours=8)).strftime("%Y-%m-%d %H:%M:%S")
+            except Exception as e:
+                date_expired = (timezone.now() + timezone.timedelta(days=365 * 70, hours=8)).strftime("%Y-%m-%d %H:%M:%S")
+
+            permissionList = AssetPermission.objects.filter(users=users.first()).exclude(name__icontains="permanent")
+            if permissionList.exists():
                 permissionList.update(date_start=date_start, date_expired=date_expired)
-            else:
-                permissionList.update(name=permission.get('permission_name', ''),
-                                      accounts=permission.get('account', ["@INPUT"]),
-                                      protocols=protocols,
-                                      actions=actions,
-                                      date_start=date_start,
-                                      date_expired=date_expired)
-            print("Success to update asset[{}]'s permission[{}]."
-                        .format(permission.get('asset_name', ''), permission.get('permission_name', '')))
+                print("Success to extend all permissions for user[{}].".format(permission.get('username', '')))
 
             update(permission['instanceId'])
-
         except Exception as e:
-            print("Failed to update asset[{}]'s permission[{}], error:{}"
-                         .format(permission.get('asset_name', ''), permission.get('permission_name', ''), e))
+            print("Failed to extend all asset permission for user[{}], error:{}"
+                  .format(permission.get('username', ''), e))
 
 
 def remove_user_asset_permission(permissions):
     for permission in permissions:
         print("Remove asset[{}] permission for user[{}]."
-                    .format(permission.get('asset_name', ''), permission.get('username', '')))
+              .format(permission.get('asset_name', ''), permission.get('username', '')))
         try:
             asset = get_object_or_none(Asset, name=permission['asset_name'])
             if not asset:
@@ -351,7 +394,7 @@ def remove_user_asset_permission(permissions):
             if not permissionList.exists():
                 update(permission['instanceId'])
                 print("Asset[{}] permission for user[{}] does not exist!"
-                            .format(permission.get('asset_name', ''), permission.get('username', '')))
+                      .format(permission.get('asset_name', ''), permission.get('username', '')))
                 continue
 
             for p in permissionList:
@@ -359,11 +402,11 @@ def remove_user_asset_permission(permissions):
                 p.assets.remove(asset)  # 移除资产
                 update(permission['instanceId'])
                 print("Success to remove Asset[{}] permission for user[{}]."
-                            .format(permission.get('asset_name', ''), permission.get('username', '')))
+                      .format(permission.get('asset_name', ''), permission.get('username', '')))
 
         except Exception as e:
             print("Failed to remove Asset[{}] permission for user[{}], error:{}"
-                         .format(permission.get('asset_name', ''), permission.get('username', ''), e))
+                  .format(permission.get('asset_name', ''), permission.get('username', ''), e))
 
 
 def update_user_state(users):
