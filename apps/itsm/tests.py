@@ -14,7 +14,8 @@ from perms.const import ActionChoices
 from common.utils import get_object_or_none
 from perms.serializers import ActionChoicesField
 from itsm.task import sync_itsm_data, sync_itsm_data_periodic
-from itsm.main import process_data, save_or_update_asset_permission, save_or_update_asset, to_internal_value
+from itsm.main import process_data, save_or_update_asset_permission, save_or_update_asset, to_internal_value, \
+    extend_permission
 
 
 class TestTaskCase(TestCase):
@@ -39,6 +40,15 @@ class TestTaskCase(TestCase):
         # actions = ["connect", "upload", "download", "copy", "paste", "delete", "share"]
         # print(ActionChoicesField.to_internal_value(self, actions))
         # print(to_internal_value(actions))
+
+        # 延期授权
+        permissions = [
+            {
+                "username": "liufei",
+                "date_expired": "2024-05-01"
+            }
+        ]
+        extend_permission(permissions)
 
         # 创建或更新授权
         # permissions = [
@@ -131,7 +141,7 @@ class TestTaskCase(TestCase):
         # print(root_node.value)
 
         # 创建资产
-        assets = [
+        # assets = [
             # {
         #         "asset_type": "host",
         #         "asset_name": "10.1.12.12",
@@ -167,30 +177,30 @@ class TestTaskCase(TestCase):
         #         "default_db": ""
         #     }
 
-            {
-                "asset_type": "db",
-                "asset_name": "salesview 平台26",
-                "address": "10.1.12.173",
-                "platform": "Kingbase",
-                "assetnode_name": "/Default/开发/数据库",
-                "protocol": ["Kingbase/54321"],
-                "default_db": "",
-                "permission_name": "173-permission",
-                "username": "liufei",
-                "account": ["@SPEC", "root"],
-                "action": ["connect", "upload", "download", "copy", "paste", "delete", "share"],
-                # "date_start": "2023-02-23T10:53:23.879Z",
-                # "date_expired": "2093-01-30T10:53:23.879Z",
-                "account_name": "10.1.12.173-root",
-                "account_username": "root",
-                "secret_type": "password",
-                "secret": "",
-                "su_from": "",
-                "is_privileged": "True",
-                "default_db": "js_db"
-            }
-        ]
-        save_or_update_asset(assets)
+        #     {
+        #         "asset_type": "db",
+        #         "asset_name": "salesview 平台26",
+        #         "address": "10.1.12.173",
+        #         "platform": "Kingbase",
+        #         "assetnode_name": "/Default/开发/数据库",
+        #         "protocol": ["Kingbase/54321"],
+        #         "default_db": "",
+        #         "permission_name": "173-permission",
+        #         "username": "liufei",
+        #         "account": ["@SPEC", "root"],
+        #         "action": ["connect", "upload", "download", "copy", "paste", "delete", "share"],
+        #         # "date_start": "2023-02-23T10:53:23.879Z",
+        #         # "date_expired": "2093-01-30T10:53:23.879Z",
+        #         "account_name": "10.1.12.173-root",
+        #         "account_username": "root",
+        #         "secret_type": "password",
+        #         "secret": "",
+        #         "su_from": "",
+        #         "is_privileged": "True",
+        #         "default_db": "js_db"
+        #     }
+        # ]
+        # save_or_update_asset(assets)
 
     def test_sync_itsm_data(self):
         # process_data()
