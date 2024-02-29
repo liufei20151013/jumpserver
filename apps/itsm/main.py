@@ -12,7 +12,7 @@ from perms.const import ActionChoices
 from orgs.models import Organization
 from accounts.models import Account
 from assets.models import Asset, Platform, Database, Web, Node, Protocol, Host, PlatformProtocol
-from common.utils import get_logger, get_object_or_none, date_expired_default
+from common.utils import get_logger, get_object_or_none
 from perms.models import AssetPermission
 from users.models import User
 
@@ -265,13 +265,6 @@ def save_or_update_asset_permission(permissions):
 
             actions = to_internal_value(permission.get('action', ["connect", "upload", "download", "delete", "copy",
                                                                   "paste", "share"]))
-            protocols = []
-            if len(permission.get('protocol', '')) > 0:
-                for protocol in permission.get('protocol', ''):
-                    arr = str(protocol).lower().split("/")
-                    protocols.append(arr[0])
-            else:
-                protocols = ["all"]
 
             try:
                 date_start = permission.get('date_start') + ' 00:00:00' if len(permission.get('date_start')) > 0 \
@@ -300,7 +293,7 @@ def save_or_update_asset_permission(permissions):
 
                     p = AssetPermission.objects.create(name=permission.get('permission_name', ''),
                                                        accounts=permission.get('account', ["@INPUT"]),
-                                                       protocols=protocols,
+                                                       protocols=["all"],
                                                        actions=actions,
                                                        date_start=date_start,
                                                        date_expired=date_expired,
@@ -323,7 +316,7 @@ def save_or_update_asset_permission(permissions):
                 else:
                     permissionList.update(name=permission.get('permission_name', ''),
                                           accounts=permission.get('account', ["@INPUT"]),
-                                          protocols=protocols,
+                                          protocols=["all"],
                                           actions=actions,
                                           date_start=date_start,
                                           date_expired=date_expired)
