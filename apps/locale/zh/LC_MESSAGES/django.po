@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: JumpServer 0.3.3\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-01-17 19:11+0800\n"
+"POT-Creation-Date: 2024-03-08 11:10+0800\n"
 "PO-Revision-Date: 2021-05-20 10:54+0800\n"
 "Last-Translator: ibuler <ibuler@qq.com>\n"
 "Language-Team: JumpServer team<ibuler@qq.com>\n"
@@ -49,7 +49,7 @@ msgstr "Access key"
 
 #: accounts/const/account.py:9 assets/models/_user.py:48
 #: authentication/backends/passkey/models.py:16
-#: authentication/models/sso_token.py:14 settings/serializers/feature.py:52
+#: authentication/models/sso_token.py:14 settings/serializers/feature.py:53
 msgid "Token"
 msgstr "Token"
 
@@ -91,7 +91,7 @@ msgstr "模板"
 msgid "Skip"
 msgstr "跳过"
 
-#: accounts/const/account.py:32 audits/const.py:24 rbac/tree.py:239
+#: accounts/const/account.py:32 audits/const.py:24 rbac/tree.py:243
 #: templates/_csv_import_export.html:18 templates/_csv_update_modal.html:6
 msgid "Update"
 msgstr "更新"
@@ -216,7 +216,7 @@ msgstr "SFTP"
 msgid "Database"
 msgstr "数据库"
 
-#: accounts/const/vault.py:9 settings/serializers/feature.py:43
+#: accounts/const/vault.py:9 settings/serializers/feature.py:44
 msgid "HCP Vault"
 msgstr "HashiCorp Vault"
 
@@ -595,10 +595,11 @@ msgstr "密码规则"
 #: acls/serializers/base.py:35 applications/models.py:9
 #: assets/models/_user.py:22 assets/models/asset/common.py:93
 #: assets/models/asset/common.py:159 assets/models/cmd_filter.py:21
-#: assets/models/domain.py:19 assets/models/group.py:17
-#: assets/models/label.py:18 assets/models/platform.py:16
-#: assets/models/platform.py:95 assets/serializers/asset/common.py:149
-#: assets/serializers/platform.py:118 assets/serializers/platform.py:228
+#: assets/models/domain.py:19 assets/models/favorite_node.py:15
+#: assets/models/group.py:17 assets/models/label.py:18
+#: assets/models/platform.py:16 assets/models/platform.py:95
+#: assets/serializers/asset/common.py:149 assets/serializers/platform.py:118
+#: assets/serializers/platform.py:228
 #: authentication/backends/passkey/models.py:10
 #: authentication/serializers/connect_token_secret.py:113
 #: authentication/serializers/connect_token_secret.py:168 labels/models.py:11
@@ -606,7 +607,7 @@ msgstr "密码规则"
 #: ops/models/celery.py:57 ops/models/job.py:136 ops/models/playbook.py:28
 #: ops/serializers/job.py:18 orgs/models.py:82
 #: perms/models/asset_permission.py:61 rbac/models/role.py:29
-#: settings/models.py:33 settings/models.py:181 settings/serializers/msg.py:89
+#: settings/models.py:33 settings/models.py:182 settings/serializers/msg.py:89
 #: terminal/models/applet/applet.py:33 terminal/models/component/endpoint.py:12
 #: terminal/models/component/endpoint.py:95
 #: terminal/models/component/storage.py:26 terminal/models/component/task.py:13
@@ -827,7 +828,7 @@ msgstr "ID"
 #: authentication/models/sso_token.py:16
 #: notifications/models/notification.py:12
 #: perms/api/user_permission/mixin.py:55 perms/models/asset_permission.py:63
-#: perms/serializers/permission.py:32 rbac/builtin.py:124
+#: perms/serializers/permission.py:32 rbac/builtin.py:125
 #: rbac/models/rolebinding.py:49 rbac/serializers/rolebinding.py:17
 #: terminal/backends/command/models.py:16 terminal/models/session/session.py:29
 #: terminal/models/session/sharing.py:34 terminal/notifications.py:156
@@ -1138,7 +1139,7 @@ msgid "Regex"
 msgstr "正则表达式"
 
 #: acls/models/command_acl.py:26 assets/models/cmd_filter.py:79
-#: settings/models.py:182 settings/serializers/feature.py:19
+#: settings/models.py:183 settings/serializers/feature.py:20
 #: xpack/plugins/license/models.py:30
 msgid "Content"
 msgstr "内容"
@@ -1420,7 +1421,7 @@ msgstr "脚本"
 
 #: assets/const/category.py:10 assets/models/asset/host.py:8
 #: settings/serializers/auth/radius.py:16 settings/serializers/auth/sms.py:71
-#: settings/serializers/feature.py:49 settings/serializers/msg.py:31
+#: settings/serializers/feature.py:50 settings/serializers/msg.py:31
 #: terminal/models/component/endpoint.py:13 terminal/serializers/applet.py:17
 #: xpack/plugins/cloud/serializers/account_attrs.py:72
 msgid "Host"
@@ -1787,7 +1788,7 @@ msgstr "客户端密钥"
 msgid "Allow invalid cert"
 msgstr "忽略证书校验"
 
-#: assets/models/asset/gpt.py:8 settings/serializers/feature.py:84
+#: assets/models/asset/gpt.py:8 settings/serializers/feature.py:85
 msgid "Proxy"
 msgstr "代理"
 
@@ -1850,9 +1851,13 @@ msgstr "过滤器"
 msgid "Command filter rule"
 msgstr "命令过滤规则"
 
-#: assets/models/favorite_asset.py:17
+#: assets/models/favorite_asset.py:18
 msgid "Favorite asset"
 msgstr "收藏的资产"
+
+#: assets/models/favorite_node.py:19
+msgid "FavoriteNode"
+msgstr "收藏夹"
 
 #: assets/models/gateway.py:34 assets/serializers/domain.py:18
 msgid "Gateway"
@@ -2333,7 +2338,7 @@ msgstr "删除目录"
 
 #: audits/const.py:14 audits/const.py:25
 #: authentication/templates/authentication/_access_key_modal.html:65
-#: rbac/tree.py:240
+#: rbac/tree.py:244
 msgid "Delete"
 msgstr "删除"
 
@@ -2357,7 +2362,7 @@ msgstr "下载"
 msgid "Rename dir"
 msgstr "映射目录"
 
-#: audits/const.py:23 rbac/tree.py:238 terminal/api/session/session.py:257
+#: audits/const.py:23 rbac/tree.py:242 terminal/api/session/session.py:257
 #: terminal/templates/terminal/_msg_command_warning.html:18
 #: terminal/templates/terminal/_msg_session_sharing.html:10
 msgid "View"
@@ -2365,7 +2370,7 @@ msgstr "查看"
 
 #: audits/const.py:26
 #: authentication/templates/authentication/_access_key_modal.html:22
-#: rbac/tree.py:237
+#: rbac/tree.py:241
 msgid "Create"
 msgstr "创建"
 
@@ -3860,11 +3865,11 @@ msgstr "错误的 pk \"{pk_value}\" - 对象不存在"
 msgid "Incorrect type. Expected pk value, received {data_type}."
 msgstr "错误类型。期望 pk 值，收到 {data_type}。"
 
-#: common/serializers/fields.py:209
+#: common/serializers/fields.py:209 itsm/main.py:425
 msgid "Invalid data type, should be list"
 msgstr "错误的数据类型，应该是列表"
 
-#: common/serializers/fields.py:224
+#: common/serializers/fields.py:224 itsm/main.py:440
 msgid "Invalid choice: {}"
 msgstr "无效选项: {}"
 
@@ -3910,6 +3915,16 @@ msgstr "不能包含特殊字符"
 #: common/validators.py:47
 msgid "The mobile phone number format is incorrect"
 msgstr "手机号格式不正确"
+
+#: itsm/task.py:13
+msgid "Sync itsm data to JumpServer"
+msgstr ""
+
+#: itsm/task.py:18
+#, fuzzy
+#| msgid "Registration periodic import ldap user task"
+msgid "Registration periodic sync itsm data task"
+msgstr "注册周期导入 LDAP 用户 任务"
 
 #: jumpserver/conf.py:454
 #, python-brace-format
@@ -4061,7 +4076,7 @@ msgstr "文件密钥该字段是必填项。"
 msgid "This file can not be delete"
 msgstr "无法删除此文件"
 
-#: ops/apps.py:9 ops/notifications.py:17 rbac/tree.py:57
+#: ops/apps.py:9 ops/notifications.py:17 rbac/tree.py:58
 msgid "App ops"
 msgstr "作业中心"
 
@@ -4426,7 +4441,7 @@ msgstr "LDAP 同步设置组织为当前组织，请切换其他组织后再进�
 msgid "The organization have resource ({}) cannot be deleted"
 msgstr "组织存在资源 ({}) 不能被删除"
 
-#: orgs/apps.py:7 rbac/tree.py:128
+#: orgs/apps.py:7 rbac/tree.py:132
 msgid "App organizations"
 msgstr "组织管理"
 
@@ -4455,7 +4470,7 @@ msgstr "默认组织"
 msgid "SYSTEM"
 msgstr "系统组织"
 
-#: orgs/models.py:83 rbac/models/role.py:36 settings/models.py:183
+#: orgs/models.py:83 rbac/models/role.py:36 settings/models.py:184
 #: terminal/models/applet/applet.py:41
 msgid "Builtin"
 msgstr "内置的"
@@ -4528,23 +4543,23 @@ msgstr "未分组"
 msgid "Favorite"
 msgstr "收藏夹"
 
-#: perms/models/perm_node.py:121
+#: perms/models/perm_node.py:132
 msgid "Permed asset"
 msgstr "授权的资产"
 
-#: perms/models/perm_node.py:123
+#: perms/models/perm_node.py:134
 msgid "Can view my assets"
 msgstr "可以查看我的资产"
 
-#: perms/models/perm_node.py:124
+#: perms/models/perm_node.py:135
 msgid "Can view user assets"
 msgstr "可以查看用户授权的资产"
 
-#: perms/models/perm_node.py:125
+#: perms/models/perm_node.py:136
 msgid "Can view usergroup assets"
 msgstr "可以查看用户组授权的资产"
 
-#: perms/models/perm_node.py:136
+#: perms/models/perm_node.py:147
 msgid "Permed account"
 msgstr "授权账号"
 
@@ -4553,7 +4568,7 @@ msgid "today"
 msgstr "今天"
 
 #: perms/notifications.py:12 perms/notifications.py:44
-#: settings/serializers/feature.py:117
+#: settings/serializers/feature.py:118
 msgid "day"
 msgstr "天"
 
@@ -4614,7 +4629,7 @@ msgstr "内部角色，不能删除"
 msgid "The role has been bound to users, can't be destroy"
 msgstr "角色已绑定用户，不能删除"
 
-#: rbac/api/role.py:100
+#: rbac/api/role.py:102
 msgid "Internal role, can't be update"
 msgstr "内部角色，不能更新"
 
@@ -4626,27 +4641,31 @@ msgstr "{} 至少有一个系统角色"
 msgid "RBAC"
 msgstr "RBAC"
 
-#: rbac/builtin.py:115
+#: rbac/builtin.py:21
+msgid "favoritenode"
+msgstr "收藏夹"
+
+#: rbac/builtin.py:116
 msgid "SystemAdmin"
 msgstr "系统管理员"
 
-#: rbac/builtin.py:118
+#: rbac/builtin.py:119
 msgid "SystemAuditor"
 msgstr "系统审计员"
 
-#: rbac/builtin.py:121
+#: rbac/builtin.py:122
 msgid "SystemComponent"
 msgstr "系统组件"
 
-#: rbac/builtin.py:127
+#: rbac/builtin.py:128
 msgid "OrgAdmin"
 msgstr "组织管理员"
 
-#: rbac/builtin.py:130
+#: rbac/builtin.py:131
 msgid "OrgAuditor"
 msgstr "组织审计员"
 
-#: rbac/builtin.py:133
+#: rbac/builtin.py:134
 msgid "OrgUser"
 msgstr "组织用户"
 
@@ -4787,26 +4806,30 @@ msgstr "任务中心"
 msgid "My assets"
 msgstr "我的资产"
 
-#: rbac/tree.py:58 terminal/models/applet/applet.py:52
+#: rbac/tree.py:57
+msgid "My favorite nodes"
+msgstr "我的收藏夹"
+
+#: rbac/tree.py:59 terminal/models/applet/applet.py:52
 #: terminal/models/applet/applet.py:317 terminal/models/applet/host.py:30
 #: terminal/serializers/applet.py:15
 msgid "Applet"
 msgstr "远程应用"
 
-#: rbac/tree.py:129
+#: rbac/tree.py:133
 msgid "Ticket comment"
 msgstr "工单评论"
 
-#: rbac/tree.py:130 settings/serializers/feature.py:109
+#: rbac/tree.py:134 settings/serializers/feature.py:110
 #: tickets/models/ticket/general.py:307
 msgid "Ticket"
 msgstr "工单管理"
 
-#: rbac/tree.py:131
+#: rbac/tree.py:135
 msgid "Common setting"
 msgstr "一般设置"
 
-#: rbac/tree.py:132
+#: rbac/tree.py:136
 msgid "View permission tree"
 msgstr "查看授权树"
 
@@ -4917,7 +4940,13 @@ msgstr "终端设置"
 msgid "Can change other setting"
 msgstr "其它设置"
 
-#: settings/models.py:186
+#: settings/models.py:177
+#, fuzzy
+#| msgid "Can change sms setting"
+msgid "Can change itsm setting"
+msgstr "短信设置"
+
+#: settings/models.py:187
 msgid "Chat prompt"
 msgstr "聊天提示"
 
@@ -5472,35 +5501,35 @@ msgid ""
 msgstr ""
 "会话、录像，命令记录超过该时长将会被清除 (影响数据库存储，OSS 等不受影响)"
 
-#: settings/serializers/feature.py:18
+#: settings/serializers/feature.py:19
 msgid "Subject"
 msgstr "主题"
 
-#: settings/serializers/feature.py:22
+#: settings/serializers/feature.py:23
 msgid "More url"
 msgstr "更多信息 URL"
 
-#: settings/serializers/feature.py:36 settings/serializers/feature.py:39
+#: settings/serializers/feature.py:37 settings/serializers/feature.py:40
 msgid "Announcement"
 msgstr "公告"
 
-#: settings/serializers/feature.py:38
+#: settings/serializers/feature.py:39
 msgid "Enable announcement"
 msgstr "启用公告"
 
-#: settings/serializers/feature.py:46
+#: settings/serializers/feature.py:47
 msgid "Enable Vault"
 msgstr "启用 Vault"
 
-#: settings/serializers/feature.py:55
+#: settings/serializers/feature.py:56
 msgid "Mount Point"
 msgstr "挂载点"
 
-#: settings/serializers/feature.py:60
+#: settings/serializers/feature.py:61
 msgid "Historical accounts retained count"
 msgstr "历史账号保留数量"
 
-#: settings/serializers/feature.py:62
+#: settings/serializers/feature.py:63
 msgid ""
 "If the specific value is less than 999, the system will automatically "
 "perform a task every night: check and delete historical accounts that exceed "
@@ -5510,63 +5539,63 @@ msgstr ""
 "若特定数值小于999，系统将在每日晚间自动执行任务：检查并删除超出预定数量的历史"
 "账号。如果该数值达到或超过999，则不进行任何历史账号的删除操作。"
 
-#: settings/serializers/feature.py:71
+#: settings/serializers/feature.py:72
 msgid "Chat AI"
 msgstr "聊天 AI"
 
-#: settings/serializers/feature.py:75
+#: settings/serializers/feature.py:76
 msgid "Enable Chat AI"
 msgstr "启动聊天 AI"
 
-#: settings/serializers/feature.py:78
+#: settings/serializers/feature.py:79
 msgid "Base Url"
 msgstr "基本地址"
 
-#: settings/serializers/feature.py:81 templates/_header_bar.html:90
+#: settings/serializers/feature.py:82 templates/_header_bar.html:90
 msgid "API Key"
 msgstr "API Key"
 
-#: settings/serializers/feature.py:87
+#: settings/serializers/feature.py:88
 msgid "GPT Model"
 msgstr "GPT 模型"
 
-#: settings/serializers/feature.py:111
+#: settings/serializers/feature.py:112
 msgid "Enable tickets"
 msgstr "启用工单"
 
-#: settings/serializers/feature.py:114
+#: settings/serializers/feature.py:115
 msgid "Ticket authorize default time"
 msgstr "默认工单授权时间"
 
-#: settings/serializers/feature.py:117
+#: settings/serializers/feature.py:118
 msgid "hour"
 msgstr "时"
 
-#: settings/serializers/feature.py:118
+#: settings/serializers/feature.py:119
 msgid "Ticket authorize default time unit"
 msgstr "默认工单授权时间单位"
 
-#: settings/serializers/feature.py:123
+#: settings/serializers/feature.py:124
 msgid "Feature"
 msgstr "功能"
 
-#: settings/serializers/feature.py:126
+#: settings/serializers/feature.py:127
 msgid "Operation center"
 msgstr "作业中心"
 
-#: settings/serializers/feature.py:127
+#: settings/serializers/feature.py:128
 msgid "Allow user run batch command or not using ansible"
 msgstr "是否允许用户使用 ansible 执行批量命令"
 
-#: settings/serializers/feature.py:131
+#: settings/serializers/feature.py:132
 msgid "Operation center command blacklist"
 msgstr "作业中心命令黑名单"
 
-#: settings/serializers/feature.py:132
+#: settings/serializers/feature.py:133
 msgid "Commands that are not allowed execute."
 msgstr "不允许执行的命令"
 
-#: settings/serializers/feature.py:137
+#: settings/serializers/feature.py:138
 #: terminal/models/virtualapp/provider.py:17
 #: terminal/models/virtualapp/virtualapp.py:36
 #: terminal/models/virtualapp/virtualapp.py:97
@@ -5574,9 +5603,51 @@ msgstr "不允许执行的命令"
 msgid "Virtual app"
 msgstr "虚拟应用"
 
-#: settings/serializers/feature.py:140
+#: settings/serializers/feature.py:141
 msgid "Enable virtual app"
 msgstr "启用虚拟应用"
+
+#: settings/serializers/feature.py:146
+msgid "ITSM"
+msgstr ""
+
+#: settings/serializers/feature.py:149
+#, fuzzy
+#| msgid "Enable SMS"
+msgid "Enable ITSM"
+msgstr "启用 SMS"
+
+#: settings/serializers/feature.py:152
+#, fuzzy
+#| msgid "User"
+msgid "CMDB User"
+msgstr "用户"
+
+#: settings/serializers/feature.py:155
+msgid "CMDB Org"
+msgstr ""
+
+#: settings/serializers/feature.py:158
+#, fuzzy
+#| msgid "LDAP server"
+msgid "CMDB Server"
+msgstr "LDAP 地址"
+
+#: settings/serializers/feature.py:161
+#, fuzzy
+#| msgid "Host"
+msgid "CMDB Host"
+msgstr "主机"
+
+#: settings/serializers/feature.py:164
+#, fuzzy
+#| msgid "Object"
+msgid "Object ID"
+msgstr "对象"
+
+#: settings/serializers/feature.py:167
+msgid "Cron"
+msgstr ""
 
 #: settings/serializers/msg.py:25
 msgid "SMTP"

@@ -3,7 +3,7 @@ import abc
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 
 from assets.api.asset.asset import AssetFilterSet
-from assets.models import Asset, Node
+from assets.models import Asset, Node, FavoriteNode
 from common.utils import get_logger, lazyproperty, is_uuid
 from orgs.utils import tmp_to_root_org
 from perms import serializers
@@ -38,13 +38,28 @@ class UserPermedAssetRetrieveApi(SelfOrPKUserMixin, RetrieveAPIView):
 
 
 class BaseUserPermedAssetsApi(SelfOrPKUserMixin, ListAPIView):
-    ordering = ('name',)
+    ordering = []
     search_fields = ('name', 'address', 'comment')
     ordering_fields = ("name", "address")
     filterset_class = AssetFilterSet
     serializer_class = serializers.AssetPermedSerializer
 
     def get_queryset(self):
+        node_id = self.kwargs.get("node_id")
+        if not node_id:
+            return self.query_assets()
+
+        try:
+            favoriteNode = FavoriteNode.objects.filter(id=node_id)
+            if favoriteNode:
+                return self.query_asset_util.get_favorite_node_all_assets(node_id)
+        except Exception as e:
+            pass
+
+        assets = self.query_assets()
+        return assets
+
+    def query_assets(self):
         if getattr(self, 'swagger_fake_view', False):
             return Asset.objects.none()
         assets = self.get_assets()
@@ -90,6 +105,14 @@ class UserPermedNodeAssetsApi(BaseUserPermedAssetsApi):
 
     def get_assets(self):
         node_id = self.kwargs.get("node_id")
+
+        try:
+            favoriteNode = FavoriteNode.objects.filter(id=node_id)
+            if favoriteNode:
+                return self.query_asset_util.get_favorite_node_all_assets(node_id)
+        except Exception as e:
+            pass
+
         node, assets = self.query_asset_util.get_node_all_assets(node_id)
         self.pagination_node = node
         return assets

@@ -137,9 +137,20 @@ class UserPermedNodeChildrenWithAssetsAsTreeApi(BaseUserNodeWithAssetAsTreeApi):
         elif node_key == PermNode.UNGROUPED_NODE_KEY:
             nodes = PermNode.objects.none()
             assets = query_asset_util.get_ungroup_assets()
-        elif node_key == PermNode.FAVORITE_NODE_KEY:
-            nodes = PermNode.objects.none()
-            assets = query_asset_util.get_favorite_assets()
+        elif node_key.startswith('0'):
+            if node_key == PermNode.FAVORITE_NODE_KEY:
+                nodes = PermNode.objects.none()
+                assets = query_asset_util.get_favorite_assets()
+            else:
+                nodes = PermNode.objects.none()
+                allNodes = []
+                fav_node = query_node_util.get_favorite_node()
+                allNodes.append(fav_node)
+                query_node_util.get_favorite_node_children(allNodes)
+                assets = Asset.objects.none()
+                for node in allNodes:
+                    if node_key == node.key:
+                        assets = query_asset_util.get_favorite_node_all_assets(node.id)
         else:
             nodes = query_node_util.get_node_children(node_key)
             assets = query_asset_util.get_node_assets(key=node_key)

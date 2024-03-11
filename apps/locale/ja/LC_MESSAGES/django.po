@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-01-17 19:11+0800\n"
+"POT-Creation-Date: 2024-03-08 11:10+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -50,7 +50,7 @@ msgstr "アクセスキー"
 
 #: accounts/const/account.py:9 assets/models/_user.py:48
 #: authentication/backends/passkey/models.py:16
-#: authentication/models/sso_token.py:14 settings/serializers/feature.py:52
+#: authentication/models/sso_token.py:14 settings/serializers/feature.py:53
 msgid "Token"
 msgstr "トークン"
 
@@ -92,7 +92,7 @@ msgstr "テンプレート"
 msgid "Skip"
 msgstr "スキップ"
 
-#: accounts/const/account.py:32 audits/const.py:24 rbac/tree.py:239
+#: accounts/const/account.py:32 audits/const.py:24 rbac/tree.py:243
 #: templates/_csv_import_export.html:18 templates/_csv_update_modal.html:6
 msgid "Update"
 msgstr "更新"
@@ -217,7 +217,7 @@ msgstr "SFTP"
 msgid "Database"
 msgstr "データベース"
 
-#: accounts/const/vault.py:9 settings/serializers/feature.py:43
+#: accounts/const/vault.py:9 settings/serializers/feature.py:44
 msgid "HCP Vault"
 msgstr "HashiCorp Vault"
 
@@ -596,10 +596,11 @@ msgstr "パスワードルール"
 #: acls/serializers/base.py:35 applications/models.py:9
 #: assets/models/_user.py:22 assets/models/asset/common.py:93
 #: assets/models/asset/common.py:159 assets/models/cmd_filter.py:21
-#: assets/models/domain.py:19 assets/models/group.py:17
-#: assets/models/label.py:18 assets/models/platform.py:16
-#: assets/models/platform.py:95 assets/serializers/asset/common.py:149
-#: assets/serializers/platform.py:118 assets/serializers/platform.py:228
+#: assets/models/domain.py:19 assets/models/favorite_node.py:15
+#: assets/models/group.py:17 assets/models/label.py:18
+#: assets/models/platform.py:16 assets/models/platform.py:95
+#: assets/serializers/asset/common.py:149 assets/serializers/platform.py:118
+#: assets/serializers/platform.py:228
 #: authentication/backends/passkey/models.py:10
 #: authentication/serializers/connect_token_secret.py:113
 #: authentication/serializers/connect_token_secret.py:168 labels/models.py:11
@@ -607,7 +608,7 @@ msgstr "パスワードルール"
 #: ops/models/celery.py:57 ops/models/job.py:136 ops/models/playbook.py:28
 #: ops/serializers/job.py:18 orgs/models.py:82
 #: perms/models/asset_permission.py:61 rbac/models/role.py:29
-#: settings/models.py:33 settings/models.py:181 settings/serializers/msg.py:89
+#: settings/models.py:33 settings/models.py:182 settings/serializers/msg.py:89
 #: terminal/models/applet/applet.py:33 terminal/models/component/endpoint.py:12
 #: terminal/models/component/endpoint.py:95
 #: terminal/models/component/storage.py:26 terminal/models/component/task.py:13
@@ -829,7 +830,7 @@ msgstr "ID"
 #: authentication/models/sso_token.py:16
 #: notifications/models/notification.py:12
 #: perms/api/user_permission/mixin.py:55 perms/models/asset_permission.py:63
-#: perms/serializers/permission.py:32 rbac/builtin.py:124
+#: perms/serializers/permission.py:32 rbac/builtin.py:125
 #: rbac/models/rolebinding.py:49 rbac/serializers/rolebinding.py:17
 #: terminal/backends/command/models.py:16 terminal/models/session/session.py:29
 #: terminal/models/session/sharing.py:34 terminal/notifications.py:156
@@ -1142,7 +1143,7 @@ msgid "Regex"
 msgstr "正規情報"
 
 #: acls/models/command_acl.py:26 assets/models/cmd_filter.py:79
-#: settings/models.py:182 settings/serializers/feature.py:19
+#: settings/models.py:183 settings/serializers/feature.py:20
 #: xpack/plugins/license/models.py:30
 msgid "Content"
 msgstr "コンテンツ"
@@ -1428,7 +1429,7 @@ msgstr "脚本"
 
 #: assets/const/category.py:10 assets/models/asset/host.py:8
 #: settings/serializers/auth/radius.py:16 settings/serializers/auth/sms.py:71
-#: settings/serializers/feature.py:49 settings/serializers/msg.py:31
+#: settings/serializers/feature.py:50 settings/serializers/msg.py:31
 #: terminal/models/component/endpoint.py:13 terminal/serializers/applet.py:17
 #: xpack/plugins/cloud/serializers/account_attrs.py:72
 msgid "Host"
@@ -1795,7 +1796,7 @@ msgstr "クライアントキー"
 msgid "Allow invalid cert"
 msgstr "証明書チェックを無視"
 
-#: assets/models/asset/gpt.py:8 settings/serializers/feature.py:84
+#: assets/models/asset/gpt.py:8 settings/serializers/feature.py:85
 msgid "Proxy"
 msgstr "プロキシー"
 
@@ -1858,9 +1859,13 @@ msgstr "フィルター"
 msgid "Command filter rule"
 msgstr "コマンドフィルタルール"
 
-#: assets/models/favorite_asset.py:17
+#: assets/models/favorite_asset.py:18
 msgid "Favorite asset"
 msgstr "お気に入りのアセット"
+
+#: assets/models/favorite_node.py:19
+msgid "FavoriteNode"
+msgstr "お気に入りフォルダ"
 
 #: assets/models/gateway.py:34 assets/serializers/domain.py:18
 msgid "Gateway"
@@ -2350,7 +2355,7 @@ msgstr "Rmdir"
 
 #: audits/const.py:14 audits/const.py:25
 #: authentication/templates/authentication/_access_key_modal.html:65
-#: rbac/tree.py:240
+#: rbac/tree.py:244
 msgid "Delete"
 msgstr "削除"
 
@@ -2374,7 +2379,7 @@ msgstr "ダウンロード"
 msgid "Rename dir"
 msgstr "マップディレクトリ"
 
-#: audits/const.py:23 rbac/tree.py:238 terminal/api/session/session.py:257
+#: audits/const.py:23 rbac/tree.py:242 terminal/api/session/session.py:257
 #: terminal/templates/terminal/_msg_command_warning.html:18
 #: terminal/templates/terminal/_msg_session_sharing.html:10
 msgid "View"
@@ -2382,7 +2387,7 @@ msgstr "表示"
 
 #: audits/const.py:26
 #: authentication/templates/authentication/_access_key_modal.html:22
-#: rbac/tree.py:237
+#: rbac/tree.py:241
 msgid "Create"
 msgstr "作成"
 
@@ -3906,11 +3911,11 @@ msgstr "無効な pk \"{pk_value}\" - オブジェクトが存在しません"
 msgid "Incorrect type. Expected pk value, received {data_type}."
 msgstr "エラータイプ。 予想される pk 値、受信 {data_type}。"
 
-#: common/serializers/fields.py:209
+#: common/serializers/fields.py:209 itsm/main.py:425
 msgid "Invalid data type, should be list"
 msgstr "間違ったデータ タイプです。リストにする必要があります"
 
-#: common/serializers/fields.py:224
+#: common/serializers/fields.py:224 itsm/main.py:440
 msgid "Invalid choice: {}"
 msgstr "無効なオプション: {}"
 
@@ -3954,6 +3959,16 @@ msgstr "特殊文字を含むべきではない"
 #: common/validators.py:47
 msgid "The mobile phone number format is incorrect"
 msgstr "携帯電話番号の形式が正しくありません"
+
+#: itsm/task.py:13
+msgid "Sync itsm data to JumpServer"
+msgstr ""
+
+#: itsm/task.py:18
+#, fuzzy
+#| msgid "Registration periodic import ldap user task"
+msgid "Registration periodic sync itsm data task"
+msgstr "登録サイクルLDAPユーザータスクのインポート"
 
 #: jumpserver/conf.py:454
 #, python-brace-format
@@ -4112,7 +4127,7 @@ msgstr "ファイルキーこのフィールドは必須です"
 msgid "This file can not be delete"
 msgstr "このファイルを削除できません"
 
-#: ops/apps.py:9 ops/notifications.py:17 rbac/tree.py:57
+#: ops/apps.py:9 ops/notifications.py:17 rbac/tree.py:58
 msgid "App ops"
 msgstr "アプリ操作"
 
@@ -4478,7 +4493,7 @@ msgstr ""
 msgid "The organization have resource ({}) cannot be deleted"
 msgstr "組織のリソース ({}) は削除できません"
 
-#: orgs/apps.py:7 rbac/tree.py:128
+#: orgs/apps.py:7 rbac/tree.py:132
 msgid "App organizations"
 msgstr "アプリ組織"
 
@@ -4507,7 +4522,7 @@ msgstr "デフォルト組織"
 msgid "SYSTEM"
 msgstr "システム組織"
 
-#: orgs/models.py:83 rbac/models/role.py:36 settings/models.py:183
+#: orgs/models.py:83 rbac/models/role.py:36 settings/models.py:184
 #: terminal/models/applet/applet.py:41
 msgid "Builtin"
 msgstr "ビルトイン"
@@ -4580,23 +4595,23 @@ msgstr "グループ化されていません"
 msgid "Favorite"
 msgstr "お気に入り"
 
-#: perms/models/perm_node.py:121
+#: perms/models/perm_node.py:132
 msgid "Permed asset"
 msgstr "許可された資産"
 
-#: perms/models/perm_node.py:123
+#: perms/models/perm_node.py:134
 msgid "Can view my assets"
 msgstr "私の資産を見ることができます"
 
-#: perms/models/perm_node.py:124
+#: perms/models/perm_node.py:135
 msgid "Can view user assets"
 msgstr "ユーザー資産を表示できます"
 
-#: perms/models/perm_node.py:125
+#: perms/models/perm_node.py:136
 msgid "Can view usergroup assets"
 msgstr "ユーザーグループの資産を表示できます"
 
-#: perms/models/perm_node.py:136
+#: perms/models/perm_node.py:147
 msgid "Permed account"
 msgstr "認定アカウント"
 
@@ -4605,7 +4620,7 @@ msgid "today"
 msgstr "今日"
 
 #: perms/notifications.py:12 perms/notifications.py:44
-#: settings/serializers/feature.py:117
+#: settings/serializers/feature.py:118
 msgid "day"
 msgstr "日"
 
@@ -4666,7 +4681,7 @@ msgstr "内部の役割は、破壊することはできません"
 msgid "The role has been bound to users, can't be destroy"
 msgstr "ロールはユーザーにバインドされており、破壊することはできません"
 
-#: rbac/api/role.py:100
+#: rbac/api/role.py:102
 msgid "Internal role, can't be update"
 msgstr "内部ロール、更新できません"
 
@@ -4678,27 +4693,31 @@ msgstr "{} 少なくとも1つのシステムロール"
 msgid "RBAC"
 msgstr "RBAC"
 
-#: rbac/builtin.py:115
+#: rbac/builtin.py:21
+msgid "favoritenode"
+msgstr "お気に入りフォルダ"
+
+#: rbac/builtin.py:116
 msgid "SystemAdmin"
 msgstr "システム管理者"
 
-#: rbac/builtin.py:118
+#: rbac/builtin.py:119
 msgid "SystemAuditor"
 msgstr "システム監査人"
 
-#: rbac/builtin.py:121
+#: rbac/builtin.py:122
 msgid "SystemComponent"
 msgstr "システムコンポーネント"
 
-#: rbac/builtin.py:127
+#: rbac/builtin.py:128
 msgid "OrgAdmin"
 msgstr "組織管理者"
 
-#: rbac/builtin.py:130
+#: rbac/builtin.py:131
 msgid "OrgAuditor"
 msgstr "監査員を組織する"
 
-#: rbac/builtin.py:133
+#: rbac/builtin.py:134
 msgid "OrgUser"
 msgstr "組織ユーザー"
 
@@ -4840,26 +4859,30 @@ msgstr "タスクセンター"
 msgid "My assets"
 msgstr "私の資産"
 
-#: rbac/tree.py:58 terminal/models/applet/applet.py:52
+#: rbac/tree.py:57
+msgid "My favorite nodes"
+msgstr "我的收藏夹"
+
+#: rbac/tree.py:59 terminal/models/applet/applet.py:52
 #: terminal/models/applet/applet.py:317 terminal/models/applet/host.py:30
 #: terminal/serializers/applet.py:15
 msgid "Applet"
 msgstr "リモートアプリケーション"
 
-#: rbac/tree.py:129
+#: rbac/tree.py:133
 msgid "Ticket comment"
 msgstr "チケットコメント"
 
-#: rbac/tree.py:130 settings/serializers/feature.py:109
+#: rbac/tree.py:134 settings/serializers/feature.py:110
 #: tickets/models/ticket/general.py:307
 msgid "Ticket"
 msgstr "チケット"
 
-#: rbac/tree.py:131
+#: rbac/tree.py:135
 msgid "Common setting"
 msgstr "共通設定"
 
-#: rbac/tree.py:132
+#: rbac/tree.py:136
 msgid "View permission tree"
 msgstr "権限ツリーの表示"
 
@@ -4972,7 +4995,13 @@ msgstr "ターミナルの設定を変えることができます"
 msgid "Can change other setting"
 msgstr "他の設定を変えることができます"
 
-#: settings/models.py:186
+#: settings/models.py:177
+#, fuzzy
+#| msgid "Can change sms setting"
+msgid "Can change itsm setting"
+msgstr "Smsの設定を変えることができます"
+
+#: settings/models.py:187
 msgid "Chat prompt"
 msgstr "チャットのヒント"
 
@@ -5531,35 +5560,35 @@ msgstr ""
 "この期間を超えるセッション、録音、およびコマンド レコードは削除されます (デー"
 "タベースのバックアップに影響し、OSS などには影響しません)"
 
-#: settings/serializers/feature.py:18
+#: settings/serializers/feature.py:19
 msgid "Subject"
 msgstr "件名"
 
-#: settings/serializers/feature.py:22
+#: settings/serializers/feature.py:23
 msgid "More url"
 msgstr "もっとURL"
 
-#: settings/serializers/feature.py:36 settings/serializers/feature.py:39
+#: settings/serializers/feature.py:37 settings/serializers/feature.py:40
 msgid "Announcement"
 msgstr "発表"
 
-#: settings/serializers/feature.py:38
+#: settings/serializers/feature.py:39
 msgid "Enable announcement"
 msgstr "アナウンスの有効化"
 
-#: settings/serializers/feature.py:46
+#: settings/serializers/feature.py:47
 msgid "Enable Vault"
 msgstr "有効化 Vault"
 
-#: settings/serializers/feature.py:55
+#: settings/serializers/feature.py:56
 msgid "Mount Point"
 msgstr "マウントポイント"
 
-#: settings/serializers/feature.py:60
+#: settings/serializers/feature.py:61
 msgid "Historical accounts retained count"
 msgstr "保持されている過去のアカウントの数"
 
-#: settings/serializers/feature.py:62
+#: settings/serializers/feature.py:63
 msgid ""
 "If the specific value is less than 999, the system will automatically "
 "perform a task every night: check and delete historical accounts that exceed "
@@ -5570,63 +5599,63 @@ msgstr ""
 "所定の数を超える履歴アカウントを確認して削除します。 値が 999 以上の場合、履"
 "歴アカウントの削除は実行されません。"
 
-#: settings/serializers/feature.py:71
+#: settings/serializers/feature.py:72
 msgid "Chat AI"
 msgstr "チャットAI"
 
-#: settings/serializers/feature.py:75
+#: settings/serializers/feature.py:76
 msgid "Enable Chat AI"
 msgstr "チャットAIを起動する"
 
-#: settings/serializers/feature.py:78
+#: settings/serializers/feature.py:79
 msgid "Base Url"
 msgstr "基本的なUrl"
 
-#: settings/serializers/feature.py:81 templates/_header_bar.html:90
+#: settings/serializers/feature.py:82 templates/_header_bar.html:90
 msgid "API Key"
 msgstr "API Key"
 
-#: settings/serializers/feature.py:87
+#: settings/serializers/feature.py:88
 msgid "GPT Model"
 msgstr "GPTモデル"
 
-#: settings/serializers/feature.py:111
+#: settings/serializers/feature.py:112
 msgid "Enable tickets"
 msgstr "チケットを有効にする"
 
-#: settings/serializers/feature.py:114
+#: settings/serializers/feature.py:115
 msgid "Ticket authorize default time"
 msgstr "デフォルト製造オーダ承認時間"
 
-#: settings/serializers/feature.py:117
+#: settings/serializers/feature.py:118
 msgid "hour"
 msgstr "時"
 
-#: settings/serializers/feature.py:118
+#: settings/serializers/feature.py:119
 msgid "Ticket authorize default time unit"
 msgstr "デフォルト製造オーダ承認時間単位"
 
-#: settings/serializers/feature.py:123
+#: settings/serializers/feature.py:124
 msgid "Feature"
 msgstr "機能"
 
-#: settings/serializers/feature.py:126
+#: settings/serializers/feature.py:127
 msgid "Operation center"
 msgstr "職業センター"
 
-#: settings/serializers/feature.py:127
+#: settings/serializers/feature.py:128
 msgid "Allow user run batch command or not using ansible"
 msgstr "ユーザー実行バッチコマンドを許可するか、ansibleを使用しない"
 
-#: settings/serializers/feature.py:131
+#: settings/serializers/feature.py:132
 msgid "Operation center command blacklist"
 msgstr "オペレーション センター コマンド ブラックリスト"
 
-#: settings/serializers/feature.py:132
+#: settings/serializers/feature.py:133
 msgid "Commands that are not allowed execute."
 msgstr "実行が許可されていないコマンド"
 
-#: settings/serializers/feature.py:137
+#: settings/serializers/feature.py:138
 #: terminal/models/virtualapp/provider.py:17
 #: terminal/models/virtualapp/virtualapp.py:36
 #: terminal/models/virtualapp/virtualapp.py:97
@@ -5634,9 +5663,51 @@ msgstr "実行が許可されていないコマンド"
 msgid "Virtual app"
 msgstr "仮想アプリケーション"
 
-#: settings/serializers/feature.py:140
+#: settings/serializers/feature.py:141
 msgid "Enable virtual app"
 msgstr "仮想アプリケーションの有効化"
+
+#: settings/serializers/feature.py:146
+msgid "ITSM"
+msgstr ""
+
+#: settings/serializers/feature.py:149
+#, fuzzy
+#| msgid "Enable SMS"
+msgid "Enable ITSM"
+msgstr "SMSの有効化"
+
+#: settings/serializers/feature.py:152
+#, fuzzy
+#| msgid "User"
+msgid "CMDB User"
+msgstr "ユーザー"
+
+#: settings/serializers/feature.py:155
+msgid "CMDB Org"
+msgstr ""
+
+#: settings/serializers/feature.py:158
+#, fuzzy
+#| msgid "LDAP server"
+msgid "CMDB Server"
+msgstr "LDAPサーバー"
+
+#: settings/serializers/feature.py:161
+#, fuzzy
+#| msgid "Host"
+msgid "CMDB Host"
+msgstr "ホスト"
+
+#: settings/serializers/feature.py:164
+#, fuzzy
+#| msgid "Object"
+msgid "Object ID"
+msgstr "オブジェクト"
+
+#: settings/serializers/feature.py:167
+msgid "Cron"
+msgstr ""
 
 #: settings/serializers/msg.py:25
 msgid "SMTP"
