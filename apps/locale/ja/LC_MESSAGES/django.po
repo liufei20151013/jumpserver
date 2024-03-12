@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-03-08 11:10+0800\n"
+"POT-Creation-Date: 2024-03-12 11:38+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -92,7 +92,7 @@ msgstr "テンプレート"
 msgid "Skip"
 msgstr "スキップ"
 
-#: accounts/const/account.py:32 audits/const.py:24 rbac/tree.py:243
+#: accounts/const/account.py:32 audits/const.py:24 rbac/tree.py:244
 #: templates/_csv_import_export.html:18 templates/_csv_update_modal.html:6
 msgid "Update"
 msgstr "更新"
@@ -1745,7 +1745,7 @@ msgid "Domain"
 msgstr "ドメイン"
 
 #: assets/models/asset/common.py:165 assets/models/automations/base.py:18
-#: assets/models/cmd_filter.py:32 assets/models/node.py:546
+#: assets/models/cmd_filter.py:32 assets/models/node.py:549
 #: perms/models/asset_permission.py:72 perms/serializers/permission.py:37
 #: tickets/models/ticket/apply_asset.py:14 xpack/plugins/cloud/models.py:330
 msgid "Node"
@@ -1889,7 +1889,7 @@ msgstr "デフォルトアセットグループ"
 msgid "System"
 msgstr "システム"
 
-#: assets/models/label.py:19 assets/models/node.py:532
+#: assets/models/label.py:19 assets/models/node.py:535
 #: assets/serializers/cagegory.py:11 assets/serializers/cagegory.py:18
 #: assets/serializers/cagegory.py:24
 #: authentication/models/connection_token.py:29
@@ -1912,23 +1912,23 @@ msgstr "ラベル"
 msgid "New node"
 msgstr "新しいノード"
 
-#: assets/models/node.py:460 audits/backends/db.py:65 audits/backends/db.py:66
+#: assets/models/node.py:463 audits/backends/db.py:65 audits/backends/db.py:66
 msgid "empty"
 msgstr "空"
 
-#: assets/models/node.py:531 perms/models/perm_node.py:28
+#: assets/models/node.py:534 perms/models/perm_node.py:28
 msgid "Key"
 msgstr "キー"
 
-#: assets/models/node.py:533 assets/serializers/node.py:20
+#: assets/models/node.py:536 assets/serializers/node.py:20
 msgid "Full value"
 msgstr "フルバリュー"
 
-#: assets/models/node.py:537 perms/models/perm_node.py:30
+#: assets/models/node.py:540 perms/models/perm_node.py:30
 msgid "Parent key"
 msgstr "親キー"
 
-#: assets/models/node.py:549
+#: assets/models/node.py:552
 msgid "Can match node"
 msgstr "ノードを一致させることができます"
 
@@ -2355,7 +2355,7 @@ msgstr "Rmdir"
 
 #: audits/const.py:14 audits/const.py:25
 #: authentication/templates/authentication/_access_key_modal.html:65
-#: rbac/tree.py:244
+#: rbac/tree.py:245
 msgid "Delete"
 msgstr "削除"
 
@@ -2379,7 +2379,7 @@ msgstr "ダウンロード"
 msgid "Rename dir"
 msgstr "マップディレクトリ"
 
-#: audits/const.py:23 rbac/tree.py:242 terminal/api/session/session.py:257
+#: audits/const.py:23 rbac/tree.py:243 terminal/api/session/session.py:257
 #: terminal/templates/terminal/_msg_command_warning.html:18
 #: terminal/templates/terminal/_msg_session_sharing.html:10
 msgid "View"
@@ -2387,7 +2387,7 @@ msgstr "表示"
 
 #: audits/const.py:26
 #: authentication/templates/authentication/_access_key_modal.html:22
-#: rbac/tree.py:241
+#: rbac/tree.py:242
 msgid "Create"
 msgstr "作成"
 
@@ -4493,7 +4493,7 @@ msgstr ""
 msgid "The organization have resource ({}) cannot be deleted"
 msgstr "組織のリソース ({}) は削除できません"
 
-#: orgs/apps.py:7 rbac/tree.py:132
+#: orgs/apps.py:7 rbac/tree.py:133
 msgid "App organizations"
 msgstr "アプリ組織"
 
@@ -4869,20 +4869,20 @@ msgstr "我的收藏夹"
 msgid "Applet"
 msgstr "リモートアプリケーション"
 
-#: rbac/tree.py:133
+#: rbac/tree.py:134
 msgid "Ticket comment"
 msgstr "チケットコメント"
 
-#: rbac/tree.py:134 settings/serializers/feature.py:110
+#: rbac/tree.py:135 settings/serializers/feature.py:110
 #: tickets/models/ticket/general.py:307
 msgid "Ticket"
 msgstr "チケット"
 
-#: rbac/tree.py:135
+#: rbac/tree.py:136
 msgid "Common setting"
 msgstr "共通設定"
 
-#: rbac/tree.py:136
+#: rbac/tree.py:137
 msgid "View permission tree"
 msgstr "権限ツリーの表示"
 
@@ -5708,6 +5708,14 @@ msgstr "オブジェクト"
 #: settings/serializers/feature.py:167
 msgid "Cron"
 msgstr ""
+
+#: settings/serializers/feature.py:170
+msgid "Area"
+msgstr "岸辺"
+
+#: settings/serializers/feature.py:173
+msgid "Environment"
+msgstr "マトリックス"
 
 #: settings/serializers/msg.py:25
 msgid "SMTP"

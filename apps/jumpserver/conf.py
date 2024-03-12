@@ -615,7 +615,9 @@ class Config(dict):
         'ITSM_SERVER': '',
         'ITSM_HOST': '',
         'ITSM_OBJECT_ID': '',
-        'ITSM_SYNC_CRONTAB': None
+        'ITSM_SYNC_CRONTAB': None,
+        'ITSM_AREA': '',
+        'ITSM_ENVIRONMENT': ''
     }
 
     old_config_map = {

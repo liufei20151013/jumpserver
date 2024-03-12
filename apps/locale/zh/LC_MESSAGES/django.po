@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: JumpServer 0.3.3\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-03-08 11:10+0800\n"
+"POT-Creation-Date: 2024-03-12 11:38+0800\n"
 "PO-Revision-Date: 2021-05-20 10:54+0800\n"
 "Last-Translator: ibuler <ibuler@qq.com>\n"
 "Language-Team: JumpServer team<ibuler@qq.com>\n"
@@ -91,7 +91,7 @@ msgstr "模板"
 msgid "Skip"
 msgstr "跳过"
 
-#: accounts/const/account.py:32 audits/const.py:24 rbac/tree.py:243
+#: accounts/const/account.py:32 audits/const.py:24 rbac/tree.py:244
 #: templates/_csv_import_export.html:18 templates/_csv_update_modal.html:6
 msgid "Update"
 msgstr "更新"
@@ -1737,7 +1737,7 @@ msgid "Domain"
 msgstr "网域"
 
 #: assets/models/asset/common.py:165 assets/models/automations/base.py:18
-#: assets/models/cmd_filter.py:32 assets/models/node.py:546
+#: assets/models/cmd_filter.py:32 assets/models/node.py:549
 #: perms/models/asset_permission.py:72 perms/serializers/permission.py:37
 #: tickets/models/ticket/apply_asset.py:14 xpack/plugins/cloud/models.py:330
 msgid "Node"
@@ -1881,7 +1881,7 @@ msgstr "默认资产组"
 msgid "System"
 msgstr "系统"
 
-#: assets/models/label.py:19 assets/models/node.py:532
+#: assets/models/label.py:19 assets/models/node.py:535
 #: assets/serializers/cagegory.py:11 assets/serializers/cagegory.py:18
 #: assets/serializers/cagegory.py:24
 #: authentication/models/connection_token.py:29
@@ -1904,23 +1904,23 @@ msgstr "标签"
 msgid "New node"
 msgstr "新节点"
 
-#: assets/models/node.py:460 audits/backends/db.py:65 audits/backends/db.py:66
+#: assets/models/node.py:463 audits/backends/db.py:65 audits/backends/db.py:66
 msgid "empty"
 msgstr "空"
 
-#: assets/models/node.py:531 perms/models/perm_node.py:28
+#: assets/models/node.py:534 perms/models/perm_node.py:28
 msgid "Key"
 msgstr "键"
 
-#: assets/models/node.py:533 assets/serializers/node.py:20
+#: assets/models/node.py:536 assets/serializers/node.py:20
 msgid "Full value"
 msgstr "全称"
 
-#: assets/models/node.py:537 perms/models/perm_node.py:30
+#: assets/models/node.py:540 perms/models/perm_node.py:30
 msgid "Parent key"
 msgstr "ssh私钥"
 
-#: assets/models/node.py:549
+#: assets/models/node.py:552
 msgid "Can match node"
 msgstr "可以匹配节点"
 
@@ -2338,7 +2338,7 @@ msgstr "删除目录"
 
 #: audits/const.py:14 audits/const.py:25
 #: authentication/templates/authentication/_access_key_modal.html:65
-#: rbac/tree.py:244
+#: rbac/tree.py:245
 msgid "Delete"
 msgstr "删除"
 
@@ -2362,7 +2362,7 @@ msgstr "下载"
 msgid "Rename dir"
 msgstr "映射目录"
 
-#: audits/const.py:23 rbac/tree.py:242 terminal/api/session/session.py:257
+#: audits/const.py:23 rbac/tree.py:243 terminal/api/session/session.py:257
 #: terminal/templates/terminal/_msg_command_warning.html:18
 #: terminal/templates/terminal/_msg_session_sharing.html:10
 msgid "View"
@@ -2370,7 +2370,7 @@ msgstr "查看"
 
 #: audits/const.py:26
 #: authentication/templates/authentication/_access_key_modal.html:22
-#: rbac/tree.py:241
+#: rbac/tree.py:242
 msgid "Create"
 msgstr "创建"
 
@@ -4441,7 +4441,7 @@ msgstr "LDAP 同步设置组织为当前组织，请切换其他组织后再进�
 msgid "The organization have resource ({}) cannot be deleted"
 msgstr "组织存在资源 ({}) 不能被删除"
 
-#: orgs/apps.py:7 rbac/tree.py:132
+#: orgs/apps.py:7 rbac/tree.py:133
 msgid "App organizations"
 msgstr "组织管理"
 
@@ -4816,20 +4816,20 @@ msgstr "我的收藏夹"
 msgid "Applet"
 msgstr "远程应用"
 
-#: rbac/tree.py:133
+#: rbac/tree.py:134
 msgid "Ticket comment"
 msgstr "工单评论"
 
-#: rbac/tree.py:134 settings/serializers/feature.py:110
+#: rbac/tree.py:135 settings/serializers/feature.py:110
 #: tickets/models/ticket/general.py:307
 msgid "Ticket"
 msgstr "工单管理"
 
-#: rbac/tree.py:135
+#: rbac/tree.py:136
 msgid "Common setting"
 msgstr "一般设置"
 
-#: rbac/tree.py:136
+#: rbac/tree.py:137
 msgid "View permission tree"
 msgstr "查看授权树"
 
@@ -5615,7 +5615,7 @@ msgstr ""
 #, fuzzy
 #| msgid "Enable SMS"
 msgid "Enable ITSM"
-msgstr "启用 SMS"
+msgstr "启用 ITSM"
 
 #: settings/serializers/feature.py:152
 #, fuzzy
@@ -5648,6 +5648,14 @@ msgstr "对象"
 #: settings/serializers/feature.py:167
 msgid "Cron"
 msgstr ""
+
+#: settings/serializers/feature.py:170
+msgid "Area"
+msgstr "区域"
+
+#: settings/serializers/feature.py:173
+msgid "Environment"
+msgstr "环境"
 
 #: settings/serializers/msg.py:25
 msgid "SMTP"

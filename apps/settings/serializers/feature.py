@@ -166,3 +166,9 @@ class ITSMSettingSerializer(serializers.Serializer):
     ITSM_SYNC_CRONTAB = serializers.CharField(
         max_length=256, allow_blank=True, required=False, label=_('Cron')
     )
+    ITSM_AREA = serializers.CharField(
+        max_length=256, allow_blank=True, required=False, label=_('Area')
+    )
+    ITSM_ENVIRONMENT = serializers.CharField(
+        max_length=256, allow_blank=True, required=False, label=_('Environment')
+    )
