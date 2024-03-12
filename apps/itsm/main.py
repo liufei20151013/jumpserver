@@ -31,15 +31,27 @@ def process_data():
     org = Organization.objects.get(id=Organization.DEFAULT_ID)
     set_current_org(org)
 
-    data_distribution('新增')
-    data_distribution('延期')
-    data_distribution('移除')
-    data_distribution('注销')
+    areaStr = settings.ITSM_AREA
+    if len(areaStr) == 0:
+        print('未填写区域.')
+        return
+    env = settings.ITSM_ENVIRONMENT
+    if len(env) == 0:
+        print('未填写环境.')
+        return
+
+    areaArr = str(areaStr).split(',')
+    for area in areaArr:
+        data_distribution('新增', area, env)
+        data_distribution('延期', area, env)
+        data_distribution('移除', area, env)
+        data_distribution('注销', area, env)
+
     print('ITSM 数据处理 End.')
 
 
-def data_distribution(option):
-    result = search(option)
+def data_distribution(option, area, env):
+    result = search(option, area, env)
     if result['code'] != 0:
         print("CMDB {}数据查询失败，code: {}".format(option, result['code']))
         return
@@ -442,11 +454,11 @@ def to_internal_value(data):
     return value
 
 
-def search(option):
+def search(option, area, env):
     CMDB_HEADERS = {"org": settings.ITSM_ORG, "user": settings.ITSM_USER, "host": settings.ITSM_HOST}
     url = "{CMDB_SERVER}/object/{objectId}/instance/_search" \
         .format(CMDB_SERVER=settings.ITSM_SERVER, objectId=settings.ITSM_OBJECT_ID)
-    data = {"query": {"handle_tag": "false", "op_type": option}}
+    data = {"query": {"handle_tag": "false", "op_type": option, "area": area, "env": env}}
     print("url: {}".format(url))
     print("data: {}".format(json.dumps(data)))
 

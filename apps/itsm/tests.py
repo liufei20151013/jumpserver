@@ -203,14 +203,19 @@ class TestTaskCase(TestCase):
         # save_or_update_asset(assets)
 
     def test_sync_itsm_data(self):
-        # process_data()
+        # area = 'swd,wdwd,wdwd'
+        # areaStr = str(str(area).split(','))
+        # print(areaStr)
+
+        process_data()
         # sync_itsm_data()
         # sync_itsm_data_periodic()
         # sync_itsm_data.delay()
-        try:
-            print((timezone.now() + timezone.timedelta(hours=8)).strftime("%Y-%m-%d %H:%M:%S"))
-            years = 70
-            print((timezone.now() + timezone.timedelta(days=365 * years, hours=8)).strftime("%Y-%m-%d %H:%M:%S"))
-            # print(date_expired_default().strftime("%Y-%m-%d %H:%M:%S"))
-        except Exception as e:
-            print(e)
+
+        # try:
+        #     print((timezone.now() + timezone.timedelta(hours=8)).strftime("%Y-%m-%d %H:%M:%S"))
+        #     years = 70
+        #     print((timezone.now() + timezone.timedelta(days=365 * years, hours=8)).strftime("%Y-%m-%d %H:%M:%S"))
+        #     # print(date_expired_default().strftime("%Y-%m-%d %H:%M:%S"))
+        # except Exception as e:
+        #     print(e)
