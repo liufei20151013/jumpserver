@@ -163,7 +163,7 @@ def save_or_update_asset(assets):
 
 
 def process_permission_or_account(asset):
-    if len(asset.get('account_name', '')) > 0:
+    if len(asset.get('account_username', '')) > 0:
         save_or_update_asset_account([asset])
 
     if len(asset.get('permission_name', '')) > 0:
@@ -203,12 +203,11 @@ def create_asset_node(assetnode_name, asset):
 
 
 def save_or_update_asset_account(accounts):
+    # account_username == asset_name
     for account in accounts:
         try:
-            print("Save or update asset[{}]'s account[{}], username[{}]."
-                  .format(account.get('asset_name', ''), account.get('account_name', ''),
-                          account.get('account_username', '')))
-            su_from = get_object_or_none(Account, name=account['su_from'])
+            print("Save or update asset[{}]'s account[{}]."
+                  .format(account.get('asset_name', ''), account.get('account_username', '')))
             asset = get_object_or_none(Asset, name=account['asset_name'])
             if not asset:
                 print("Asset[{}] does not exist!".format(account.get('asset_name', '')))
@@ -218,43 +217,38 @@ def save_or_update_asset_account(accounts):
             if not accountList.exists():
                 try:
                     Account.objects.create(asset=asset,
-                                           su_from=su_from,
-                                           name=account.get('account_name', None),
+                                           name=account.get('account_username', None),
                                            username=account.get('account_username', None),
                                            privileged=account.get('is_privileged', False),
-                                           secret_type=account.get('secret_type', None),
+                                           secret_type=account.get('secret_type', 'password'),
                                            _secret=account.get('secret', None),
                                            org_id=Organization.DEFAULT_ID)
-                    print("Success to save asset[{}]'s account[{}], username[{}]."
-                          .format(account.get('asset_name', ''), account.get('account_name', ''),
-                                  account.get('account_username', '')))
+                    print("Success to save asset[{}]'s account[{}]."
+                          .format(account.get('asset_name', ''), account.get('account_username', '')))
 
                     update(account['instanceId'])
                 except Exception as e:
-                    print("Failed to save asset[{}]'s account[{}], username[{}], error:{}"
-                          .format(account.get('asset_name', ''), account.get('account_name', ''),
-                                  account.get('account_username', ''), e))
+                    print("Failed to save asset[{}]'s account[{}], error:{}"
+                          .format(account.get('asset_name', ''), account.get('account_username', ''), e))
                 continue
 
             try:
                 accountList.update(asset=asset,
-                                   su_from=su_from,
-                                   name=account.get('account_name', None),
+                                   name=account.get('account_username', None),
                                    username=account.get('account_username', None),
                                    privileged=account.get('is_privileged', False),
-                                   secret_type=account.get('secret_type', None),
-                                   _secret=account.get('secret', None))
-                print("Success to update asset[{}]'s account[{}], username[{}]."
-                      .format(account.get('asset_name', ''), account.get('account_name', ''),
-                              account.get('account_username', '')))
+                                   secret_type=account.get('secret_type', 'password'),
+                                   _secret=account.get('secret', None),
+                                   org_id=Organization.DEFAULT_ID)
+                print("Success to update asset[{}]'s account[{}]."
+                      .format(account.get('asset_name', ''), account.get('account_username', '')))
                 update(account['instanceId'])
 
             except Exception as e:
-                print("Failed to update asset[{}]'s account[{}], username[{}], error:{}"
-                      .format(account.get('asset_name', ''), account.get('account_name', ''),
-                              account.get('account_username', ''), e))
+                print("Failed to update asset[{}]'s account[{}], error:{}"
+                      .format(account.get('asset_name', ''), account.get('account_username', ''), e))
         except Exception as e:
-            print("Failed to save or update asset account[{}], error:{}".format(account.get('account_name', ''), e))
+            print("Failed to save or update asset account[{}], error:{}".format(account.get('account_username', ''), e))
 
 
 def save_or_update_asset_permission(permissions):
