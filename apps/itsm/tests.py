@@ -15,7 +15,7 @@ from common.utils import get_object_or_none
 from perms.serializers import ActionChoicesField
 from itsm.task import sync_itsm_data, sync_itsm_data_periodic
 from itsm.main import process_data, save_or_update_asset_permission, save_or_update_asset, to_internal_value, \
-    extend_permission
+    extend_permission, save_or_update_asset_account
 
 
 class TestTaskCase(TestCase):
@@ -42,13 +42,13 @@ class TestTaskCase(TestCase):
         # print(to_internal_value(actions))
 
         # 延期授权
-        permissions = [
-            {
-                "username": "liufei",
-                "date_expired": "2024-05-01"
-            }
-        ]
-        extend_permission(permissions)
+        # permissions = [
+        #     {
+        #         "username": "liufei",
+        #         "date_expired": "2024-05-01"
+        #     }
+        # ]
+        # extend_permission(permissions)
 
         # 创建或更新授权
         # permissions = [
@@ -113,18 +113,19 @@ class TestTaskCase(TestCase):
         # save_or_update_asset_permission(permissions)
 
         # 创建或更新账号
-        # accounts = [
-        #     {
-        #         "account_name": "10.1.12.127-root",
-        #         "account_username": "root",
-        #         "secret_type": "password",
-        #         "secret": "",
-        #         "su_from": "",
-        #         "asset_name": "10.1.12.126",
-        #         "is_privileged": "True"
-        #     }
-        # ]
-        # save_or_update_asset_account(accounts)
+        accounts = [
+            {
+                "asset_name": "10.1.12.126",
+                "account_username": "root2"
+                # ,
+                # "account_name": "10.1.12.127-root",
+                # "secret_type": "password",
+                # "secret": "",
+                # "su_from": "",
+                # "is_privileged": "True"
+            }
+        ]
+        save_or_update_asset_account(accounts)
 
         # 创建资产节点
         # assetnode_name = '/Default/开发1/java1'
