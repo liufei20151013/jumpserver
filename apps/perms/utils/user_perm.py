@@ -9,6 +9,7 @@ from rest_framework.utils.encoders import JSONEncoder
 from assets.const import AllTypes
 from assets.models import FavoriteAsset, Asset, FavoriteNode, Node
 from common.utils.common import timeit, get_logger
+from orgs.models import Organization
 from orgs.utils import current_org, tmp_to_root_org, get_current_org_id
 from perms.models import PermNode, UserAssetGrantedTreeNodeRelation, AssetPermission
 from .permission import AssetPermissionUtil
@@ -190,10 +191,16 @@ class UserPermAssetUtil(AssetPermissionPermAssetUtil):
         return Asset.objects.filter(id__in=asset_ids)
 
     def get_favorite_node_all_assets(self, node_id):
-        node = Node.objects.filter(org_id=get_current_org_id(), parent_key='').first()
-        all_perm_asset_ids = self.get_node_assets(node.key).values_list('id', flat=True)
-        if not all_perm_asset_ids.exists():
-            return Asset.objects.none()
+        # 如果是全局组织，查询所有
+        if Organization.ROOT_ID == get_current_org_id():
+            nodes = Node.objects.filter(parent_key='')
+        else:
+            nodes = Node.objects.filter(org_id=get_current_org_id(), parent_key='')
+
+        all_perm_asset_ids = set()
+        for node in nodes:
+            perm_asset_ids = self.get_node_assets(node.key).values_list('id', flat=True)
+            all_perm_asset_ids.update(list(perm_asset_ids))
 
         """ 获取节点下的所有资产 """
         favoriteNode = FavoriteNode.objects.get(id=node_id)
@@ -251,7 +258,11 @@ class UserPermNodeUtil:
         return nodes
 
     def get_favorite_node_children(self, nodes):
-        favoriteNodes = FavoriteNode.objects.filter(user=self.user, org_id=get_current_org_id())
+        # 如果是全局组织，查询所有
+        if Organization.ROOT_ID == get_current_org_id():
+            favoriteNodes = FavoriteNode.objects.filter(user=self.user)
+        else:
+            favoriteNodes = FavoriteNode.objects.filter(user=self.user, org_id=get_current_org_id())
         if favoriteNodes.exists():
             for index, favoriteNode in enumerate(favoriteNodes):
                 assets_amount = FavoriteAsset.objects.filter(user=self.user, favoriteNode=favoriteNode).count()
