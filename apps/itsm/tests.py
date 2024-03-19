@@ -113,19 +113,19 @@ class TestTaskCase(TestCase):
         # save_or_update_asset_permission(permissions)
 
         # 创建或更新账号
-        accounts = [
-            {
-                "asset_name": "10.1.12.126",
-                "account_username": "root2"
-                # ,
-                # "account_name": "10.1.12.127-root",
-                # "secret_type": "password",
-                # "secret": "",
-                # "su_from": "",
-                # "is_privileged": "True"
-            }
-        ]
-        save_or_update_asset_account(accounts)
+        # accounts = [
+        #     {
+        #         "asset_name": "10.1.12.126",
+        #         "account_username": "root2"
+        #         # ,
+        #         # "account_name": "10.1.12.127-root",
+        #         # "secret_type": "password",
+        #         # "secret": "",
+        #         # "su_from": "",
+        #         # "is_privileged": "True"
+        #     }
+        # ]
+        # save_or_update_asset_account(accounts)
 
         # 创建资产节点
         # assetnode_name = '/Default/开发1/java1'
@@ -142,16 +142,16 @@ class TestTaskCase(TestCase):
         # print(root_node.value)
 
         # 创建资产
-        # assets = [
-            # {
-        #         "asset_type": "host",
-        #         "asset_name": "10.1.12.12",
-        #         "address": "10.1.12.12",
-        #         "platform": "Linux",
-        #         "assetnode_name": "/Default/开发2/java2",
-        #         "protocol": ["ssh/22", "sftp/2222"],
-        #         "default_db": ""
-        #     }
+        assets = [
+            {
+                "asset_type": "host",
+                "asset_name": "10.1.12.123",
+                "address": "10.1.12.123",
+                "platform": "Linux",
+                "assetnode_name": "/Default/开发2/java2",
+                "protocol": "ssh/22",
+                "default_db": ""
+            }
         #     , {
         #         "asset_type": "host",
         #         "asset_name": "10.1.12.11",
@@ -200,8 +200,8 @@ class TestTaskCase(TestCase):
         #         "is_privileged": "True",
         #         "default_db": "js_db"
         #     }
-        # ]
-        # save_or_update_asset(assets)
+        ]
+        save_or_update_asset(assets)
 
     def test_sync_itsm_data(self):
         # area = 'swd,wdwd,wdwd'
