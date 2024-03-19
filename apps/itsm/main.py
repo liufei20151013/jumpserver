@@ -82,7 +82,7 @@ def save_or_update_asset(assets):
                 if len(asset.get('protocol', '')) == 0:
                     asset['protocol'] = ["postgresql/5432"]  # 54321 Kingbase
                 else:
-                    protocols = asset['protocol']
+                    protocols = [asset['protocol']]
                     asset['protocol'] = []
                     for p in protocols:
                         asset['protocol'].append(str(p).replace('Kingbase', 'postgresql'))
@@ -102,6 +102,8 @@ def save_or_update_asset(assets):
                     if len(protocols) > 0:
                         for p in protocols:
                             asset['protocol'].append("{}/{}".format(p.name, p.port))
+                else:
+                    asset['protocol'] = [asset['protocol']]
 
             assetList = Asset.objects.filter(name=asset['asset_name'], address=asset['address'])
             if not assetList.exists():
@@ -141,8 +143,6 @@ def save_or_update_asset(assets):
                 continue
 
             try:
-                # assetList.update(name=['asset_name'], address=asset['address'], platform=platform)
-
                 for a in assetList:
                     if asset['asset_type'] == 'db' and len(asset['default_db']) > 0:
                         d = Database.objects.filter(asset_ptr_id=a.id).first()
@@ -173,11 +173,15 @@ def process_permission_or_account(asset):
 
 
 def relate_protocols(string, asset_id):
-    if len(string) > 0:
-        Protocol.objects.filter(asset_id=asset_id).delete()
-        for protocol in string:
-            arr = str(protocol).lower().split("/")
-            Protocol.objects.create(name=arr[0], port=arr[1], asset_id=asset_id)
+    try:
+        if len(string) > 0:
+            for protocol in string:
+                arr = str(protocol).lower().split("/")
+                protocols = Protocol.objects.filter(name=arr[0], port=arr[1], asset_id=asset_id)
+                if not protocols.exists():
+                    Protocol.objects.create(name=arr[0], port=arr[1], asset_id=asset_id)
+    except Exception as e:
+        print("Relate asset[{}]'s protocols error:{}".format(asset_id, e))
 
 
 def create_asset_node(assetnode_name, asset):
