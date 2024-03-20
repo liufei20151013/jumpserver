@@ -165,7 +165,6 @@ def save_or_update_asset(assets):
 def process_permission_or_account(asset):
     if len(asset.get('account_username', '')) > 0:
         save_or_update_asset_account([asset])
-
     if len(asset.get('permission_name', '')) > 0:
         save_or_update_asset_permission([asset])
     else:
@@ -287,22 +286,29 @@ def save_or_update_asset_permission(permissions):
             except Exception as e:
                 date_expired = (timezone.now() + timezone.timedelta(days=365 * 70, hours=8)).strftime("%Y-%m-%d %H:%M:%S")
 
+            accounts = set()
+            accounts.add("@INPUT")
+            if len(permission.get('account_username', '')) > 0:
+                accounts.add(permission.get('account_username', ''))
+
             permissionList = AssetPermission.objects.filter(assets=assets.first(), users=users.first())
             if not permissionList.exists():
                 try:
                     if len(permission.get('permission_name', '')) > 0:
                         perms = AssetPermission.objects.filter(name=permission['permission_name'])
                         if perms.exists():
-                            print(
-                                "AssetPermission[{}] is already exist!".format(permission.get('permission_name', '')))
+                            print("AssetPermission[{}] is already exist!".format(permission.get('permission_name', '')))
                             p = perms.first()
                             p.users.add(users.first())
                             p.assets.add(assets.first())
+                            for account in p.accounts:
+                                accounts.add(account)
+                            permissionList.update(accounts=list(accounts))
                             update(permission['instanceId'])
                             continue
 
                     p = AssetPermission.objects.create(name=permission.get('permission_name', ''),
-                                                       accounts=permission.get('account', ["@INPUT"]),
+                                                       accounts=list(accounts),
                                                        protocols=["all"],
                                                        actions=actions,
                                                        date_start=date_start,
@@ -321,11 +327,14 @@ def save_or_update_asset_permission(permissions):
                 continue
 
             try:
-                if len(permission.get('permission_name', '')) == 0 or len(permission.get('account', '')) == 0:
+                if len(permission.get('permission_name', '')) == 0 or len(permission.get('account_username', '')) == 0:
                     permissionList.update(date_start=date_start, date_expired=date_expired)
                 else:
+                    perm = permissionList.first()
+                    for account in perm.accounts:
+                        accounts.add(account)
                     permissionList.update(name=permission.get('permission_name', ''),
-                                          accounts=permission.get('account', ["@INPUT"]),
+                                          accounts=list(accounts),
                                           protocols=["all"],
                                           actions=actions,
                                           date_start=date_start,
