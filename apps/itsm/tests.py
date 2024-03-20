@@ -143,15 +143,15 @@ class TestTaskCase(TestCase):
 
         # 创建资产
         assets = [
-            {
-                "asset_type": "host",
-                "asset_name": "10.1.12.123",
-                "address": "10.1.12.123",
-                "platform": "Linux",
-                "assetnode_name": "/Default/开发2/java2",
-                "protocol": "ssh/22",
-                "default_db": ""
-            }
+            # {
+            #     "asset_type": "host",
+            #     "asset_name": "10.1.12.123",
+            #     "address": "10.1.12.123",
+            #     "platform": "Linux",
+            #     "assetnode_name": "/Default/开发2/java2",
+            #     "protocol": "ssh/22",
+            #     "default_db": ""
+            # }
         #     , {
         #         "asset_type": "host",
         #         "asset_name": "10.1.12.11",
@@ -178,28 +178,27 @@ class TestTaskCase(TestCase):
         #         "default_db": ""
         #     }
 
-        #     {
-        #         "asset_type": "db",
-        #         "asset_name": "salesview 平台26",
-        #         "address": "10.1.12.173",
-        #         "platform": "Kingbase",
-        #         "assetnode_name": "/Default/开发/数据库",
-        #         "protocol": ["Kingbase/54321"],
-        #         "default_db": "",
-        #         "permission_name": "173-permission",
-        #         "username": "liufei",
-        #         "account": ["@SPEC", "root"],
-        #         "action": ["connect", "upload", "download", "copy", "paste", "delete", "share"],
-        #         # "date_start": "2023-02-23T10:53:23.879Z",
-        #         # "date_expired": "2093-01-30T10:53:23.879Z",
-        #         "account_name": "10.1.12.173-root",
-        #         "account_username": "root",
-        #         "secret_type": "password",
-        #         "secret": "",
-        #         "su_from": "",
-        #         "is_privileged": "True",
-        #         "default_db": "js_db"
-        #     }
+            {
+                "asset_type": "host",
+                "asset_name": "salesview 平台26",
+                "address": "10.1.12.173",
+                "platform": "Linux",
+                "assetnode_name": "/Default/开发/test",
+                "protocol": ["ssh/22"],
+                "default_db": "",
+                "permission_name": "173e-permission",
+                "username": "admin",
+                "action": ["connect", "upload", "download", "copy", "paste", "delete", "share"],
+                # "date_start": "2023-02-23T10:53:23.879Z",
+                # "date_expired": "2093-01-30T10:53:23.879Z",
+                "account_name": "10.1.12.173-root",
+                "account_username": "root",
+                "secret_type": "password",
+                "secret": "",
+                "su_from": "",
+                "is_privileged": "True",
+                "default_db": "js_db"
+            }
         ]
         save_or_update_asset(assets)
 
