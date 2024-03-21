@@ -199,7 +199,9 @@ class UserPermAssetUtil(AssetPermissionPermAssetUtil):
 
         all_perm_asset_ids = set()
         for node in nodes:
-            perm_asset_ids = self.get_node_assets(node.key).values_list('id', flat=True)
+            permNode = PermNode.objects.get(id=node.id)
+            permNode.node_from = 'asset'
+            perm_asset_ids = self._get_indirect_perm_node_all_assets(permNode).values_list('id', flat=True)
             all_perm_asset_ids.update(list(perm_asset_ids))
 
         """ 获取节点下的所有资产 """

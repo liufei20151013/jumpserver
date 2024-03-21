@@ -180,8 +180,8 @@ class TestTaskCase(TestCase):
 
             {
                 "asset_type": "host",
-                "asset_name": "salesview 平台26",
-                "address": "10.1.12.173",
+                "asset_name": "salesview 平台22",
+                "address": "10.1.12.176",
                 "platform": "Linux",
                 "assetnode_name": "/Default/开发/test",
                 "protocol": ["ssh/22"],
@@ -201,6 +201,11 @@ class TestTaskCase(TestCase):
             }
         ]
         save_or_update_asset(assets)
+
+        # node_name = '/Default/开发/test'
+        # index = node_name.find('/', 1)
+        # print(index)
+        # print(node_name[1:index])
 
     def test_sync_itsm_data(self):
         # area = 'swd,wdwd,wdwd'
