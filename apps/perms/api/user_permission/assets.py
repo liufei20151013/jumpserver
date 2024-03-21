@@ -54,7 +54,7 @@ class BaseUserPermedAssetsApi(SelfOrPKUserMixin, ListAPIView):
             if favoriteNode:
                 return self.query_asset_util.get_favorite_node_all_assets(node_id)
         except Exception as e:
-            pass
+            return Asset.objects.none()
 
         assets = self.query_assets()
         return assets
@@ -111,7 +111,7 @@ class UserPermedNodeAssetsApi(BaseUserPermedAssetsApi):
             if favoriteNode:
                 return self.query_asset_util.get_favorite_node_all_assets(node_id)
         except Exception as e:
-            pass
+            return Asset.objects.none()
 
         node, assets = self.query_asset_util.get_node_all_assets(node_id)
         self.pagination_node = node
