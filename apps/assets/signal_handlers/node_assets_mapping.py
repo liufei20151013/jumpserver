@@ -44,12 +44,12 @@ def on_node_post_create(sender, instance, created, update_fields, **kwargs):
         need_expire = False
 
     if need_expire:
-        expire_node_assets_mapping(org_ids=(instance.org_id,))
+        expire_node_assets_mapping.delay(org_ids=(instance.org_id,))
 
 
 @receiver(post_delete, sender=Node)
 def on_node_post_delete(sender, instance, **kwargs):
-    expire_node_assets_mapping(org_ids=(instance.org_id,))
+    expire_node_assets_mapping.delay(org_ids=(instance.org_id,))
 
 
 @receiver(m2m_changed, sender=Asset.nodes.through)
