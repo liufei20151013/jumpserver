@@ -617,6 +617,7 @@ msgstr "密码规则"
 #: acls/serializers/base.py:35 applications/models.py:9
 #: assets/models/_user.py:22 assets/models/asset/common.py:93
 #: assets/models/asset/common.py:159 assets/models/cmd_filter.py:21
+#: assets/models/domain.py:19 assets/models/favorite_node.py:15
 #: assets/models/domain.py:19 assets/models/group.py:17
 #: assets/models/label.py:18 assets/models/platform.py:16
 #: assets/models/platform.py:95 assets/serializers/asset/common.py:149
@@ -1894,9 +1895,13 @@ msgstr "过滤器"
 msgid "Command filter rule"
 msgstr "命令过滤规则"
 
-#: assets/models/favorite_asset.py:17
+#: assets/models/favorite_asset.py:18
 msgid "Favorite asset"
 msgstr "收藏的资产"
+
+#: assets/models/favorite_node.py:19
+msgid "FavoriteNode"
+msgstr "收藏夹"
 
 #: assets/models/gateway.py:34 assets/serializers/domain.py:18
 msgid "Gateway"
@@ -3966,7 +3971,15 @@ msgstr "不能包含特殊字符"
 msgid "The mobile phone number format is incorrect"
 msgstr "手机号格式不正确"
 
-#: jumpserver/conf.py:458
+#: itsm/task.py:13
+msgid "Sync itsm data to JumpServer"
+msgstr ""
+
+#: itsm/task.py:18
+msgid "Registration periodic sync itsm data task"
+msgstr "注册周期导入 LDAP 用户 任务"
+
+#: jumpserver/conf.py:454
 #, python-brace-format
 msgid "The verification code is: {code}"
 msgstr "验证码为: {code}"
@@ -4686,7 +4699,11 @@ msgstr "{} 至少有一个系统角色"
 msgid "RBAC"
 msgstr "RBAC"
 
-#: rbac/builtin.py:115
+#: rbac/builtin.py:21
+msgid "favoritenode"
+msgstr "收藏夹"
+
+#: rbac/builtin.py:116
 msgid "SystemAdmin"
 msgstr "系统管理员"
 
@@ -4969,7 +4986,11 @@ msgstr "终端设置"
 msgid "Can change other setting"
 msgstr "其它设置"
 
-#: settings/models.py:186
+#: settings/models.py:177
+msgid "Can change itsm setting"
+msgstr "短信设置"
+
+#: settings/models.py:187
 msgid "Chat prompt"
 msgstr "聊天提示"
 
@@ -5645,6 +5666,48 @@ msgstr "虚拟应用"
 #: settings/serializers/feature.py:141
 msgid "Enable virtual app"
 msgstr "启用虚拟应用"
+
+#: settings/serializers/feature.py:146
+msgid "ITSM"
+msgstr ""
+
+#: settings/serializers/feature.py:149
+msgid "Enable ITSM"
+msgstr "启用 ITSM"
+
+#: settings/serializers/feature.py:152
+msgid "CMDB User"
+msgstr "用户"
+
+#: settings/serializers/feature.py:155
+msgid "CMDB Org"
+msgstr ""
+
+#: settings/serializers/feature.py:158
+#, fuzzy
+#| msgid "LDAP server"
+msgid "CMDB Server"
+msgstr "LDAP 地址"
+
+#: settings/serializers/feature.py:161
+msgid "CMDB Host"
+msgstr "主机"
+
+#: settings/serializers/feature.py:164
+msgid "Object ID"
+msgstr "对象"
+
+#: settings/serializers/feature.py:167
+msgid "Cron"
+msgstr ""
+
+#: settings/serializers/feature.py:170
+msgid "Area"
+msgstr "区域"
+
+#: settings/serializers/feature.py:173
+msgid "Environment"
+msgstr "环境"
 
 #: settings/serializers/msg.py:25
 msgid "SMTP"

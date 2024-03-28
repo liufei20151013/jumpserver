@@ -4,8 +4,8 @@ from django.conf import settings
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 
 from assets.api.asset.asset import AssetFilterSet
-from assets.models import Asset, Node
 from common.api.mixin import ExtraFilterFieldsMixin
+from assets.models import Asset, Node, FavoriteNode
 from common.utils import get_logger, lazyproperty, is_uuid
 from orgs.utils import tmp_to_root_org
 from perms import serializers
@@ -47,6 +47,21 @@ class BaseUserPermedAssetsApi(SelfOrPKUserMixin, ExtraFilterFieldsMixin, ListAPI
     serializer_class = serializers.AssetPermedSerializer
 
     def get_queryset(self):
+        node_id = self.kwargs.get("node_id")
+        if not node_id:
+            return self.query_assets()
+
+        try:
+            favoriteNode = FavoriteNode.objects.filter(id=node_id)
+            if favoriteNode:
+                return self.query_asset_util.get_favorite_node_all_assets(node_id)
+        except Exception as e:
+            pass
+
+        assets = self.query_assets()
+        return assets
+
+    def query_assets(self):
         if getattr(self, 'swagger_fake_view', False):
             return Asset.objects.none()
         if settings.ASSET_SIZE == 'small':
@@ -94,6 +109,14 @@ class UserPermedNodeAssetsApi(BaseUserPermedAssetsApi):
 
     def get_assets(self):
         node_id = self.kwargs.get("node_id")
+
+        try:
+            favoriteNode = FavoriteNode.objects.filter(id=node_id)
+            if favoriteNode:
+                return self.query_asset_util.get_favorite_node_all_assets(node_id)
+        except Exception as e:
+            pass
+
         node, assets = self.query_asset_util.get_node_all_assets(node_id)
         self.pagination_node = node
         return assets

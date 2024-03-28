@@ -96,8 +96,19 @@ class PermNode(Node):
     def get_favorite_node(cls, assets_amount):
         node = cls(
             id=cls.FAVORITE_NODE_KEY,
-            key=cls.FAVORITE_NODE_KEY,
+            key='0',
             value=cls.FAVORITE_NODE_VALUE,
+        )
+        node.assets_amount = assets_amount
+        return node
+
+    @classmethod
+    def get_favorite_node_children(cls, assets_amount, index, favoriteNode):
+        node = cls(
+            id=favoriteNode.id,
+            key='0:' + str(index),
+            parent_key='0',
+            value=favoriteNode.name,
         )
         node.assets_amount = assets_amount
         return node

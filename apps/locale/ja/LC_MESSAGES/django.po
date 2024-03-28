@@ -618,6 +618,7 @@ msgstr "パスワードルール"
 #: acls/serializers/base.py:35 applications/models.py:9
 #: assets/models/_user.py:22 assets/models/asset/common.py:93
 #: assets/models/asset/common.py:159 assets/models/cmd_filter.py:21
+#: assets/models/domain.py:19 assets/models/favorite_node.py:15
 #: assets/models/domain.py:19 assets/models/group.py:17
 #: assets/models/label.py:18 assets/models/platform.py:16
 #: assets/models/platform.py:95 assets/serializers/asset/common.py:149
@@ -1904,9 +1905,13 @@ msgstr "フィルター"
 msgid "Command filter rule"
 msgstr "コマンドフィルタルール"
 
-#: assets/models/favorite_asset.py:17
+#: assets/models/favorite_asset.py:18
 msgid "Favorite asset"
 msgstr "お気に入りのアセット"
+
+#: assets/models/favorite_node.py:19
+msgid "FavoriteNode"
+msgstr "お気に入りフォルダ"
 
 #: assets/models/gateway.py:34 assets/serializers/domain.py:18
 msgid "Gateway"
@@ -4012,7 +4017,15 @@ msgstr "特殊文字を含むべきではない"
 msgid "The mobile phone number format is incorrect"
 msgstr "携帯電話番号の形式が正しくありません"
 
-#: jumpserver/conf.py:458
+#: itsm/task.py:13
+msgid "Sync itsm data to JumpServer"
+msgstr ""
+
+#: itsm/task.py:18
+msgid "Registration periodic sync itsm data task"
+msgstr "登録サイクルLDAPユーザータスクのインポート"
+
+#: jumpserver/conf.py:454
 #, python-brace-format
 msgid "The verification code is: {code}"
 msgstr "認証コードは: {code}"
@@ -4740,7 +4753,11 @@ msgstr "{} 少なくとも1つのシステムロール"
 msgid "RBAC"
 msgstr "RBAC"
 
-#: rbac/builtin.py:115
+#: rbac/builtin.py:21
+msgid "favoritenode"
+msgstr "お気に入りフォルダ"
+
+#: rbac/builtin.py:116
 msgid "SystemAdmin"
 msgstr "システム管理者"
 
@@ -5026,7 +5043,11 @@ msgstr "ターミナルの設定を変えることができます"
 msgid "Can change other setting"
 msgstr "他の設定を変えることができます"
 
-#: settings/models.py:186
+#: settings/models.py:177
+msgid "Can change itsm setting"
+msgstr "Smsの設定を変えることができます"
+
+#: settings/models.py:187
 msgid "Chat prompt"
 msgstr "チャットのヒント"
 
@@ -5707,6 +5728,52 @@ msgstr "仮想アプリケーション"
 #: settings/serializers/feature.py:141
 msgid "Enable virtual app"
 msgstr "仮想アプリケーションの有効化"
+
+#: settings/serializers/feature.py:146
+msgid "ITSM"
+msgstr ""
+
+#: settings/serializers/feature.py:149
+msgid "Enable ITSM"
+msgstr "SMSの有効化"
+
+#: settings/serializers/feature.py:152
+msgid "CMDB User"
+msgstr "ユーザー"
+
+#: settings/serializers/feature.py:155
+msgid "CMDB Org"
+msgstr ""
+
+#: settings/serializers/feature.py:158
+#, fuzzy
+#| msgid "LDAP server"
+msgid "CMDB Server"
+msgstr "LDAPサーバー"
+
+#: settings/serializers/feature.py:161
+#, fuzzy
+#| msgid "Host"
+msgid "CMDB Host"
+msgstr "ホスト"
+
+#: settings/serializers/feature.py:164
+#, fuzzy
+#| msgid "Object"
+msgid "Object ID"
+msgstr "オブジェクト"
+
+#: settings/serializers/feature.py:167
+msgid "Cron"
+msgstr ""
+
+#: settings/serializers/feature.py:170
+msgid "Area"
+msgstr "岸辺"
+
+#: settings/serializers/feature.py:173
+msgid "Environment"
+msgstr "マトリックス"
 
 #: settings/serializers/msg.py:25
 msgid "SMTP"
