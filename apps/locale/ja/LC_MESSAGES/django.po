@@ -4919,7 +4919,11 @@ msgstr "タスクセンター"
 msgid "My assets"
 msgstr "私の資産"
 
-#: rbac/tree.py:58 terminal/models/applet/applet.py:52
+#: rbac/tree.py:57
+msgid "My favorite nodes"
+msgstr "我的收藏夹"
+
+#: rbac/tree.py:59 terminal/models/applet/applet.py:52
 #: terminal/models/applet/applet.py:317 terminal/models/applet/host.py:30
 #: terminal/serializers/applet.py:15
 msgid "Applet"
@@ -5735,7 +5739,7 @@ msgstr ""
 
 #: settings/serializers/feature.py:149
 msgid "Enable ITSM"
-msgstr "SMSの有効化"
+msgstr "ITSMの実現"
 
 #: settings/serializers/feature.py:152
 msgid "CMDB User"
@@ -5746,22 +5750,16 @@ msgid "CMDB Org"
 msgstr ""
 
 #: settings/serializers/feature.py:158
-#, fuzzy
-#| msgid "LDAP server"
 msgid "CMDB Server"
-msgstr "LDAPサーバー"
+msgstr ""
 
 #: settings/serializers/feature.py:161
-#, fuzzy
-#| msgid "Host"
 msgid "CMDB Host"
 msgstr "ホスト"
 
 #: settings/serializers/feature.py:164
-#, fuzzy
-#| msgid "Object"
 msgid "Object ID"
-msgstr "オブジェクト"
+msgstr ""
 
 #: settings/serializers/feature.py:167
 msgid "Cron"

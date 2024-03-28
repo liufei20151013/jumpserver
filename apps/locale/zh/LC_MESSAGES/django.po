@@ -4864,7 +4864,11 @@ msgstr "任务中心"
 msgid "My assets"
 msgstr "我的资产"
 
-#: rbac/tree.py:58 terminal/models/applet/applet.py:52
+#: rbac/tree.py:57
+msgid "My favorite nodes"
+msgstr "我的收藏夹"
+
+#: rbac/tree.py:59 terminal/models/applet/applet.py:52
 #: terminal/models/applet/applet.py:317 terminal/models/applet/host.py:30
 #: terminal/serializers/applet.py:15
 msgid "Applet"
@@ -5687,7 +5691,7 @@ msgstr ""
 #, fuzzy
 #| msgid "LDAP server"
 msgid "CMDB Server"
-msgstr "LDAP 地址"
+msgstr ""
 
 #: settings/serializers/feature.py:161
 msgid "CMDB Host"
@@ -5695,7 +5699,7 @@ msgstr "主机"
 
 #: settings/serializers/feature.py:164
 msgid "Object ID"
-msgstr "对象"
+msgstr ""
 
 #: settings/serializers/feature.py:167
 msgid "Cron"
