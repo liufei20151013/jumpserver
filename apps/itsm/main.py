@@ -272,8 +272,7 @@ def save_or_update_asset_permission(permissions):
                 # update(permission['instanceId'])
                 continue
 
-            actions = to_internal_value(permission.get('action', ["connect", "upload", "download", "delete", "copy",
-                                                                  "paste", "share"]))
+            actions = to_internal_value(permission.get('action', ["connect", "copy", "paste", "share"]))
 
             try:
                 date_start = permission.get('date_start') + ' 00:00:00' if len(permission.get('date_start')) > 0 \
