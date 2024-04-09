@@ -326,7 +326,7 @@ def save_or_update_asset_permission(permissions):
                 continue
 
             try:
-                if len(permission.get('permission_name', '')) == 0 or len(permission.get('account_username', '')) == 0:
+                if len(permission.get('permission_name', '')) == 0 and len(permission.get('account_username', '')) == 0:
                     permissionList.update(date_start=date_start, date_expired=date_expired)
                 else:
                     perm = permissionList.first()
