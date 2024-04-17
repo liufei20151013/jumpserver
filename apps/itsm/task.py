@@ -21,12 +21,6 @@ def sync_itsm_data_periodic():
     if not settings.ITSM_ENABLED:
         return
     task_name = 'sync_itsm_data_periodic'
-
-    try:
-        disable_celery_periodic_task(task_name)
-    except Exception as e:
-        print('sync_itsm_data_periodic does not exist')
-
     crontab = settings.ITSM_SYNC_CRONTAB
     if crontab:
         # 优先使用 crontab
