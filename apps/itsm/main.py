@@ -1,6 +1,8 @@
 import traceback
 import requests
 import json
+
+from django.db.models import Q
 from django.utils import timezone
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
@@ -10,7 +12,7 @@ from orgs.utils import set_current_org
 from perms.const import ActionChoices
 
 from orgs.models import Organization
-from accounts.models import Account
+from accounts.models import Account, AccountTemplate
 from assets.models import Asset, Platform, Database, Web, Node, Protocol, Host, PlatformProtocol
 from common.utils import get_logger, get_object_or_none
 from perms.models import AssetPermission
@@ -219,37 +221,27 @@ def save_or_update_asset_account(accounts):
             accountList = Account.objects.filter(asset=asset, username=account['account_username'])
             if not accountList.exists():
                 try:
-                    Account.objects.create(asset=asset,
-                                           name=account.get('account_username', None),
-                                           username=account.get('account_username', None),
-                                           privileged=account.get('is_privileged', False),
-                                           secret_type=account.get('secret_type', 'password'),
-                                           _secret=account.get('secret', None),
-                                           org_id=Organization.DEFAULT_ID)
-                    print("Success to save asset[{}]'s account[{}]."
-                          .format(account.get('asset_name', ''), account.get('account_username', '')))
+                    # 查询账号模板
+                    accountTemplates = AccountTemplate.objects.filter(username=account.get('account_username', ''))
+                    if accountTemplates.exists():
+                        accountTemplate = accountTemplates.first()
+                        Account.objects.create(asset=asset,
+                                               name=account.get('account_username', None),
+                                               username=account.get('account_username', None),
+                                               privileged=accountTemplate.privileged,
+                                               secret_type=accountTemplate.secret_type,
+                                               _secret=accountTemplate.secret,
+                                               org_id=Organization.DEFAULT_ID)
+                        print("Success to save asset[{}]'s account[{}]."
+                              .format(account.get('asset_name', ''), account.get('account_username', '')))
+                        update(account['instanceId'])
 
-                    update(account['instanceId'])
+                        # todo 改密
+
                 except Exception as e:
                     print("Failed to save asset[{}]'s account[{}], error:{}"
                           .format(account.get('asset_name', ''), account.get('account_username', ''), e))
                 continue
-
-            try:
-                accountList.update(asset=asset,
-                                   name=account.get('account_username', None),
-                                   username=account.get('account_username', None),
-                                   privileged=account.get('is_privileged', False),
-                                   secret_type=account.get('secret_type', 'password'),
-                                   _secret=account.get('secret', None),
-                                   org_id=Organization.DEFAULT_ID)
-                print("Success to update asset[{}]'s account[{}]."
-                      .format(account.get('asset_name', ''), account.get('account_username', '')))
-                update(account['instanceId'])
-
-            except Exception as e:
-                print("Failed to update asset[{}]'s account[{}], error:{}"
-                      .format(account.get('asset_name', ''), account.get('account_username', ''), e))
         except Exception as e:
             print("Failed to save or update asset account[{}], error:{}".format(account.get('account_username', ''), e))
 
@@ -283,14 +275,23 @@ def save_or_update_asset_permission(permissions):
                 date_expired = permission.get('date_expired') + ' 23:59:59' if len(permission.get('date_expired')) > 0 \
                     else (timezone.now() + timezone.timedelta(days=365 * 70, hours=8)).strftime("%Y-%m-%d %H:%M:%S")
             except Exception as e:
-                date_expired = (timezone.now() + timezone.timedelta(days=365 * 70, hours=8)).strftime("%Y-%m-%d %H:%M:%S")
+                date_expired = (timezone.now() + timezone.timedelta(days=365 * 70, hours=8)).strftime(
+                    "%Y-%m-%d %H:%M:%S")
 
             accounts = set()
             accounts.add("@INPUT")
             if len(permission.get('account_username', '')) > 0:
                 accounts.add(permission.get('account_username', ''))
 
-            permissionList = AssetPermission.objects.filter(assets=assets.first(), users=users.first())
+            # 特权账号授权特殊处理
+            isExistPrivilegeAccount = str(permission.get('permission_name', '')).__contains__('_root') or \
+                                      str(permission.get('permission_name', '')).__contains__('_admin')
+            if isExistPrivilegeAccount:
+                permissionList = AssetPermission.objects.filter(assets=assets.first(), users=users.first(),
+                                                                name=permission.get('permission_name', ''))
+            else:
+                permissionList = AssetPermission.objects.filter(assets=assets.first(), users=users.first())
+
             if not permissionList.exists():
                 try:
                     if len(permission.get('permission_name', '')) > 0:
@@ -326,20 +327,22 @@ def save_or_update_asset_permission(permissions):
                 continue
 
             try:
-                if len(permission.get('permission_name', '')) == 0 and len(permission.get('account_username', '')) == 0:
-                    permissionList.update(date_start=date_start, date_expired=date_expired)
-                else:
-                    perm = permissionList.first()
-                    for account in perm.accounts:
-                        accounts.add(account)
-                    permissionList.update(name=permission.get('permission_name', ''),
-                                          accounts=list(accounts),
-                                          protocols=["all"],
-                                          actions=actions,
-                                          date_start=date_start,
-                                          date_expired=date_expired)
-                print("Success to update asset[{}]'s permission[{}]."
-                      .format(permission.get('asset_name', ''), permission.get('permission_name', '')))
+                if not isExistPrivilegeAccount:
+                    if len(permission.get('permission_name', '')) == 0 and \
+                            len(permission.get('account_username', '')) == 0:
+                        permissionList.update(date_start=date_start, date_expired=date_expired)
+                    else:
+                        perm = permissionList.first()
+                        for account in perm.accounts:
+                            accounts.add(account)
+                        permissionList.update(name=permission.get('permission_name', ''),
+                                              accounts=list(accounts),
+                                              protocols=["all"],
+                                              actions=actions,
+                                              date_start=date_start,
+                                              date_expired=date_expired)
+                    print("Success to update asset[{}]'s permission[{}]."
+                          .format(permission.get('asset_name', ''), permission.get('permission_name', '')))
 
                 update(permission['instanceId'])
 
@@ -371,9 +374,13 @@ def extend_permission(permissions):
                 date_expired = permission.get('date_expired') + ' 23:59:59' if len(permission.get('date_expired')) > 0 \
                     else (timezone.now() + timezone.timedelta(days=365 * 70, hours=8)).strftime("%Y-%m-%d %H:%M:%S")
             except Exception as e:
-                date_expired = (timezone.now() + timezone.timedelta(days=365 * 70, hours=8)).strftime("%Y-%m-%d %H:%M:%S")
+                date_expired = (timezone.now() + timezone.timedelta(days=365 * 70, hours=8)).strftime(
+                    "%Y-%m-%d %H:%M:%S")
 
-            permissionList = AssetPermission.objects.filter(users=users.first()).exclude(name__icontains="permanent")
+            # 永久授权、特权账号的授权不允许延期
+            permissionList = AssetPermission.objects.filter(users=users.first()).exclude(
+                Q(name__icontains='permanent') | Q(name__icontains='root') | Q(name__icontains='admin')
+            )
             if permissionList.exists():
                 permissionList.update(date_start=date_start, date_expired=date_expired)
                 print("Success to extend all permissions for user[{}].".format(permission.get('username', '')))
