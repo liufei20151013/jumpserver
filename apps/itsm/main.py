@@ -1,4 +1,6 @@
 import traceback
+from datetime import datetime
+
 import requests
 import json
 
@@ -7,12 +9,13 @@ from django.utils import timezone
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 
-from assets.utils import check_node_assets_amount
+from accounts.const import SecretStrategy, SSHKeyStrategy
 from orgs.utils import set_current_org
 from perms.const import ActionChoices
 
 from orgs.models import Organization
-from accounts.models import Account, AccountTemplate
+from accounts.models import Account, AccountTemplate, ChangeSecretAutomation, AutomationExecution, \
+    AccountBackupAutomation
 from assets.models import Asset, Platform, Database, Web, Node, Protocol, Host, PlatformProtocol
 from common.utils import get_logger, get_object_or_none
 from perms.models import AssetPermission
@@ -30,9 +33,6 @@ def process_data():
         return
 
     print('ITSM 数据处理 Start.')
-    org = Organization.objects.get(id=Organization.DEFAULT_ID)
-    set_current_org(org)
-
     areaStr = settings.ITSM_AREA
     if len(areaStr) == 0:
         print('未填写区域.')
@@ -42,17 +42,50 @@ def process_data():
         print('未填写环境.')
         return
 
+    org = Organization.objects.get(id=Organization.DEFAULT_ID)
+    set_current_org(org)
+
+    changedPwdAccounts = 0
     areaArr = str(areaStr).split(',')
+    opts = ['新增', '延期', '移除', '注销']
     for area in areaArr:
-        data_distribution('新增', area, env)
-        data_distribution('延期', area, env)
-        data_distribution('移除', area, env)
-        data_distribution('注销', area, env)
+        for opt in opts:
+            data_distribution(opt, area, env, changedPwdAccounts)
+
+    # 更改 自动改密后账号备份 计划
+    name = '自动改密后账号备份'
+    automations = AccountBackupAutomation.objects.filter(name=name)
+    if automations.exists():
+        automation = automations.first()
+        crontab = automation.crontab
+        today_of_month = datetime.now().date().day
+        if automation.is_periodic and len(crontab) > 0:
+            strList = crontab.split(' ')
+            if strList[2] != str(today_of_month):
+                # 第二天
+                # 关闭自定义账号备份任务
+                automation.is_periodic = False
+                automation.save()
+
+                # 删除临时的改密计划
+                changeSecretAutomations = ChangeSecretAutomation.objects.filter(name__icontains='tentative_')
+                changeSecretAutomations.delete()
+                print(
+                    'Successfully changed the timed account backup plan and deleted the temporary password change plan.')
+
+        if changedPwdAccounts > 0:
+            crontab = '* 22 {} * *'.format(today_of_month)
+            automation.crontab = crontab
+            automation.is_periodic = True
+            automation.save()
+            print("Success to update account backup plan, crontab: {}".format(crontab))
+    else:
+        print("Account backup plan not exist! Please create an account backup plan with the name {}.".format(name))
 
     print('ITSM 数据处理 End.')
 
 
-def data_distribution(option, area, env):
+def data_distribution(option, area, env, changedPwdAccounts):
     result = search(option, area, env)
     if result['code'] != 0:
         print("CMDB {}数据查询失败，code: {}".format(option, result['code']))
@@ -61,8 +94,7 @@ def data_distribution(option, area, env):
     print("CMDB 数据查询成功，total: {}, option: {}".format(result['data']['total'], option))
     data = result['data']['list']
     if option == '新增':
-        save_or_update_asset(data)
-        check_node_assets_amount()
+        save_or_update_asset(data, changedPwdAccounts)
     elif option == '延期':
         extend_permission(data)
     elif option == '移除':
@@ -71,106 +103,118 @@ def data_distribution(option, area, env):
         update_user_state(data)
 
 
-def save_or_update_asset(assets):
+def save_or_update_asset(assets, changedPwdAccounts):
     for asset in assets:
+        address = asset.get('address', '')
+        instanceId = asset.get('instanceId', '')
+        asset_protocol = asset.get('protocol', '')
+        asset_name = asset.get('asset_name', '')
+        asset_type = asset.get('asset_type', '')
+        default_db = asset.get('default_db', '')
+        asset_platform = asset.get('platform', '')
+        assetnode_name = asset.get('assetnode_name', '')
+
         try:
-            print("Save or update asset[{}].".format(asset.get('asset_name', '')))
-            if asset.get('platform', '') == 'ElasticSearch':
-                asset['asset_type'] = 'web'
-                asset['protocol'] = ["http/80"]
+            if len(asset_name) == 0:
+                print("Asset name cannot be empty！")
+                update(instanceId)
+                continue
+
+            print("Save or update asset[{}].".format(asset_name))
+            if asset_platform == 'ElasticSearch':
+                asset_type = 'web'
+                asset_protocol = ["http/80"]
                 platform = Platform.objects.filter(name='Website').first()
-            elif asset.get('platform', '') == 'Kingbase':
+            elif asset_platform == 'Kingbase':
                 platform = Platform.objects.filter(name='PostgreSQL').first()
-                if len(asset.get('protocol', '')) == 0:
-                    asset['protocol'] = ["postgresql/5432"]  # 54321 Kingbase
+                if len(asset_protocol) == 0:
+                    asset_protocol = ["postgresql/5432"]  # 54321 Kingbase
                 else:
-                    protocols = [asset['protocol']]
-                    asset['protocol'] = []
+                    protocols = [asset_protocol]
+                    asset_protocol = []
                     for p in protocols:
-                        asset['protocol'].append(str(p).replace('Kingbase', 'postgresql'))
+                        asset_protocol.append(str(p).replace('Kingbase', 'postgresql'))
             else:
-                platforms = Platform.objects.filter(name=asset['platform'])
+                platforms = Platform.objects.filter(name=asset_platform)
                 if not platforms.exists():
-                    print("Platform[{}] does not exist!".format(asset.get('platform', '')))
+                    print("Platform[{}] does not exist!".format(asset_platform))
 
                     # 更新 ITSM 记录状态?
                     continue
                 platform = platforms.first()
 
                 # 使用默认平台协议
-                if len(asset.get('protocol', '')) == 0:
-                    asset['protocol'] = []
+                if len(asset_protocol) == 0:
+                    asset_protocol = []
                     protocols = PlatformProtocol.objects.filter(platform=platform)
                     if len(protocols) > 0:
                         for p in protocols:
-                            asset['protocol'].append("{}/{}".format(p.name, p.port))
+                            asset_protocol.append("{}/{}".format(p.name, p.port))
                 else:
-                    asset['protocol'] = [asset['protocol']]
+                    asset_protocol = [asset_protocol]
 
-            assetList = Asset.objects.filter(name=asset['asset_name'], address=asset['address'])
+            assetList = Asset.objects.filter(name=asset_name, address=address)
             if not assetList.exists():
                 try:
-                    assetList = Asset.objects.filter(name=asset['asset_name'])
+                    assetList = Asset.objects.filter(name=asset_name)
                     if assetList.exists():
-                        print("Asset[{}] is already exist! Can't create asset.".format(asset.get('asset_name', '')))
-                        update(asset['instanceId'])
+                        print("Asset[{}] is already exist! Can't create asset.".format(asset_name))
+                        update(instanceId)
                         continue
 
-                    a = Asset.objects.create(name=asset.get('asset_name', None),
-                                             address=asset.get('address', None),
+                    a = Asset.objects.create(name=asset_name,
+                                             address=address,
                                              platform=platform,
                                              org_id=Organization.DEFAULT_ID)
 
-                    if asset['asset_type'] == 'host':
+                    if asset_type == 'host':
                         asset_model = Host(asset_ptr_id=a.id)
                         asset_model.__dict__.update(a.__dict__)
                         asset_model.save()
-                    elif asset['asset_type'] == 'db':
-                        asset_model = Database(asset_ptr_id=a.id, db_name=asset.get('default_db', ''))
+                    elif asset_type == 'db':
+                        asset_model = Database(asset_ptr_id=a.id, db_name=default_db)
                         asset_model.__dict__.update(a.__dict__)
                         asset_model.save()
-                    elif asset['asset_type'] == 'web':
+                    elif asset_type == 'web':
                         asset_model = Web(asset_ptr_id=a.id, autofill='no')
                         asset_model.__dict__.update(a.__dict__)
                         asset_model.save()
 
-                    create_asset_node(asset['assetnode_name'], a)
-                    relate_protocols(asset.get('protocol', ''), a.id)
-                    print("Success to save asset[{}].".format(asset.get('asset_name', '')))
+                    create_asset_node(assetnode_name, a)
+                    relate_protocols(asset_protocol, a.id)
+                    print("Success to save asset[{}].".format(asset_name))
 
-                    process_permission_or_account(asset)
-
+                    process_permission_or_account(asset, changedPwdAccounts)
                 except Exception as e:
-                    print("Failed to save asset[{}], error:{}".format(asset.get('asset_name', ''), e))
+                    print("Failed to save asset[{}], error:{}".format(asset_name, e))
                 continue
 
             try:
                 for a in assetList:
-                    if asset['asset_type'] == 'db' and len(asset['default_db']) > 0:
+                    if asset_type == 'db' and len(default_db) > 0:
                         d = Database.objects.filter(asset_ptr_id=a.id).first()
                         if d:
-                            d.db_name = asset['default_db']
+                            d.db_name = default_db
                             d.save()
 
-                    create_asset_node(asset['assetnode_name'], a)
-                    relate_protocols(asset['protocol'], a.id)
-                print("Success to update asset[{}].".format(asset.get('asset_name', '')))
+                    create_asset_node(assetnode_name, a)
+                    relate_protocols(asset_protocol, a.id)
+                print("Success to update asset[{}].".format(asset_name))
 
-                process_permission_or_account(asset)
-
+                process_permission_or_account(asset, changedPwdAccounts)
             except Exception as e:
-                print("Failed to update asset[{}], error:{}".format(asset.get('asset_name', ''), e))
+                print("Failed to update asset[{}], error:{}".format(asset_name, e))
         except Exception as e:
-            print("Failed to save or update asset[{}], error:{}".format(asset.get('asset_name', ''), e))
+            print("Failed to save or update asset[{}], error:{}".format(asset_name, e))
 
 
-def process_permission_or_account(asset):
+def process_permission_or_account(asset, changedPwdAccounts):
     if len(asset.get('account_username', '')) > 0:
-        save_or_update_asset_account([asset])
+        save_or_update_asset_account([asset], changedPwdAccounts)
     if len(asset.get('permission_name', '')) > 0:
         save_or_update_asset_permission([asset])
     else:
-        update(asset['instanceId'])
+        update(asset.get('instanceId'))
 
 
 def relate_protocols(string, asset_id):
@@ -207,107 +251,131 @@ def create_asset_node(assetnode_name, asset):
             asset.nodes.set([node.id])
 
 
-def save_or_update_asset_account(accounts):
-    # account_username == asset_name
+def save_or_update_asset_account(accounts, changedPwdAccounts):
+    # account_username == account_name
     for account in accounts:
+        asset_type = account.get('asset_type', '')
+        asset_name = account.get('asset_name', '')
+        instanceId = account.get('instanceId', '')
+        account_username = account.get('account_username', '')
+
         try:
-            print("Save or update asset[{}]'s account[{}]."
-                  .format(account.get('asset_name', ''), account.get('account_username', '')))
-            asset = get_object_or_none(Asset, name=account['asset_name'])
+            print("Save or update asset[{}]'s account[{}].".format(asset_name, account_username))
+            asset = get_object_or_none(Asset, name=asset_name)
             if not asset:
-                print("Asset[{}] does not exist!".format(account.get('asset_name', '')))
+                print("Asset[{}] does not exist!".format(asset_name))
                 continue
 
-            accountList = Account.objects.filter(asset=asset, username=account['account_username'])
+            accountList = Account.objects.filter(asset=asset, username=account_username)
             if not accountList.exists():
                 try:
                     # 查询账号模板
-                    accountTemplates = AccountTemplate.objects.filter(username=account.get('account_username', ''))
-                    if accountTemplates.exists():
-                        accountTemplate = accountTemplates.first()
-                        Account.objects.create(asset=asset,
-                                               name=account.get('account_username', None),
-                                               username=account.get('account_username', None),
-                                               privileged=accountTemplate.privileged,
-                                               secret_type=accountTemplate.secret_type,
-                                               _secret=accountTemplate.secret,
-                                               org_id=Organization.DEFAULT_ID)
-                        print("Success to save asset[{}]'s account[{}]."
-                              .format(account.get('asset_name', ''), account.get('account_username', '')))
-                        update(account['instanceId'])
+                    accountTemplates = AccountTemplate.objects.filter(username=account_username)
+                    if not accountTemplates.exists():
+                        print("Account[{}]'s template not exist! Please create an account template and retry."
+                              .format(account_username))
+                        continue
 
-                        # todo 改密
+                    accountTemplate = accountTemplates.first()
+                    Account.objects.create(asset=asset,
+                                           name=account_username,
+                                           username=account_username,
+                                           privileged=accountTemplate.privileged,
+                                           secret_type=accountTemplate.secret_type,
+                                           _secret=accountTemplate.secret,
+                                           org_id=Organization.DEFAULT_ID)
+                    print("Success to save asset[{}]'s account[{}].".format(asset_name, account_username))
+                    update(instanceId)
 
+                    # 主机创建新账号后立即改密
+                    if asset_type == 'host':
+                        name = 'tentative_' + asset_name
+                        password_rules = '{length: 30, lowercase: true, uppercase: true, digit: true, symbol: true}'
+                        automation = ChangeSecretAutomation.objects.create(name=name,
+                                                                           accounts=[account_username],
+                                                                           is_active=True,
+                                                                           is_periodic=False,
+                                                                           password_rules=password_rules,
+                                                                           secret='',
+                                                                           secret_strategy=SecretStrategy.random,
+                                                                           secret_type='password',
+                                                                           ssh_key_change_strategy=SSHKeyStrategy.add)
+                        automation.assets.set([asset])
+                        automation.save()
+                        print("Success to create a change secret plan[{}] for asset[{}]'s account[{}]."
+                              .format(automation.id, asset_name, account_username))
+
+                        task = AutomationExecution.objects.create(automation=automation)
+                        print("Success to create a change secret task[{}] for asset[{}]'s account[{}]."
+                              .format(task.id, asset_name, account_username))
+
+                        changedPwdAccounts += 1
                 except Exception as e:
-                    print("Failed to save asset[{}]'s account[{}], error:{}"
-                          .format(account.get('asset_name', ''), account.get('account_username', ''), e))
+                    print("Failed to save asset[{}]'s account[{}], error:{}".format(asset_name, account_username, e))
                 continue
         except Exception as e:
-            print("Failed to save or update asset account[{}], error:{}".format(account.get('account_username', ''), e))
+            print("Failed to save or update asset[{}]'s account[{}], error:{}".format(asset_name, account_username, e))
 
 
 def save_or_update_asset_permission(permissions):
     for permission in permissions:
+        username = permission.get('username', '')
+        instanceId = permission.get('instanceId', '')
+        asset_name = permission.get('asset_name', '')
+        permission_name = permission.get('permission_name', '')
+        account_username = permission.get('account_username', '')
+
         try:
-            print("Save or update asset[{}]'s permission[{}] for user[{}]."
-                  .format(permission.get('asset_name', ''), permission.get('permission_name', ''),
-                          permission.get('username', '')))
-            assets = Asset.objects.filter(name=permission['asset_name'])
+            print("Save or update asset[{}]'s permission[{}] for user[{}].".format(asset_name, permission_name, username))
+            assets = Asset.objects.filter(name=asset_name)
             if not assets.exists():
-                print("Asset[{}] does not exist!".format(permission.get('asset_name', '')))
-                # update(permission['instanceId'])
+                print("Asset[{}] does not exist!".format(asset_name))
+                # update(instanceId)
                 continue
 
-            users = User.objects.filter(username=permission['username'])
+            users = User.objects.filter(username=username)
             if not users.exists():
-                print("User[{}] does not exist!".format(permission.get('username', '')))
-                # update(permission['instanceId'])
+                print("User[{}] does not exist!".format(username))
+                # update(instanceId)
                 continue
-
-            actions = to_internal_value(permission.get('action', ["connect", "copy", "paste", "share"]))
-
-            try:
-                date_start = permission.get('date_start') + ' 00:00:00' if len(permission.get('date_start')) > 0 \
-                    else (timezone.now() + timezone.timedelta(hours=8)).strftime("%Y-%m-%d %H:%M:%S")
-            except Exception as e:
-                date_start = (timezone.now() + timezone.timedelta(hours=8)).strftime("%Y-%m-%d %H:%M:%S")
-            try:
-                date_expired = permission.get('date_expired') + ' 23:59:59' if len(permission.get('date_expired')) > 0 \
-                    else (timezone.now() + timezone.timedelta(days=365 * 70, hours=8)).strftime("%Y-%m-%d %H:%M:%S")
-            except Exception as e:
-                date_expired = (timezone.now() + timezone.timedelta(days=365 * 70, hours=8)).strftime(
-                    "%Y-%m-%d %H:%M:%S")
 
             accounts = set()
             accounts.add("@INPUT")
-            if len(permission.get('account_username', '')) > 0:
-                accounts.add(permission.get('account_username', ''))
+            if len(account_username) > 0:
+                accounts.add("@SPEC")
+                accounts.add(account_username)
+
+            date_start = get_date_start(permission.get('date_start', ''))
+            date_expired = get_date_expired(permission.get('date_expired', ''))
+            actions = to_internal_value(permission.get('action', ["connect", "copy", "paste", "share"]))
 
             # 特权账号授权特殊处理
-            isExistPrivilegeAccount = str(permission.get('permission_name', '')).__contains__('_root') or \
-                                      str(permission.get('permission_name', '')).__contains__('_admin')
+            isExistPrivilegeAccount = str(permission_name).__contains__('_root') or \
+                                      str(permission_name).__contains__('_administrator') or \
+                                      str(account_username).__contains__('root') or \
+                                      str(account_username).__contains__('_administrator')
             if isExistPrivilegeAccount:
                 permissionList = AssetPermission.objects.filter(assets=assets.first(), users=users.first(),
-                                                                name=permission.get('permission_name', ''))
+                                                                name=permission_name)
             else:
                 permissionList = AssetPermission.objects.filter(assets=assets.first(), users=users.first())
 
             if not permissionList.exists():
                 try:
-                    if len(permission.get('permission_name', '')) > 0:
-                        perms = AssetPermission.objects.filter(name=permission['permission_name'])
+                    if len(permission_name) > 0:
+                        perms = AssetPermission.objects.filter(name=permission_name)
                         if perms.exists():
-                            print("AssetPermission[{}] is already exist!".format(permission.get('permission_name', '')))
+                            print("AssetPermission[{}] is already exist!".format(permission_name))
                             p = perms.first()
                             p.users.add(users.first())
                             p.assets.add(assets.first())
                             for account in p.accounts:
                                 accounts.add(account)
                             permissionList.update(accounts=list(accounts))
-                            update(permission['instanceId'])
+                            update(instanceId)
                             continue
 
-                    p = AssetPermission.objects.create(name=permission.get('permission_name', ''),
+                    p = AssetPermission.objects.create(name=permission_name,
                                                        accounts=list(accounts),
                                                        protocols=["all"],
                                                        actions=actions,
@@ -316,133 +384,123 @@ def save_or_update_asset_permission(permissions):
                                                        org_id=Organization.DEFAULT_ID)
                     p.users.add(users.first())
                     p.assets.add(assets.first())
-                    print("Success to save asset[{}]'s permission[{}]."
-                          .format(permission.get('asset_name', ''), permission.get('permission_name', '')))
+                    print("Success to save asset[{}]'s permission[{}].".format(asset_name, permission_name))
 
-                    update(permission['instanceId'])
+                    update(instanceId)
                 except Exception as e:
                     traceback.print_exc()
-                    print("Failed to save asset[{}]'s permission[{}], error:{}"
-                          .format(permission.get('asset_name', ''), permission.get('permission_name', ''), e))
+                    print("Failed to save asset[{}]'s permission[{}], error:{}".format(asset_name, permission_name, e))
                 continue
 
             try:
                 if not isExistPrivilegeAccount:
-                    if len(permission.get('permission_name', '')) == 0 and \
-                            len(permission.get('account_username', '')) == 0:
+                    if len(permission_name) == 0 and len(account_username) == 0:
                         permissionList.update(date_start=date_start, date_expired=date_expired)
                     else:
                         perm = permissionList.first()
                         for account in perm.accounts:
                             accounts.add(account)
-                        permissionList.update(name=permission.get('permission_name', ''),
+                        permissionList.update(name=permission_name,
                                               accounts=list(accounts),
                                               protocols=["all"],
                                               actions=actions,
                                               date_start=date_start,
                                               date_expired=date_expired)
-                    print("Success to update asset[{}]'s permission[{}]."
-                          .format(permission.get('asset_name', ''), permission.get('permission_name', '')))
+                    print("Success to update asset[{}]'s permission[{}].".format(asset_name, permission_name))
 
-                update(permission['instanceId'])
+                update(instanceId)
 
             except Exception as e:
-                print("Failed to update asset[{}]'s permission[{}], error:{}"
-                      .format(permission.get('asset_name', ''), permission.get('permission_name', ''), e))
+                print("Failed to update asset[{}]'s permission[{}], error:{}".format(asset_name, permission_name, e))
         except Exception as e:
-            print("Failed to save or update asset permission[{}], error:{}"
-                  .format(permission.get('permission_name', ''), e))
+            print("Failed to save or update asset permission[{}], error:{}".format(permission_name, e))
 
 
 def extend_permission(permissions):
     for permission in permissions:
-        try:
-            print("Extend all permissions for user[{}].".format(permission.get('username', '')))
+        username = permission.get('username', '')
+        instanceId = permission.get('instanceId', '')
 
-            users = User.objects.filter(username=permission['username'])
+        try:
+            print("Extend all permissions for user[{}].".format(username))
+            users = User.objects.filter(username=username)
             if not users.exists():
-                print("User[{}] does not exist!".format(permission.get('username', '')))
-                # update(permission['instanceId'])
+                print("User[{}] does not exist!".format(username))
+                # update(instanceId)
                 continue
 
-            try:
-                date_start = permission.get('date_start') + ' 00:00:00' if len(permission.get('date_start')) > 0 \
-                    else (timezone.now() + timezone.timedelta(hours=8)).strftime("%Y-%m-%d %H:%M:%S")
-            except Exception as e:
-                date_start = (timezone.now() + timezone.timedelta(hours=8)).strftime("%Y-%m-%d %H:%M:%S")
-            try:
-                date_expired = permission.get('date_expired') + ' 23:59:59' if len(permission.get('date_expired')) > 0 \
-                    else (timezone.now() + timezone.timedelta(days=365 * 70, hours=8)).strftime("%Y-%m-%d %H:%M:%S")
-            except Exception as e:
-                date_expired = (timezone.now() + timezone.timedelta(days=365 * 70, hours=8)).strftime(
-                    "%Y-%m-%d %H:%M:%S")
+            date_start = get_date_start(permission.get('date_start', ''))
+            date_expired = get_date_expired(permission.get('date_expired', ''))
 
             # 永久授权、特权账号的授权不允许延期
             permissionList = AssetPermission.objects.filter(users=users.first()).exclude(
-                Q(name__icontains='permanent') | Q(name__icontains='root') | Q(name__icontains='admin')
+                Q(name__icontains='permanent') | Q(name__icontains='root') | Q(name__icontains='administrator') |
+                Q(accounts__icontains='root') | Q(accounts__icontains='administrator')
             )
             if permissionList.exists():
                 permissionList.update(date_start=date_start, date_expired=date_expired)
-                print("Success to extend all permissions for user[{}].".format(permission.get('username', '')))
+                print("Success to extend all permissions for user[{}].".format(username))
 
-            update(permission['instanceId'])
+            update(instanceId)
         except Exception as e:
-            print("Failed to extend all asset permission for user[{}], error:{}"
-                  .format(permission.get('username', ''), e))
+            print("Failed to extend all asset permission for user[{}], error:{}".format(username, e))
 
 
 def remove_user_asset_permission(permissions):
     for permission in permissions:
-        print("Remove asset[{}] permission for user[{}]."
-              .format(permission.get('asset_name', ''), permission.get('username', '')))
+        username = permission.get('username', '')
+        asset_name = permission.get('asset_name', '')
+        instanceId = permission.get('instanceId', '')
+
         try:
-            asset = get_object_or_none(Asset, name=permission['asset_name'])
+            print("Remove asset[{}]'s permission for user[{}].".format(asset_name, username))
+            asset = get_object_or_none(Asset, name=asset_name)
             if not asset:
-                update(permission['instanceId'])
-                print("Asset[{}] does not exist!".format(permission.get('asset_name', '')))
+                update(instanceId)
+                print("Asset[{}] does not exist!".format(asset_name))
                 continue
 
-            user = get_object_or_none(User, username=permission['username'])
+            user = get_object_or_none(User, username=username)
             if not user:
-                update(permission['instanceId'])
-                print("User[{}] does not exist!".format(permission.get('username', '')))
+                update(instanceId)
+                print("User[{}] does not exist!".format(username))
                 continue
 
             permissionList = AssetPermission.objects.filter(assets=asset, users=user)
             if not permissionList.exists():
-                update(permission['instanceId'])
-                print("Asset[{}] permission for user[{}] does not exist!"
-                      .format(permission.get('asset_name', ''), permission.get('username', '')))
+                update(instanceId)
+                print("Asset[{}]'s permission for user[{}] does not exist!".format(asset_name, username))
                 continue
 
             for p in permissionList:
-                # p.users.remove(user)
+                # p.users.remove(user) # 移除用户
                 p.assets.remove(asset)  # 移除资产
-                update(permission['instanceId'])
-                print("Success to remove Asset[{}] permission for user[{}]."
-                      .format(permission.get('asset_name', ''), permission.get('username', '')))
+                update(instanceId)
+                print("Success to remove Asset[{}]'s permission for user[{}].".format(asset_name, username))
 
         except Exception as e:
-            print("Failed to remove Asset[{}] permission for user[{}], error:{}"
-                  .format(permission.get('asset_name', ''), permission.get('username', ''), e))
+            print("Failed to remove Asset[{}]'s permission for user[{}], error:{}".format(asset_name, username, e))
 
 
 def update_user_state(users):
     for user in users:
-        print("Update status of user[{}].".format(user.get('username', '')))
+        username = user.get('username', '')
+        instanceId = user.get('instanceId', '')
+
         try:
-            userList = User.objects.filter(username=user['username']).exclude(username='admin')
+            print("Update status of user[{}].".format(username))
+            userList = User.objects.filter(username=username).exclude(username='admin')
             if not userList.exists():
-                print("User[{}] does not exist!".format(user['username']))
-                update(user['instanceId'])
+                print("User[{}] does not exist!".format(username))
+                update(instanceId)
                 continue
 
             userList.update(is_active=False)
-            update(user['instanceId'])
-            print("Success to update the status of user[{}].".format(user.get('username', '')))
+            update(instanceId)
+            print("Success to update the status of user[{}].".format(username))
 
         except Exception as e:
-            print("Failed to update the status of user[{}], error:{}".format(user.get('username', ''), e))
+            print("Failed to update the status of user[{}], error:{}".format(username, e))
 
 
 def to_internal_value(data):
@@ -523,3 +581,19 @@ def update(instanceId):
     print("[update] url:{}".format(url))
     r = requests.put(url, headers=CMDB_HEADERS, json=data, timeout=10)
     return r.json()
+
+
+def get_date_start(start_time):
+    if len(start_time) > 0:
+        date_start = start_time + ' 00:00:00'
+    else:
+        date_start = (timezone.now() + timezone.timedelta(hours=8)).strftime("%Y-%m-%d %H:%M:%S")
+    return date_start
+
+
+def get_date_expired(expired_time):
+    if len(expired_time) > 0:
+        date_expired = expired_time + ' 23:59:59'
+    else:
+        date_expired = (timezone.now() + timezone.timedelta(days=365 * 70, hours=8)).strftime("%Y-%m-%d %H:%M:%S")
+    return date_expired

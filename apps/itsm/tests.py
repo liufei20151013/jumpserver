@@ -1,15 +1,19 @@
+import json
 import os
 
 import django
 
-
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'jumpserver.settings')
 django.setup()
 
+from accounts.models import ChangeSecretAutomation, AccountBackupAutomation, AccountTemplate, Account, \
+    AutomationExecution
+from accounts.const import SecretStrategy, SSHKeyStrategy
+from orgs.models import Organization
 from unittest import TestCase
 from django.utils import timezone
-import datetime
-from assets.models import Node
+from datetime import datetime
+from assets.models import Node, Asset
 from perms.const import ActionChoices
 from common.utils import get_object_or_none
 from perms.serializers import ActionChoicesField
@@ -45,69 +49,68 @@ class TestTaskCase(TestCase):
         # permissions = [
         #     {
         #         "username": "liufei",
-        #         "date_expired": "2024-05-01"
+        #         "date_expired": "2024-07-01"
         #     }
         # ]
         # extend_permission(permissions)
 
         # 创建或更新授权
         # permissions = [
-            # {
-            #     "permission_name": "10.1.12.127-permission",
-            #     "username": "liufei",
-            #     "asset_name": "10.1.12.127",
-            #     "account": ["@SPEC", "root"],
-            #     "protocol": ["ssh/22", "sftp/22"],
-            #     "action": ["connect", "upload", "download", "copy", "paste", "delete", "share"],
-            #     "date_start": "2023-02-23T10:53:23.879Z",
-            #     "date_expired": "2093-01-30T10:53:23.879Z"
-            # },
-            # {
-            #     "permission_name": "10.1.12.126-permission",
-            #     "username": "liufei2",
-            #     "asset_name": "10.1.12.126",
-            #     "account": ["@SPEC", "root"],
-            #     "protocol": ["ssh/22", "sftp/22"],
-            #     "action": ["connect", "upload", "download", "copy", "paste", "delete", "share"],
-            #     "date_start": "2023-02-23T10:53:23.879Z",
-            #     "date_expired": "2093-01-30T10:53:23.879Z"
-            # },
-            # {
-            #     "permission_name": "10.1.12.126-permission",
-            #     "username": "liufei",
-            #     "asset_name": "10.1.12.126",
-            #     "account": ["@SPEC", "root"],
-            #     "protocol": ["ssh/22", "sftp/22"],
-            #     "action": ["connect", "upload", "download", "copy", "paste", "delete", "share"],
-            #     "date_start": "2023-02-23T10:53:23.879Z",
-            #     "date_expired": "2093-01-30T10:53:23.879Z"
-            # },
-            # {
-            #     "permission_name": "11-permission",
-            #     "username": "liufei",
-            #     "asset_name": "11",
-            #     "account": ["@SPEC", "root"],
-            #     "action": ["connect", "upload", "download", "copy"],
-            #     "date_start": "2023-02-23T10:53:23.879Z",
-            #     "date_expired": "2093-01-30T10:53:23.879Z"
-            # },
-            # {
-            #     "permission_name": "12-permission",
-            #     "username": "liufei",
-            #     "asset_name": "11",
-            #     "account": ["@SPEC", "root"],
-            #     "protocol": ["ssh/22"],
-            #     "action": ["connect", "upload", "download", "copy"]
-            # },
+        # {
+        #     "permission_name": "10.1.12.127-permission",
+        #     "username": "liufei",
+        #     "asset_name": "10.1.12.127",
+        #     "account": ["@SPEC", "root"],
+        #     "protocol": ["ssh/22", "sftp/22"],
+        #     "action": ["connect", "upload", "download", "copy", "paste", "delete", "share"],
+        #     "date_start": "2023-02-23T10:53:23.879Z",
+        #     "date_expired": "2093-01-30T10:53:23.879Z"
+        # },
+        # {
+        #     "permission_name": "10.1.12.126-permission",
+        #     "username": "liufei2",
+        #     "asset_name": "10.1.12.126",
+        #     "account": ["@SPEC", "root"],
+        #     "protocol": ["ssh/22", "sftp/22"],
+        #     "action": ["connect", "upload", "download", "copy", "paste", "delete", "share"],
+        #     "date_start": "2023-02-23T10:53:23.879Z",
+        #     "date_expired": "2093-01-30T10:53:23.879Z"
+        # },
+        # {
+        #     "permission_name": "10.1.12.126-permission",
+        #     "username": "liufei",
+        #     "asset_name": "10.1.12.126",
+        #     "account": ["@SPEC", "root"],
+        #     "protocol": ["ssh/22", "sftp/22"],
+        #     "action": ["connect", "upload", "download", "copy", "paste", "delete", "share"],
+        #     "date_start": "2023-02-23T10:53:23.879Z",
+        #     "date_expired": "2093-01-30T10:53:23.879Z"
+        # },
+        # {
+        #     "permission_name": "11-permission",
+        #     "username": "liufei",
+        #     "asset_name": "11",
+        #     "account": ["@SPEC", "root"],
+        #     "action": ["connect", "upload", "download", "copy"],
+        #     "date_start": "2023-02-23T10:53:23.879Z",
+        #     "date_expired": "2093-01-30T10:53:23.879Z"
+        # },
+        # {
+        #     "permission_name": "12-permission",
+        #     "username": "liufei",
+        #     "asset_name": "11",
+        #     "account": ["@SPEC", "root"],
+        #     "protocol": ["ssh/22"],
+        #     "action": ["connect", "upload", "download", "copy"]
+        # },
         #     {
-        #         "permission_name": "12-permission",
+        #         "permission_name": "12-permission_root",
         #         "username": "liufei",
-        #         "asset_name": "11",
+        #         "asset_name": "10.1.12.12",
         #         "account": ["@SPEC", "root"],
         #         "protocol": ["ssh/22"],
         #         "action": ["connect", "upload", "download", "copy", "paste", "delete", "share"],
-        #         "date_start": "2023-02-23T10:53:23.879Z",
-        #         "date_expired": "2093-01-30T10:53:23.879Z"
+        #         "date_expired": "2024-05-01"
         #     }
         # ]
         # save_or_update_asset_permission(permissions)
@@ -152,31 +155,31 @@ class TestTaskCase(TestCase):
             #     "protocol": "ssh/22",
             #     "default_db": ""
             # }
-        #     , {
-        #         "asset_type": "host",
-        #         "asset_name": "10.1.12.11",
-        #         "address": "10.1.12.11",
-        #         "platform": "Linux",
-        #         "assetnode_name": "/Default/开发2/java2",
-        #         "protocol": ["ssh/2266"],
-        #         "default_db": ""
-        #     }, {
-        #         "asset_type": "db",
-        #         "asset_name": "10.1.12.224",
-        #         "address": "10.1.12.224",
-        #         "platform": "MySQL",
-        #         "assetnode_name": "/Default/开发/mysql2",
-        #         "protocol": ["mysql/3309"],
-        #         "default_db": "fit2cloud"
-        #     }, {
-        #         "asset_type": "web",
-        #         "asset_name": "salesview 平台",
-        #         "address": "http://10.1.12.168",
-        #         "platform": "Website",
-        #         "assetnode_name": "/Default/开发/web2",
-        #         "protocol": ["http/80"],
-        #         "default_db": ""
-        #     }
+            #     , {
+            #         "asset_type": "host",
+            #         "asset_name": "10.1.12.11",
+            #         "address": "10.1.12.11",
+            #         "platform": "Linux",
+            #         "assetnode_name": "/Default/开发2/java2",
+            #         "protocol": ["ssh/2266"],
+            #         "default_db": ""
+            #     }, {
+            #         "asset_type": "db",
+            #         "asset_name": "10.1.12.224",
+            #         "address": "10.1.12.224",
+            #         "platform": "MySQL",
+            #         "assetnode_name": "/Default/开发/mysql2",
+            #         "protocol": ["mysql/3309"],
+            #         "default_db": "fit2cloud"
+            #     }, {
+            #         "asset_type": "web",
+            #         "asset_name": "salesview 平台",
+            #         "address": "http://10.1.12.168",
+            #         "platform": "Website",
+            #         "assetnode_name": "/Default/开发/web2",
+            #         "protocol": ["http/80"],
+            #         "default_db": ""
+            #     }
 
             {
                 "asset_type": "host",
@@ -186,7 +189,7 @@ class TestTaskCase(TestCase):
                 "assetnode_name": "/Default/开发/test",
                 "protocol": ["ssh/22"],
                 "default_db": "",
-                "permission_name": "173e-permission",
+                "permission_name": "173e-permissionwww",
                 "username": "admin",
                 "action": ["connect", "upload", "download", "copy", "paste", "delete", "share"],
                 # "date_start": "2023-02-23T10:53:23.879Z",
@@ -200,7 +203,7 @@ class TestTaskCase(TestCase):
                 "default_db": "js_db"
             }
         ]
-        save_or_update_asset(assets)
+        save_or_update_asset(assets, 0)
 
         # node_name = '/Default/开发/test'
         # index = node_name.find('/', 1)
@@ -224,3 +227,38 @@ class TestTaskCase(TestCase):
         #     # print(date_expired_default().strftime("%Y-%m-%d %H:%M:%S"))
         # except Exception as e:
         #     print(e)
+
+        # account_username = 'administrator'
+        # asset = get_object_or_none(Asset, name='10.1.12.121')
+        # accountTemplates = AccountTemplate.objects.filter(username=account_username)
+        #
+        # accountTemplate = accountTemplates.first()
+        # account = Account.objects.create(asset=asset,
+        #                                  name=account_username,
+        #                                  username=account_username,
+        #                                  privileged=accountTemplate.privileged,
+        #                                  secret_type=accountTemplate.secret_type,
+        #                                  _secret=accountTemplate.secret,
+        #                                  org_id=Organization.DEFAULT_ID)
+        #
+        # # 主机创建新账号后立即改密
+        # try:
+        #     name = 'tentative_' + asset.name
+        #     password_rules = '{length: 30, lowercase: true, uppercase: true, digit: true, symbol: true}'
+        #     automation = ChangeSecretAutomation.objects.create(name=name,
+        #                                                        accounts=[account_username],
+        #                                                        is_active=True,
+        #                                                        is_periodic=False,
+        #                                                        password_rules=password_rules,
+        #                                                        secret='',
+        #                                                        secret_strategy=SecretStrategy.random,
+        #                                                        secret_type='password',
+        #                                                        ssh_key_change_strategy=SSHKeyStrategy.add)
+        #     automation.assets.set([asset])
+        #     automation.save()
+        #
+        #     task = AutomationExecution.objects.create(automation=automation)
+        #     print(task.id)
+        # except Exception as e:
+        #     print(e)
+        #     account.delete()
