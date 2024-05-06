@@ -254,45 +254,60 @@ def create_asset_node(assetnode_name, asset):
 def save_or_update_asset_account(accounts, changedPwdAccounts):
     # account_username == account_name
     for account in accounts:
-        asset_type = account.get('asset_type', '')
         asset_name = account.get('asset_name', '')
         instanceId = account.get('instanceId', '')
         account_username = account.get('account_username', '')
 
         try:
             print("Save or update asset[{}]'s account[{}].".format(asset_name, account_username))
-            asset = get_object_or_none(Asset, name=asset_name)
-            if not asset:
+            assets = Asset.objects.filter(name=asset_name)
+            if not assets.exists():
                 print("Asset[{}] does not exist!".format(asset_name))
                 continue
+            asset = assets.first()
+            platform = asset.platform.name.lower()
+            asset_type = asset.platform.category
 
-            accountList = Account.objects.filter(asset=asset, username=account_username)
-            if not accountList.exists():
+            # 如果传的是普通账号，也要把 root 或 administrator 加上
+            account_usernames = []
+            if asset_type == 'host':
+                if platform.__contains__('windows'):
+                    account_usernames.append(account_username)
+                else:
+                    account_usernames.append('root')
+            account_usernames.append(account_username)
+
+            for au in account_usernames:
+                accountList = Account.objects.filter(asset=asset, username=au)
+                if accountList.exists():
+                    continue
+
                 try:
                     # 查询账号模板
-                    accountTemplates = AccountTemplate.objects.filter(username=account_username)
+                    accountTemplates = AccountTemplate.objects.filter(username=au)
                     if not accountTemplates.exists():
                         print("Account[{}]'s template not exist! Please create an account template and retry."
-                              .format(account_username))
-                        continue
+                              .format(au))
+                        break
 
                     accountTemplate = accountTemplates.first()
                     Account.objects.create(asset=asset,
-                                           name=account_username,
-                                           username=account_username,
+                                           name=au,
+                                           username=au,
                                            privileged=accountTemplate.privileged,
                                            secret_type=accountTemplate.secret_type,
                                            _secret=accountTemplate.secret,
                                            org_id=Organization.DEFAULT_ID)
-                    print("Success to save asset[{}]'s account[{}].".format(asset_name, account_username))
-                    update(instanceId)
+                    print("Success to save asset[{}]'s account[{}].".format(asset_name, au))
+                    if account_username == au:
+                        update(instanceId)
 
                     # 主机创建新账号后立即改密
                     if asset_type == 'host':
-                        name = 'tentative_' + asset_name
+                        name = 'tentative_{}_{}'.format(asset_name, au)
                         password_rules = '{length: 30, lowercase: true, uppercase: true, digit: true, symbol: true}'
                         automation = ChangeSecretAutomation.objects.create(name=name,
-                                                                           accounts=[account_username],
+                                                                           accounts=[au],
                                                                            is_active=True,
                                                                            is_periodic=False,
                                                                            password_rules=password_rules,
@@ -303,16 +318,17 @@ def save_or_update_asset_account(accounts, changedPwdAccounts):
                         automation.assets.set([asset])
                         automation.save()
                         print("Success to create a change secret plan[{}] for asset[{}]'s account[{}]."
-                              .format(automation.id, asset_name, account_username))
+                              .format(automation.id, asset_name, au))
 
                         task = AutomationExecution.objects.create(automation=automation)
                         print("Success to create a change secret task[{}] for asset[{}]'s account[{}]."
-                              .format(task.id, asset_name, account_username))
+                              .format(task.id, asset_name, au))
 
                         changedPwdAccounts += 1
                 except Exception as e:
-                    print("Failed to save asset[{}]'s account[{}], error:{}".format(asset_name, account_username, e))
-                continue
+                    print("Failed to save asset[{}]'s account[{}], error:{}".format(asset_name, au, e))
+
+            continue
         except Exception as e:
             print("Failed to save or update asset[{}]'s account[{}], error:{}".format(asset_name, account_username, e))
 
