@@ -183,24 +183,24 @@ class TestTaskCase(TestCase):
 
             {
                 "asset_type": "host",
-                "asset_name": "salesview 平台22",
-                "address": "10.1.12.176",
+                "asset_name": "salesview 平台2223",
+                "address": "10.1.12.189",
                 "platform": "Linux",
                 "assetnode_name": "/Default/开发/test",
-                "protocol": ["ssh/22"],
+                "protocol": "ssh/22",
                 "default_db": "",
-                "permission_name": "173e-permissionwww",
+                "permission_name": "188-permissionwww",
                 "username": "admin",
                 "action": ["connect", "upload", "download", "copy", "paste", "delete", "share"],
                 # "date_start": "2023-02-23T10:53:23.879Z",
                 # "date_expired": "2093-01-30T10:53:23.879Z",
-                "account_name": "10.1.12.173-root",
-                "account_username": "root",
+                # "account_name": "10.1.12.173-root",
+                "account_username": "appusr",
                 "secret_type": "password",
                 "secret": "",
                 "su_from": "",
-                "is_privileged": "True",
-                "default_db": "js_db"
+                # "is_privileged": "True",
+                # "default_db": "js_db"
             }
         ]
         save_or_update_asset(assets, 0)
