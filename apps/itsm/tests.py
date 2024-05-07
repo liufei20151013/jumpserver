@@ -146,61 +146,21 @@ class TestTaskCase(TestCase):
 
         # 创建资产
         assets = [
-            # {
-            #     "asset_type": "host",
-            #     "asset_name": "10.1.12.123",
-            #     "address": "10.1.12.123",
-            #     "platform": "Linux",
-            #     "assetnode_name": "/Default/开发2/java2",
-            #     "protocol": "ssh/22",
-            #     "default_db": ""
-            # }
-            #     , {
-            #         "asset_type": "host",
-            #         "asset_name": "10.1.12.11",
-            #         "address": "10.1.12.11",
-            #         "platform": "Linux",
-            #         "assetnode_name": "/Default/开发2/java2",
-            #         "protocol": ["ssh/2266"],
-            #         "default_db": ""
-            #     }, {
-            #         "asset_type": "db",
-            #         "asset_name": "10.1.12.224",
-            #         "address": "10.1.12.224",
-            #         "platform": "MySQL",
-            #         "assetnode_name": "/Default/开发/mysql2",
-            #         "protocol": ["mysql/3309"],
-            #         "default_db": "fit2cloud"
-            #     }, {
-            #         "asset_type": "web",
-            #         "asset_name": "salesview 平台",
-            #         "address": "http://10.1.12.168",
-            #         "platform": "Website",
-            #         "assetnode_name": "/Default/开发/web2",
-            #         "protocol": ["http/80"],
-            #         "default_db": ""
-            #     }
-
             {
                 "asset_type": "host",
-                "asset_name": "salesview 平台2223",
-                "address": "10.1.12.189",
+                "asset_name": "salesview 平台243",
+                "address": "10.1.12.18",
                 "platform": "Linux",
                 "assetnode_name": "/Default/开发/test",
                 "protocol": "ssh/22",
                 "default_db": "",
-                "permission_name": "188-permissionwww",
+                "permission_name": "18-permissionwww",
                 "username": "admin",
                 "action": ["connect", "upload", "download", "copy", "paste", "delete", "share"],
-                # "date_start": "2023-02-23T10:53:23.879Z",
-                # "date_expired": "2093-01-30T10:53:23.879Z",
-                # "account_name": "10.1.12.173-root",
                 "account_username": "appusr",
                 "secret_type": "password",
                 "secret": "",
                 "su_from": "",
-                # "is_privileged": "True",
-                # "default_db": "js_db"
             }
         ]
         save_or_update_asset(assets, 0)

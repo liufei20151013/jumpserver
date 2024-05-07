@@ -9,7 +9,9 @@ from django.utils import timezone
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 
-from accounts.const import SecretStrategy, SSHKeyStrategy
+from accounts.const import SecretStrategy, SSHKeyStrategy, AutomationTypes
+from accounts.tasks import execute_account_automation_task
+from common.const import Trigger
 from orgs.utils import set_current_org
 from perms.const import ActionChoices
 
@@ -299,8 +301,8 @@ def save_or_update_asset_account(accounts, changedPwdAccounts):
                                            _secret=accountTemplate.secret,
                                            org_id=Organization.DEFAULT_ID)
                     print("Success to save asset[{}]'s account[{}].".format(asset_name, au))
-                    if account_username == au:
-                        update(instanceId)
+                    # if account_username == au:
+                    #     update(instanceId)
 
                     # 主机创建新账号后立即改密
                     if asset_type == 'host':
@@ -320,7 +322,9 @@ def save_or_update_asset_account(accounts, changedPwdAccounts):
                         print("Success to create a change secret plan[{}] for asset[{}]'s account[{}]."
                               .format(automation.id, asset_name, au))
 
-                        task = AutomationExecution.objects.create(automation=automation)
+                        task = execute_account_automation_task.delay(
+                            pid=str(automation.pk), trigger=Trigger.manual, tp=AutomationTypes.change_secret
+                        )
                         print("Success to create a change secret task[{}] for asset[{}]'s account[{}]."
                               .format(task.id, asset_name, au))
 
