@@ -69,12 +69,12 @@ def process_data():
                 # 关闭自定义账号备份任务
                 automation.is_periodic = False
                 automation.save()
+                print('Successfully changed the timed account backup plan.')
 
                 # 删除临时的改密计划
-                changeSecretAutomations = ChangeSecretAutomation.objects.filter(name__icontains='tentative_')
-                changeSecretAutomations.delete()
-                print(
-                    'Successfully changed the timed account backup plan and deleted the temporary password change plan.')
+                # changeSecretAutomations = ChangeSecretAutomation.objects.filter(name__icontains='tentative_')
+                # changeSecretAutomations.delete()
+                # print('Successfully changed the timed account backup plan and deleted the temporary password change plan.')
 
         if changedPwdAccounts > 0:
             crontab = '* 22 {} * *'.format(today_of_month)
@@ -156,6 +156,8 @@ def save_or_update_asset(assets, changedPwdAccounts):
                             asset_protocol.append("{}/{}".format(p.name, p.port))
                 else:
                     asset_protocol = [asset_protocol]
+                    if platform.name.lower().__contains__('windows'):
+                        asset_protocol.append("winrm/5985")
 
             assetList = Asset.objects.filter(name=asset_name, address=address)
             if not assetList.exists():
@@ -278,7 +280,7 @@ def save_or_update_asset_account(accounts, changedPwdAccounts):
             account_usernames = []
             if asset_type == 'host':
                 if platform.__contains__('windows'):
-                    account_usernames.append(account_username)
+                    account_usernames.append('administrator')
                 else:
                     account_usernames.append('root')
             account_usernames.append(account_username)
