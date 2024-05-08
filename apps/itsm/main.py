@@ -52,7 +52,8 @@ def process_data():
     opts = ['新增', '延期', '移除', '注销']
     for area in areaArr:
         for opt in opts:
-            data_distribution(opt, area, env, changedPwdAccounts)
+            changedPwdAccounts += data_distribution(opt, area, env, changedPwdAccounts)
+    print('changedPwdAccounts: {}'.format(changedPwdAccounts))
 
     # 更改 自动改密后账号备份 计划
     name = '自动改密后账号备份'
@@ -96,13 +97,14 @@ def data_distribution(option, area, env, changedPwdAccounts):
     print("CMDB 数据查询成功，total: {}, option: {}".format(result['data']['total'], option))
     data = result['data']['list']
     if option == '新增':
-        save_or_update_asset(data, changedPwdAccounts)
+        changedPwdAccounts = save_or_update_asset(data, changedPwdAccounts)
     elif option == '延期':
         extend_permission(data)
     elif option == '移除':
         remove_user_asset_permission(data)
     elif option == '注销':
         update_user_state(data)
+    return changedPwdAccounts
 
 
 def save_or_update_asset(assets, changedPwdAccounts):
@@ -186,7 +188,7 @@ def save_or_update_asset(assets, changedPwdAccounts):
                     relate_protocols(asset_protocol, a.id)
                     print("Success to save asset[{}].".format(asset_name))
 
-                    process_permission_or_account(asset, changedPwdAccounts)
+                    changedPwdAccounts = process_permission_or_account(asset, changedPwdAccounts)
                 except Exception as e:
                     print("Failed to save asset[{}], error:{}".format(asset_name, e))
                 continue
@@ -203,20 +205,22 @@ def save_or_update_asset(assets, changedPwdAccounts):
                     relate_protocols(asset_protocol, a.id)
                 print("Success to update asset[{}].".format(asset_name))
 
-                process_permission_or_account(asset, changedPwdAccounts)
+                changedPwdAccounts = process_permission_or_account(asset, changedPwdAccounts)
             except Exception as e:
                 print("Failed to update asset[{}], error:{}".format(asset_name, e))
         except Exception as e:
             print("Failed to save or update asset[{}], error:{}".format(asset_name, e))
+    return changedPwdAccounts
 
 
 def process_permission_or_account(asset, changedPwdAccounts):
     if len(asset.get('account_username', '')) > 0:
-        save_or_update_asset_account([asset], changedPwdAccounts)
+        changedPwdAccounts = save_or_update_asset_account([asset], changedPwdAccounts)
     if len(asset.get('permission_name', '')) > 0:
         save_or_update_asset_permission([asset])
     else:
         update(asset.get('instanceId'))
+    return changedPwdAccounts
 
 
 def relate_protocols(string, asset_id):
@@ -301,8 +305,8 @@ def save_or_update_asset_account(accounts, changedPwdAccounts):
                                            _secret=accountTemplate.secret,
                                            org_id=Organization.DEFAULT_ID)
                     print("Success to save asset[{}]'s account[{}].".format(asset_name, au))
-                    # if account_username == au:
-                    #     update(instanceId)
+                    if account_username == au:
+                        update(instanceId)
 
                     # 主机创建新账号后立即改密
                     if asset_type == 'host':
@@ -335,6 +339,7 @@ def save_or_update_asset_account(accounts, changedPwdAccounts):
             continue
         except Exception as e:
             print("Failed to save or update asset[{}]'s account[{}], error:{}".format(asset_name, account_username, e))
+    return changedPwdAccounts
 
 
 def save_or_update_asset_permission(permissions):
