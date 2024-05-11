@@ -314,6 +314,9 @@ def save_or_update_asset_account(accounts, changedPwdAccounts):
                     if asset_type == 'host':
                         name = 'tentative_{}_{}'.format(asset_name, au)
                         password_rules = '{length: 30, lowercase: true, uppercase: true, digit: true, symbol: true}'
+
+                        automations = ChangeSecretAutomation.objects.filter(name=name)
+                        automations.delete()
                         automation = ChangeSecretAutomation.objects.create(name=name,
                                                                            accounts=[au],
                                                                            is_active=True,
