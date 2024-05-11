@@ -55,10 +55,10 @@ def migrate_assets_sftp_protocol(apps, schema_editor):
         .distinct()\
         .values_list('id', flat=True))
     while True:
-        _asset_ids = asset_ids[count:count + 1000]
+        _asset_ids = asset_ids[count:count + 30000]
         if not _asset_ids:
             break
-        count += 1000
+        count += 30000
 
         new_protocols = []
         ssh_protocols = protocol_cls.objects.filter(name='ssh', asset_id__in=_asset_ids).distinct()

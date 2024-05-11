@@ -55,7 +55,7 @@ def add_all_user_to_default_org(apps, schema_editor):
     count = users_qs.count()
     print(f'\tWill add users to default org: {count}')
 
-    batch_size = 1000
+    batch_size = 30000
     for i in range(0, count, batch_size):
         users = list(users_qs[i:i + batch_size])
         members = [org_members_model(user=user, org=default_org) for user in users]

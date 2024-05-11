@@ -12,7 +12,7 @@ def migrate_system_role_binding(apps, schema_editor):
     role_binding_model = apps.get_model('rbac', 'SystemRoleBinding')
 
     count = 0
-    bulk_size = 1000
+    bulk_size = 30000
     print('')
     while True:
         users = user_model.objects.using(db_alias) \
@@ -41,7 +41,7 @@ def migrate_org_role_binding(apps, schema_editor):
     role_binding_model = apps.get_model('rbac', 'RoleBinding')
 
     count = 0
-    bulk_size = 1000
+    bulk_size = 30000
 
     while True:
         members = org_member_model.objects.using(db_alias)\

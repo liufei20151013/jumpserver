@@ -6,7 +6,7 @@ def migrate_app_perms_to_assets(apps, schema_editor):
     app_permission_model = apps.get_model("perms", "ApplicationPermission")
 
     count = 0
-    bulk_size = 1000
+    bulk_size = 30000
     while True:
         app_perms = app_permission_model.objects.all()[count:bulk_size]
         if not app_perms:
@@ -43,7 +43,7 @@ def migrate_relations(apps, schema_editor):
         asset_through = getattr(asset_permission_model, asset_name).through
 
         count = 0
-        bulk_size = 1000
+        bulk_size = 30000
 
         while True:
             app_permission_relations = app_through.objects.all()[count:bulk_size]
