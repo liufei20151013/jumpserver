@@ -388,7 +388,10 @@ def save_or_update_asset_permission(permissions):
                 permissionList = AssetPermission.objects.filter(assets=assets.first(), users=users.first(),
                                                                 name=permission_name)
             else:
-                permissionList = AssetPermission.objects.filter(assets=assets.first(), users=users.first())
+                permissionList = AssetPermission.objects.filter(assets=assets.first(), users=users.first()).exclude(
+                    Q(name__icontains='permanent') | Q(name__icontains='root') | Q(name__icontains='administrator') |
+                    Q(accounts__icontains='root') | Q(accounts__icontains='administrator')
+                )
 
             if not permissionList.exists():
                 try:
