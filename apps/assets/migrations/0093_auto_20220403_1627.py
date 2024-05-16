@@ -12,7 +12,7 @@ def migrate_to_host(apps, schema_editor):
     db_alias = schema_editor.connection.alias
 
     count = 0
-    batch_size = 30000
+    batch_size = 50000
 
     while True:
         assets = asset_model.objects.using(db_alias).all()[count:count + batch_size]
@@ -27,7 +27,7 @@ def migrate_hardware_info(apps, *args):
     asset_model = apps.get_model("assets", "Asset")
 
     count = 0
-    batch_size = 30000
+    batch_size = 50000
     hardware_fields = [
         'vendor', 'model', 'sn', 'cpu_model', 'cpu_count', 'cpu_cores',
         'cpu_vcpus', 'memory', 'disk_total', 'disk_info', 'os', 'os_arch',

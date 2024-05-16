@@ -6,7 +6,7 @@ from django.db import migrations, models
 def migrate_system_user_to_account(apps, schema_editor):
     connection_token_model = apps.get_model("authentication", "ConnectionToken")
     count = 0
-    bulk_size = 10000
+    bulk_size = 50000
 
     while True:
         connection_tokens = connection_token_model.objects \

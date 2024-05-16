@@ -6,7 +6,7 @@ def migrate_system_user_to_accounts(apps, schema_editor):
     asset_permission_model = apps.get_model("perms", "AssetPermission")
 
     count = 0
-    bulk_size = 30000
+    bulk_size = 50000
     while True:
         asset_permissions = asset_permission_model.objects \
             .prefetch_related('system_users')[count:bulk_size]

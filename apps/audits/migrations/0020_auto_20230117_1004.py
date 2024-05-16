@@ -9,7 +9,7 @@ from audits.backends.db import OperateLogStore
 def migrate_operate_log_after_before(apps, schema_editor):
     operate_log_model = apps.get_model("audits", "OperateLog")
     db_alias = schema_editor.connection.alias
-    count, batch_size = 0, 1000
+    count, batch_size = 0, 50000
 
     while True:
         operate_logs = []

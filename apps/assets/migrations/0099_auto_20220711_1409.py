@@ -11,7 +11,7 @@ def migrate_asset_protocols(apps, schema_editor):
     protocol_model = apps.get_model('assets', 'Protocol')
 
     count = 0
-    bulk_size = 30000
+    bulk_size = 50000
     print("\n\tStart migrate asset protocols")
     while True:
         start = time.time()

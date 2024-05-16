@@ -12,7 +12,7 @@ def migrate_asset_accounts(apps, schema_editor):
     account_history_model = apps.get_model('accounts', 'HistoricalAccount')
 
     count = 0
-    bulk_size = 30000
+    bulk_size = 50000
     print("\n\tStart migrate asset accounts")
     while True:
         start = time.time()
