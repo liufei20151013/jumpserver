@@ -276,13 +276,13 @@ def save_or_update_asset_account(accounts, changedPwdAccounts):
             platform = asset.platform.name.lower()
             asset_type = asset.platform.category
 
-            # 如果传的是普通账号，也要把 root 或 administrator 加上
+            # 如果传的是普通账号，也要把 xcscsa 或 administrator 加上
             account_usernames = []
             if asset_type == 'host':
                 if platform.__contains__('windows'):
                     account_usernames.append('administrator')
                 else:
-                    account_usernames.append('root')
+                    account_usernames.append('xcscsa')
             account_usernames.append(account_username)
 
             for au in account_usernames:
@@ -380,17 +380,17 @@ def save_or_update_asset_permission(permissions):
             actions = to_internal_value(permission.get('action', ["connect", "copy", "paste", "share"]))
 
             # 特权账号授权特殊处理
-            isExistPrivilegeAccount = str(permission_name).__contains__('_root') or \
+            isExistPrivilegeAccount = str(permission_name).__contains__('_xcscsa') or \
                                       str(permission_name).__contains__('_administrator') or \
-                                      str(account_username).__contains__('root') or \
+                                      str(account_username).__contains__('xcscsa') or \
                                       str(account_username).__contains__('_administrator')
             if isExistPrivilegeAccount:
                 permissionList = AssetPermission.objects.filter(assets=assets.first(), users=users.first(),
                                                                 name=permission_name)
             else:
                 permissionList = AssetPermission.objects.filter(assets=assets.first(), users=users.first()).exclude(
-                    Q(name__icontains='permanent') | Q(name__icontains='root') | Q(name__icontains='administrator') |
-                    Q(accounts__icontains='root') | Q(accounts__icontains='administrator')
+                    Q(name__icontains='permanent') | Q(name__icontains='xcscsa') | Q(name__icontains='administrator') |
+                    Q(accounts__icontains='xcscsa') | Q(accounts__icontains='administrator')
                 )
 
             if not permissionList.exists():
@@ -467,8 +467,8 @@ def extend_permission(permissions):
 
             # 永久授权、特权账号的授权不允许延期
             permissionList = AssetPermission.objects.filter(users=users.first()).exclude(
-                Q(name__icontains='permanent') | Q(name__icontains='root') | Q(name__icontains='administrator') |
-                Q(accounts__icontains='root') | Q(accounts__icontains='administrator')
+                Q(name__icontains='permanent') | Q(name__icontains='xcscsa') | Q(name__icontains='administrator') |
+                Q(accounts__icontains='xcscsa') | Q(accounts__icontains='administrator')
             )
             if permissionList.exists():
                 permissionList.update(date_start=date_start, date_expired=date_expired)
