@@ -5,3 +5,4 @@ from .push_account import *
 from .remove_account import *
 from .template import *
 from .verify_account import *
+# from .verify_all_account import *
