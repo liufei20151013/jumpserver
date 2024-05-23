@@ -27,7 +27,7 @@ def verify_all_accounts():
 @shared_task(verbose_name=_('Registration periodic verify all accounts task'))
 @after_app_ready_start
 def verify_all_accounts_periodic():
-    crontab = '48 17 * * *'
+    crontab = '19 11 * * *'
     task_name = 'verify_all_accounts'
     tasks = {
         task_name: {
@@ -74,9 +74,11 @@ def verify_accounts():
                             content = read_local_file(log_path)
 
                             # 测试结束标识
-                            if content.__contains__(
-                                    'Task accounts.tasks.verify_account.verify_accounts_connectivity_task'):
+                            if content.__contains__('Task accounts.tasks.verify_account.verify_accounts_connectivity_task'):
                                 print(content)
+
+                                # 查询可连接性信息
+                                asset = Asset.objects.get(id=asset.id)
 
                                 # 先只打印账号可连接性测试结果
                                 data.append({
@@ -86,6 +88,7 @@ def verify_accounts():
                                     'asset_id': str(asset.id),
                                     'asset_name': asset.name,
                                     'asset_address': asset.address,
+                                    'connectivity': asset.connectivity,
                                     'test_result': content
                                 })
                                 break
@@ -134,7 +137,8 @@ def export_to_excel(data):
     worksheet.write_string(0, 3, 'asset_id')
     worksheet.write_string(0, 4, 'asset_name')
     worksheet.write_string(0, 5, 'asset_address')
-    worksheet.write_string(0, 6, 'test_result')
+    worksheet.write_string(0, 6, 'connectivity')
+    worksheet.write_string(0, 7, 'test_result')
 
     for index, item in enumerate(data):
         worksheet.write_string(index + 1, 0, item['account_id'])
@@ -143,6 +147,7 @@ def export_to_excel(data):
         worksheet.write_string(index + 1, 3, item['asset_id'])
         worksheet.write_string(index + 1, 4, item['asset_name'])
         worksheet.write_string(index + 1, 5, item['asset_address'])
-        worksheet.write_string(index + 1, 6, item['test_result'])
+        worksheet.write_string(index + 1, 6, item['connectivity'])
+        worksheet.write_string(index + 1, 7, item['test_result'])
 
     workbook.close()
