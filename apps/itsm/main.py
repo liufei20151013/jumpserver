@@ -77,7 +77,7 @@ def process_data():
                 # print('Successfully changed the timed account backup plan and deleted the temporary password change plan.')
 
         if changedPwdAccounts > 0:
-            crontab = '* 22 {} * *'.format(today_of_month)
+            crontab = '0 22 {} * *'.format(today_of_month)
             automation.crontab = crontab
             automation.is_periodic = True
             automation.save()
