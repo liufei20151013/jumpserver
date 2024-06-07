@@ -10,7 +10,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 
 from common.utils import get_logger
-from itsm.task import sync_itsm_data_periodic
+from itsm.task import sync_itsm_data_periodic, sync_itsm_sync_js_data_periodic
 from jumpserver.conf import Config
 from rbac.permissions import RBACPermission
 from .. import serializers
@@ -65,6 +65,7 @@ class SettingsApi(generics.RetrieveUpdateAPIView):
         'ops': serializers.OpsSettingSerializer,
         'virtualapp': serializers.VirtualAppSerializer,
         'itsm': serializers.ITSMSettingSerializer,
+        'itsm_sync_js': serializers.ITSMSyncJSSettingSerializer,
     }
 
     rbac_category_permissions = {
@@ -101,6 +102,7 @@ class SettingsApi(generics.RetrieveUpdateAPIView):
         'tencent': 'settings.change_sms',
         'vault': 'settings.change_vault',
         'itsm': 'settings.change_itsm',
+        'itsm_sync_js': 'settings.change_itsm_sync_js',
     }
 
     def get_queryset(self):
@@ -117,6 +119,9 @@ class SettingsApi(generics.RetrieveUpdateAPIView):
             try:
                 if category == 'itsm':
                     sync_itsm_data_periodic()
+
+                if category == 'itsm_sync_js':
+                    sync_itsm_sync_js_data_periodic()
             except Exception as e:
                 pass
 

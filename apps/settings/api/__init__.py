@@ -12,3 +12,4 @@ from .sms import *
 from .vault import *
 from .wecom import *
 from .itsm import *
+from .itsm_sync_js import *

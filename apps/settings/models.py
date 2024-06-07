@@ -175,6 +175,7 @@ class Setting(models.Model):
             ('change_terminal', _('Can change terminal setting')),
             ('change_other', _('Can change other setting')),
             ('change_itsm', _('Can change itsm setting')),
+            ('change_itsm_sync_js', _('Can change itsm sync JumpServer setting')),
         ]
 
 

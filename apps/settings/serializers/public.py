@@ -62,6 +62,7 @@ class PrivateSettingSerializer(PublicSettingSerializer):
     FILE_UPLOAD_SIZE_LIMIT_MB = serializers.IntegerField()
     ITSM_ENABLED = serializers.BooleanField()
     ITSM_CHANGE_SECRET_ENABLED = serializers.BooleanField()
+    ITSM_SYNC_JS_DATA_ENABLED = serializers.BooleanField()
 
 
 class ServerInfoSerializer(serializers.Serializer):

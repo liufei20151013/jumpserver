@@ -10,7 +10,7 @@ __all__ = [
     'AnnouncementSettingSerializer', 'OpsSettingSerializer',
     'VaultSettingSerializer', 'TicketSettingSerializer',
     'ChatAISettingSerializer', 'VirtualAppSerializer',
-    'ITSMSettingSerializer'
+    'ITSMSettingSerializer', 'ITSMSyncJSSettingSerializer'
 ]
 
 
@@ -173,6 +173,22 @@ class ITSMSettingSerializer(serializers.Serializer):
     ITSM_ENVIRONMENT = serializers.CharField(
         max_length=256, allow_blank=True, required=False, label=_('Environment')
     )
-    ITSM_CHANGE_SECRET_ENABLED = serializers.BooleanField(
-        required=False, label=_('Enable CHANGE SECRET'), read_only=True
+
+class ITSMSyncJSSettingSerializer(serializers.Serializer):
+    PREFIX_TITLE = _('ITSM SYNC JS')
+
+    ITSM_SYNC_JS_DATA_ENABLED = serializers.BooleanField(
+        required=False, label=_('Enable SYNC JumpServer DATA'), read_only=True
+    )
+    ITSM_SYNC_JS_HOST = serializers.CharField(
+        max_length=256, allow_blank=True, required=False, label=_('JumpServer Host')
+    )
+    ITSM_SYNC_JS_AK = serializers.CharField(
+        max_length=256, allow_blank=True, required=False, label=_('JumpServer Access Key')
+    )
+    ITSM_SYNC_JS_SK = EncryptedField(
+        max_length=256, allow_blank=True, required=False, label=_('JumpServer Secret Key')
+    )
+    ITSM_SYNC_JS_CRONTAB = serializers.CharField(
+        max_length=256, allow_blank=True, required=False, label=_('Cron')
     )

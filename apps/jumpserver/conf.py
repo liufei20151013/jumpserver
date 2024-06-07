@@ -625,7 +625,14 @@ class Config(dict):
         'ITSM_SYNC_CRONTAB': None,
         'ITSM_AREA': '',
         'ITSM_ENVIRONMENT': '',
-        'ITSM_CHANGE_SECRET_ENABLED': True
+
+        'ITSM_CHANGE_SECRET_ENABLED': True,
+
+        'ITSM_SYNC_JS_DATA_ENABLED': False,
+        'ITSM_SYNC_JS_HOST': '',
+        'ITSM_SYNC_JS_AK': '',
+        'ITSM_SYNC_JS_SK': '',
+        'ITSM_SYNC_JS_CRONTAB': None
     }
 
     old_config_map = {
