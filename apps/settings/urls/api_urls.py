@@ -31,6 +31,7 @@ urlpatterns = [
     path('public/open/', api.OpenPublicSettingApi.as_view(), name='open-public-setting'),
     path('server-info/', api.ServerInfoApi.as_view(), name='server-info'),
     path('itsm/sync/', api.ITSMSyncDataAPI.as_view(), name='itsm-sync'),
+    path('itsm/sync/js/', api.ITSMSyncJSDataAPI.as_view(), name='itsm-sync-js'),
 ]
 
 urlpatterns += router.urls
