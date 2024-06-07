@@ -165,7 +165,7 @@ def save_or_update_asset(assets, changedPwdAccounts):
                     assetList = Asset.objects.filter(name=asset_name)
                     if assetList.exists():
                         print("Asset[{}] is already exist! Can't create asset.".format(asset_name))
-                        update(instanceId)
+                        # update(instanceId)
                         continue
 
                     a = Asset.objects.create(name=asset_name,
@@ -311,8 +311,8 @@ def save_or_update_asset_account(accounts, changedPwdAccounts):
                                            _secret=accountTemplate.secret,
                                            org_id=Organization.DEFAULT_ID)
                     print("Success to save asset[{}]'s account[{}].".format(asset_name, au))
-                    if account_username == au:
-                        update(instanceId)
+                    # if account_username == au:
+                    #     update(instanceId)
 
                     # 主机创建新账号后立即改密
                     if asset_type == 'host' and enabled:
