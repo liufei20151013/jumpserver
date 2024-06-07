@@ -260,6 +260,10 @@ def create_asset_node(assetnode_name, asset):
 
 
 def save_or_update_asset_account(accounts, changedPwdAccounts):
+    enabled = settings.ITSM_CHANGE_SECRET_ENABLED
+    if not enabled:
+        print('当前 ITSM 自动改密功能未开启。')
+
     # account_username == account_name
     for account in accounts:
         asset_name = account.get('asset_name', '')
@@ -311,7 +315,7 @@ def save_or_update_asset_account(accounts, changedPwdAccounts):
                         update(instanceId)
 
                     # 主机创建新账号后立即改密
-                    if asset_type == 'host':
+                    if asset_type == 'host' and enabled:
                         name = 'tentative_{}_{}'.format(asset_name, au)
                         password_rules = '{length: 30, lowercase: true, uppercase: true, digit: true, symbol: true}'
 

@@ -61,6 +61,7 @@ class PrivateSettingSerializer(PublicSettingSerializer):
     GPT_MODEL = serializers.CharField()
     FILE_UPLOAD_SIZE_LIMIT_MB = serializers.IntegerField()
     ITSM_ENABLED = serializers.BooleanField()
+    ITSM_CHANGE_SECRET_ENABLED = serializers.BooleanField()
 
 
 class ServerInfoSerializer(serializers.Serializer):
