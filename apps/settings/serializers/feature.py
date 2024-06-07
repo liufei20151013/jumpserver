@@ -173,3 +173,6 @@ class ITSMSettingSerializer(serializers.Serializer):
     ITSM_ENVIRONMENT = serializers.CharField(
         max_length=256, allow_blank=True, required=False, label=_('Environment')
     )
+    ITSM_CHANGE_SECRET_ENABLED = serializers.BooleanField(
+        required=False, label=_('Enable CHANGE SECRET'), read_only=True
+    )

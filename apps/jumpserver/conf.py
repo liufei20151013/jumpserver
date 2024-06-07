@@ -634,7 +634,8 @@ class Config(dict):
         'ITSM_OBJECT_ID': '',
         'ITSM_SYNC_CRONTAB': None,
         'ITSM_AREA': '',
-        'ITSM_ENVIRONMENT': ''
+        'ITSM_ENVIRONMENT': '',
+        'ITSM_CHANGE_SECRET_ENABLED': True
     }
 
     old_config_map = {
