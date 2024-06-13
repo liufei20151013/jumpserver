@@ -3,6 +3,7 @@ from django.utils.translation import gettext_lazy as _
 
 from common.utils import get_logger
 from itsm.main import process_data
+from itsm.sync_from_js import sync_other_js_data
 from ops.celery.decorator import after_app_ready_start
 from ops.celery.utils import create_or_update_celery_periodic_tasks
 from django.conf import settings
@@ -39,9 +40,7 @@ def sync_itsm_data_periodic():
 
 @shared_task(verbose_name=_('Sync JumpServer data locally'))
 def sync_itsm_sync_js_data():
-    # todo
-    pass
-    # process_js_data()
+    sync_other_js_data()
 
 
 @shared_task(verbose_name=_('Registration periodic sync JumpServer data task'))
