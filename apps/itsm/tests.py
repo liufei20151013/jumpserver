@@ -3,9 +3,11 @@ import os
 
 import django
 
+
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'jumpserver.settings')
 django.setup()
 
+from itsm.sync_from_js import process_js_data
 from accounts.models import ChangeSecretAutomation, AccountBackupAutomation, AccountTemplate, Account, \
     AutomationExecution
 from accounts.const import SecretStrategy, SSHKeyStrategy
@@ -171,11 +173,13 @@ class TestTaskCase(TestCase):
         # print(node_name[1:index])
 
     def test_sync_itsm_data(self):
+        process_js_data()
+
         # area = 'swd,wdwd,wdwd'
         # areaStr = str(str(area).split(','))
         # print(areaStr)
 
-        process_data()
+        # process_data()
         # sync_itsm_data()
         # sync_itsm_data_periodic()
         # sync_itsm_data.delay()

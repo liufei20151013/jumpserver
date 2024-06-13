@@ -11,6 +11,7 @@ from accounts.models import Account
 from assets.models import Asset, Node
 from authentication.permissions import UserConfirmation, ConfirmType
 from common.api.mixin import ExtraFilterFieldsMixin
+from common.drf.filters import DatetimeRangeFilterBackend
 from common.permissions import IsValidUser
 from orgs.mixins.api import OrgBulkModelViewSet
 from rbac.permissions import RBACPermission
@@ -94,6 +95,10 @@ class AccountSecretsViewSet(AccountRecordViewLogMixin, AccountViewSet):
     serializer_classes = {
         'default': serializers.AccountSecretSerializer,
     }
+    extra_filter_backends = [DatetimeRangeFilterBackend]
+    date_range_filter_fields = [
+        ('date_updated', ('date_from', 'date_to'))
+    ]
     http_method_names = ['get', 'options']
     permission_classes = [RBACPermission, UserConfirmation.require(ConfirmType.MFA)]
     rbac_perms = {

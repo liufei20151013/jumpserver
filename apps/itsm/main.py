@@ -16,8 +16,7 @@ from orgs.utils import set_current_org
 from perms.const import ActionChoices
 
 from orgs.models import Organization
-from accounts.models import Account, AccountTemplate, ChangeSecretAutomation, AutomationExecution, \
-    AccountBackupAutomation
+from accounts.models import Account, AccountTemplate, ChangeSecretAutomation, AccountBackupAutomation
 from assets.models import Asset, Platform, Database, Web, Node, Protocol, Host, PlatformProtocol
 from common.utils import get_logger, get_object_or_none
 from perms.models import AssetPermission
