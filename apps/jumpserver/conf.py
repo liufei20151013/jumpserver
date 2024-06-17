@@ -632,7 +632,12 @@ class Config(dict):
         'ITSM_SYNC_JS_HOST': '',
         'ITSM_SYNC_JS_AK': '',
         'ITSM_SYNC_JS_SK': '',
-        'ITSM_SYNC_JS_CRONTAB': None
+        'ITSM_SYNC_JS_CRONTAB': None,
+
+        'ITSM_SYNC_JS_MFA_DATA_ENABLED': False,
+        'ITSM_SYNC_JS_MFA_HOST': '',
+        'ITSM_SYNC_JS_MFA_AK': '',
+        'ITSM_SYNC_JS_MFA_SK': ''
     }
 
     old_config_map = {

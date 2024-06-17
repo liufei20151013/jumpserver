@@ -10,7 +10,8 @@ __all__ = [
     'AnnouncementSettingSerializer', 'OpsSettingSerializer',
     'VaultSettingSerializer', 'TicketSettingSerializer',
     'ChatAISettingSerializer', 'VirtualAppSerializer',
-    'ITSMSettingSerializer', 'ITSMSyncJSSettingSerializer'
+    'ITSMSettingSerializer', 'ITSMSyncJSSettingSerializer',
+    'ITSMSyncJSMFASettingSerializer'
 ]
 
 
@@ -191,4 +192,21 @@ class ITSMSyncJSSettingSerializer(serializers.Serializer):
     )
     ITSM_SYNC_JS_CRONTAB = serializers.CharField(
         max_length=256, allow_blank=True, required=False, label=_('Cron')
+    )
+
+
+class ITSMSyncJSMFASettingSerializer(serializers.Serializer):
+    PREFIX_TITLE = _('ITSM SYNC JS USER MFA')
+
+    ITSM_SYNC_JS_MFA_DATA_ENABLED = serializers.BooleanField(
+        required=False, label=_('Enable SYNC JumpServer USER MFA DATA'), read_only=True
+    )
+    ITSM_SYNC_JS_MFA_HOST = serializers.CharField(
+        max_length=256, allow_blank=True, required=False, label=_('JumpServer Host')
+    )
+    ITSM_SYNC_JS_MFA_AK = serializers.CharField(
+        max_length=256, allow_blank=True, required=False, label=_('JumpServer Access Key')
+    )
+    ITSM_SYNC_JS_MFA_SK = EncryptedField(
+        max_length=256, allow_blank=True, required=False, label=_('JumpServer Secret Key')
     )

@@ -206,3 +206,8 @@ class ResetOTPSerializer(serializers.Serializer):
 
     def update(self, instance, validated_data):
         pass
+
+class UpdateOTPSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['otp_secret_key']

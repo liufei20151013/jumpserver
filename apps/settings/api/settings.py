@@ -66,6 +66,7 @@ class SettingsApi(generics.RetrieveUpdateAPIView):
         'virtualapp': serializers.VirtualAppSerializer,
         'itsm': serializers.ITSMSettingSerializer,
         'itsm_sync_js': serializers.ITSMSyncJSSettingSerializer,
+        'itsm_sync_js_mfa': serializers.ITSMSyncJSMFASettingSerializer,
     }
 
     rbac_category_permissions = {
@@ -103,6 +104,7 @@ class SettingsApi(generics.RetrieveUpdateAPIView):
         'vault': 'settings.change_vault',
         'itsm': 'settings.change_itsm',
         'itsm_sync_js': 'settings.change_itsm_sync_js',
+        'itsm_sync_js_mfa': 'settings.change_itsm_sync_js_mfa',
     }
 
     def get_queryset(self):
