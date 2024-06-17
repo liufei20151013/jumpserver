@@ -30,6 +30,7 @@ logger = get_logger(__name__)
 __all__ = [
     'UserViewSet', 'UserChangePasswordApi',
     'UserUnblockPKApi', 'UserResetMFAApi',
+    'UserUpdateMFAApi'
 ]
 
 
@@ -215,3 +216,13 @@ class UserResetMFAApi(UserQuerysetMixin, generics.RetrieveAPIView):
 
         ResetMFAMsg(user).publish_async()
         return Response({"msg": "success"})
+
+
+class UserUpdateMFAApi(UserQuerysetMixin, generics.UpdateAPIView):
+    serializer_class = serializers.UpdateOTPSerializer
+
+    def perform_update(self, serializer):
+        user = self.get_object()
+        user.mfa_level = 1
+        user.otp_secret_key = serializer.validated_data["otp_secret_key"]
+        user.save()

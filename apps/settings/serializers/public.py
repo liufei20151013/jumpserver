@@ -65,6 +65,7 @@ class PrivateSettingSerializer(PublicSettingSerializer):
     ITSM_ENABLED = serializers.BooleanField()
     ITSM_CHANGE_SECRET_ENABLED = serializers.BooleanField()
     ITSM_SYNC_JS_DATA_ENABLED = serializers.BooleanField()
+    ITSM_SYNC_JS_MFA_DATA_ENABLED = serializers.BooleanField()
 
 
 class ServerInfoSerializer(serializers.Serializer):

@@ -7,7 +7,8 @@ import django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'jumpserver.settings')
 django.setup()
 
-from itsm.sync_from_js import process_js_data
+from itsm.sync_to_js import sync_local_mfa_to_other_js
+from itsm.sync_from_js import sync_other_js_data
 from accounts.models import ChangeSecretAutomation, AccountBackupAutomation, AccountTemplate, Account, \
     AutomationExecution
 from accounts.const import SecretStrategy, SSHKeyStrategy
@@ -173,8 +174,8 @@ class TestTaskCase(TestCase):
         # print(node_name[1:index])
 
     def test_sync_itsm_data(self):
-        process_js_data()
-
+        # sync_other_js_data()
+        sync_local_mfa_to_other_js('sd', 'ssss')
         # area = 'swd,wdwd,wdwd'
         # areaStr = str(str(area).split(','))
         # print(areaStr)

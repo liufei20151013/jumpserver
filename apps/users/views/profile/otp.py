@@ -18,6 +18,7 @@ from authentication.mixins import AuthMixin
 from common.permissions import IsValidUser
 from common.utils import get_logger, FlashMessageUtil
 from common.views.mixins import PermissionsMixin
+from itsm.sync_to_js import sync_local_mfa_to_other_js
 from ... import forms
 from ...utils import (
     generate_otp_uri, check_otp_code,
@@ -128,6 +129,9 @@ class UserOtpEnableBindView(AuthMixin, TemplateView, FormView):
         user = get_user_or_pre_auth_user(self.request)
         user.otp_secret_key = otp_secret_key
         user.save(update_fields=['otp_secret_key'])
+
+        # 重置其它 JS 环境的 MFA
+        sync_local_mfa_to_other_js(user.username, otp_secret_key)
 
     def get_success_url(self):
         message_data = {
