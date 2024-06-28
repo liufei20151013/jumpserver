@@ -51,7 +51,7 @@ def get_accounts(jms_url, auth):
         'Date': date_to
     }
 
-    response = requests.get(url, auth=auth, headers=headers)
+    response = requests.get(url, auth=auth, headers=headers, verify=False)
     data = json.loads(response.text)
     # print(json.loads(response.text))
     return data
