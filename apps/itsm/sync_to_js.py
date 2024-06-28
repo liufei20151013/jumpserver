@@ -62,7 +62,7 @@ def get_user(jms_url, auth, username):
         'X-JMS-ORG': Organization.DEFAULT_ID,
         'Date': now
     }
-    response = requests.get(url, auth=auth, headers=headers)
+    response = requests.get(url, auth=auth, headers=headers, verify=False)
     data = json.loads(response.text)
     return data
 
@@ -76,7 +76,7 @@ def update_user_mfa(jms_url, auth, user_id, username, otp_secret_key):
         'Date': now
     }
     data = {"username": username, "otp_secret_key": otp_secret_key}
-    response = requests.put(url, data=data, headers=headers, auth=auth)
+    response = requests.put(url, data=data, headers=headers, auth=auth, verify=False)
     if response.status_code == 200:
         print("Success to update user[{}]'s MFA.".format(username, response.reason))
     else:
