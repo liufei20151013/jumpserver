@@ -8,6 +8,7 @@ from accounts.models import Account
 from assets.models import Asset
 from common.utils import get_logger
 from orgs.models import Organization
+from orgs.utils import set_current_org
 
 logger = get_logger(__name__)
 
@@ -17,6 +18,9 @@ def sync_other_js_data():
     if not enabled:
         print('当前同步其它 JumpServer 环境资产账号密码的功能未开启, 不需要处理')
         return
+
+    org = Organization.objects.get(id=Organization.DEFAULT_ID)
+    set_current_org(org)
 
     jms_url = settings.ITSM_SYNC_JS_HOST
     KeyID = settings.ITSM_SYNC_JS_AK
@@ -34,21 +38,25 @@ def sync_other_js_data():
             if not accountList.exists():
                 continue
 
-            accountList.update(_secret=account['secret'])
+            for acc in accountList:
+                acc.secret = account.get('secret', '')
+                acc.save()
+            # accountList.update(_secret=account['secret'], date_updated=datetime.datetime.now())
             print("Success to update asset[{}]'s account[{}]'s secret.".format(asset.name, account['username']))
 
 
 def get_accounts(jms_url, auth):
+    date_form = '%Y-%m-%d %H:%M:%S'
     gmt_form = '%a, %d %b %Y %H:%M:%S GMT'
-    now = datetime.datetime.utcnow()
+    now = datetime.datetime.now()
     start = now - datetime.timedelta(hours=23, minutes=59, seconds=59)
-    date_from = start.strftime(gmt_form)
-    date_to = now.strftime(gmt_form)
+    date_from = start.strftime(date_form)
+    date_to = now.strftime(date_form)
     url = '{}/api/v1/accounts/account-secrets/?date_from={}&date_to={}'.format(jms_url, date_from, date_to)
     headers = {
         'Accept': 'application/json',
         'X-JMS-ORG': Organization.DEFAULT_ID,
-        'Date': date_to
+        'Date': datetime.datetime.utcnow().strftime(gmt_form)
     }
 
     response = requests.get(url, auth=auth, headers=headers, verify=False)
