@@ -224,7 +224,7 @@ class AccountSerializer(AccountCreateUpdateSerializerMixin, BaseAccountSerialize
         model = Account
         fields = BaseAccountSerializer.Meta.fields + [
             'su_from', 'asset', 'version',
-            'source', 'source_id', 'connectivity',
+            'source', 'source_id', 'connectivity', 'date_updated',
         ] + AccountCreateUpdateSerializerMixin.Meta.fields
         read_only_fields = BaseAccountSerializer.Meta.read_only_fields + [
             'connectivity'
