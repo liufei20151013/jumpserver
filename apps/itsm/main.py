@@ -488,27 +488,28 @@ def remove_user_asset_permission(permissions):
             print("Remove asset[{}]'s permission for user[{}].".format(asset_name, username))
             asset = get_object_or_none(Asset, name=asset_name)
             if not asset:
-                update(instanceId)
+                # update(instanceId)
                 print("Asset[{}] does not exist!".format(asset_name))
                 continue
 
             user = get_object_or_none(User, username=username)
             if not user:
-                update(instanceId)
+                # update(instanceId)
                 print("User[{}] does not exist!".format(username))
                 continue
 
             permissionList = AssetPermission.objects.filter(assets=asset, users=user)
             if not permissionList.exists():
-                update(instanceId)
+                # update(instanceId)
                 print("Asset[{}]'s permission for user[{}] does not exist!".format(asset_name, username))
                 continue
 
             for p in permissionList:
                 # p.users.remove(user) # 移除用户
                 p.assets.remove(asset)  # 移除资产
-                update(instanceId)
                 print("Success to remove Asset[{}]'s permission for user[{}].".format(asset_name, username))
+
+            update(instanceId)
 
         except Exception as e:
             print("Failed to remove Asset[{}]'s permission for user[{}], error:{}".format(asset_name, username, e))
@@ -524,7 +525,7 @@ def update_user_state(users):
             userList = User.objects.filter(username=username).exclude(username='admin')
             if not userList.exists():
                 print("User[{}] does not exist!".format(username))
-                update(instanceId)
+                # update(instanceId)
                 continue
 
             userList.update(is_active=False)
