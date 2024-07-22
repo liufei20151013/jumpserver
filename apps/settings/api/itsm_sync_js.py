@@ -7,7 +7,7 @@ from settings.models import Setting
 class ITSMSyncJSDataAPI(APIView):
     perm_model = Setting
     rbac_perms = {
-        'POST': 'settings.change_itsm_sync_js'
+        'POST': 'settings.change_itsmSyncJs'
     }
 
     def post(self, request, *args, **kwargs):

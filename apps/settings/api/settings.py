@@ -105,8 +105,8 @@ class SettingsApi(generics.RetrieveUpdateAPIView):
         'tencent': 'settings.change_sms',
         'vault': 'settings.change_vault',
         'itsm': 'settings.change_itsm',
-        'itsm_sync_js': 'settings.change_itsm_sync_js',
-        'itsm_sync_js_mfa': 'settings.change_itsm_sync_js_mfa',
+        'itsm_sync_js': 'settings.change_itsmSyncJs',
+        'itsm_sync_js_mfa': 'settings.change_itsmSyncJsMfa',
     }
 
     def get_queryset(self):
