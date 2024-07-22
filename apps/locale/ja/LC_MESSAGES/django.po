@@ -4046,7 +4046,15 @@ msgstr "特殊文字を含むべきではない"
 msgid "The mobile phone number format is incorrect"
 msgstr "携帯電話番号の形式が正しくありません"
 
-#: jumpserver/conf.py:459
+#: itsm/task.py:13
+msgid "Sync itsm data to JumpServer"
+msgstr ""
+
+#: itsm/task.py:18
+msgid "Registration periodic sync itsm data task"
+msgstr "登録サイクルLDAPユーザータスクのインポート"
+
+#: jumpserver/conf.py:454
 #, python-brace-format
 msgid "The verification code is: {code}"
 msgstr "認証コードは: {code}"
@@ -4797,7 +4805,11 @@ msgstr "{} 少なくとも1つのシステムロール"
 msgid "RBAC"
 msgstr "RBAC"
 
-#: rbac/builtin.py:115
+#: rbac/builtin.py:21
+msgid "favoritenode"
+msgstr "お気に入りフォルダ"
+
+#: rbac/builtin.py:116
 msgid "SystemAdmin"
 msgstr "システム管理者"
 
@@ -4959,7 +4971,11 @@ msgstr "タスクセンター"
 msgid "My assets"
 msgstr "私の資産"
 
-#: rbac/tree.py:58 terminal/models/applet/applet.py:52
+#: rbac/tree.py:57
+msgid "My favorite nodes"
+msgstr "我的收藏夹"
+
+#: rbac/tree.py:59 terminal/models/applet/applet.py:52
 #: terminal/models/applet/applet.py:317 terminal/models/applet/host.py:30
 #: terminal/serializers/applet.py:15
 msgid "Applet"
@@ -5083,7 +5099,19 @@ msgstr "ターミナルの設定を変えることができます"
 msgid "Can change other setting"
 msgstr "他の設定を変えることができます"
 
-#: settings/models.py:186
+#: settings/models.py:177
+msgid "Can change itsm setting"
+msgstr "Smsの設定を変えることができます"
+
+#: settings/models.py:178
+msgid "Can Change itsm sync jumpserver setting"
+msgstr "ジャンプサーバー設定の同期"
+
+#: settings/models.py:179
+msgid "Can change itsm sync JumpServer mfa setting"
+msgstr "JumpServer Sync ユーザー MFA 設定"
+
+#: settings/models.py:187
 msgid "Chat prompt"
 msgstr "チャットのヒント"
 
@@ -5779,6 +5807,46 @@ msgstr "仮想アプリケーション"
 #: settings/serializers/feature.py:141
 msgid "Enable virtual app"
 msgstr "仮想アプリケーションの有効化"
+
+#: settings/serializers/feature.py:146
+msgid "ITSM"
+msgstr ""
+
+#: settings/serializers/feature.py:149
+msgid "Enable ITSM"
+msgstr "ITSMの実現"
+
+#: settings/serializers/feature.py:152
+msgid "CMDB User"
+msgstr "ユーザー"
+
+#: settings/serializers/feature.py:155
+msgid "CMDB Org"
+msgstr ""
+
+#: settings/serializers/feature.py:158
+msgid "CMDB Server"
+msgstr ""
+
+#: settings/serializers/feature.py:161
+msgid "CMDB Host"
+msgstr "ホスト"
+
+#: settings/serializers/feature.py:164
+msgid "Object ID"
+msgstr ""
+
+#: settings/serializers/feature.py:167
+msgid "Cron"
+msgstr ""
+
+#: settings/serializers/feature.py:170
+msgid "Area"
+msgstr "岸辺"
+
+#: settings/serializers/feature.py:173
+msgid "Environment"
+msgstr "マトリックス"
 
 #: settings/serializers/msg.py:25
 msgid "SMTP"

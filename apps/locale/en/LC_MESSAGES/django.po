@@ -1892,7 +1892,11 @@ msgstr ""
 msgid "Favorite asset"
 msgstr ""
 
-#: assets/models/gateway.py:34 assets/serializers/domain.py:19
+#: assets/models/favorite_node.py:19
+msgid "FavoriteNode"
+msgstr ""
+
+#: assets/models/gateway.py:34 assets/serializers/domain.py:18
 msgid "Gateway"
 msgstr ""
 
@@ -3959,6 +3963,14 @@ msgstr ""
 msgid "The mobile phone number format is incorrect"
 msgstr ""
 
+#: itsm/task.py:13
+msgid "Sync itsm data to JumpServer"
+msgstr ""
+
+#: itsm/task.py:18
+msgid "Registration periodic sync itsm data task"
+msgstr ""
+
 #: jumpserver/conf.py:459
 #, python-brace-format
 msgid "The verification code is: {code}"
@@ -3974,7 +3986,7 @@ msgstr ""
 
 #: jumpserver/context_processor.py:14
 msgid "JumpServer Open Source Bastion Host"
-msgstr ""
+msgstr "湘财证券  堡垒机<br> \n如有疑问，请联系安全组人员 韩宇 +86-13361852933；黄辉 +86-18916525942"
 
 #: jumpserver/views/celery_flower.py:22
 msgid "<h1>Flower service unavailable, check it</h1>"
@@ -4689,7 +4701,11 @@ msgstr ""
 msgid "RBAC"
 msgstr ""
 
-#: rbac/builtin.py:115
+#: rbac/builtin.py:21
+msgid "favoritenode"
+msgstr ""
+
+#: rbac/builtin.py:116
 msgid "SystemAdmin"
 msgstr ""
 
@@ -4850,7 +4866,11 @@ msgstr ""
 msgid "My assets"
 msgstr ""
 
-#: rbac/tree.py:58 terminal/models/applet/applet.py:52
+#: rbac/tree.py:57
+msgid "My favorite nodes"
+msgstr ""
+
+#: rbac/tree.py:59 terminal/models/applet/applet.py:52
 #: terminal/models/applet/applet.py:317 terminal/models/applet/host.py:30
 #: terminal/serializers/applet.py:15
 msgid "Applet"
@@ -4970,6 +4990,18 @@ msgstr ""
 
 #: settings/models.py:176
 msgid "Can change other setting"
+msgstr ""
+
+#: settings/models.py:177
+msgid "Can change itsm setting"
+msgstr ""
+
+#: settings/models.py:178
+msgid "Can Change itsm sync jumpserver setting"
+msgstr ""
+
+#: settings/models.py:179
+msgid "Can change itsm sync JumpServer mfa setting"
 msgstr ""
 
 #: settings/models.py:186
@@ -5646,6 +5678,46 @@ msgstr ""
 
 #: settings/serializers/feature.py:141
 msgid "Enable virtual app"
+msgstr ""
+
+#: settings/serializers/feature.py:146
+msgid "ITSM"
+msgstr ""
+
+#: settings/serializers/feature.py:149
+msgid "Enable ITSM"
+msgstr ""
+
+#: settings/serializers/feature.py:152
+msgid "CMDB User"
+msgstr ""
+
+#: settings/serializers/feature.py:155
+msgid "CMDB Org"
+msgstr ""
+
+#: settings/serializers/feature.py:158
+msgid "CMDB Server"
+msgstr ""
+
+#: settings/serializers/feature.py:161
+msgid "CMDB Host"
+msgstr ""
+
+#: settings/serializers/feature.py:164
+msgid "Object ID"
+msgstr ""
+
+#: settings/serializers/feature.py:167
+msgid "Cron"
+msgstr ""
+
+#: settings/serializers/feature.py:170
+msgid "Area"
+msgstr ""
+
+#: settings/serializers/feature.py:173
+msgid "Environment"
 msgstr ""
 
 #: settings/serializers/msg.py:25

@@ -1919,7 +1919,11 @@ msgstr "命令过滤规则"
 msgid "Favorite asset"
 msgstr "收藏的资产"
 
-#: assets/models/gateway.py:34 assets/serializers/domain.py:19
+#: assets/models/favorite_node.py:19
+msgid "FavoriteNode"
+msgstr "收藏夹"
+
+#: assets/models/gateway.py:34 assets/serializers/domain.py:18
 msgid "Gateway"
 msgstr "网关"
 
@@ -3998,7 +4002,15 @@ msgstr "不能包含特殊字符"
 msgid "The mobile phone number format is incorrect"
 msgstr "手机号格式不正确"
 
-#: jumpserver/conf.py:459
+#: itsm/task.py:13
+msgid "Sync itsm data to JumpServer"
+msgstr ""
+
+#: itsm/task.py:18
+msgid "Registration periodic sync itsm data task"
+msgstr "注册周期导入 LDAP 用户 任务"
+
+#: jumpserver/conf.py:454
 #, python-brace-format
 msgid "The verification code is: {code}"
 msgstr "验证码为: {code}"
@@ -4738,7 +4750,11 @@ msgstr "{} 至少有一个系统角色"
 msgid "RBAC"
 msgstr "RBAC"
 
-#: rbac/builtin.py:115
+#: rbac/builtin.py:21
+msgid "favoritenode"
+msgstr "收藏夹"
+
+#: rbac/builtin.py:116
 msgid "SystemAdmin"
 msgstr "系统管理员"
 
@@ -4899,7 +4915,11 @@ msgstr "任务中心"
 msgid "My assets"
 msgstr "我的资产"
 
-#: rbac/tree.py:58 terminal/models/applet/applet.py:52
+#: rbac/tree.py:57
+msgid "My favorite nodes"
+msgstr "我的收藏夹"
+
+#: rbac/tree.py:59 terminal/models/applet/applet.py:52
 #: terminal/models/applet/applet.py:317 terminal/models/applet/host.py:30
 #: terminal/serializers/applet.py:15
 msgid "Applet"
@@ -5021,7 +5041,19 @@ msgstr "终端设置"
 msgid "Can change other setting"
 msgstr "其它设置"
 
-#: settings/models.py:186
+#: settings/models.py:177
+msgid "Can change itsm setting"
+msgstr "ITSM 设置"
+
+#: settings/models.py:178
+msgid "Can Change itsm sync jumpserver setting"
+msgstr "同步 JumpServer 设置"
+
+#: settings/models.py:179
+msgid "Can change itsm sync JumpServer mfa setting"
+msgstr "JumpServer 同步用户 MFA 设置"
+
+#: settings/models.py:187
 msgid "Chat prompt"
 msgstr "聊天提示"
 
@@ -5711,6 +5743,46 @@ msgstr "虚拟应用"
 #: settings/serializers/feature.py:141
 msgid "Enable virtual app"
 msgstr "启用虚拟应用"
+
+#: settings/serializers/feature.py:146
+msgid "ITSM"
+msgstr ""
+
+#: settings/serializers/feature.py:149
+msgid "Enable ITSM"
+msgstr "启用 ITSM"
+
+#: settings/serializers/feature.py:152
+msgid "CMDB User"
+msgstr "用户"
+
+#: settings/serializers/feature.py:155
+msgid "CMDB Org"
+msgstr ""
+
+#: settings/serializers/feature.py:158
+msgid "CMDB Server"
+msgstr ""
+
+#: settings/serializers/feature.py:161
+msgid "CMDB Host"
+msgstr "主机"
+
+#: settings/serializers/feature.py:164
+msgid "Object ID"
+msgstr ""
+
+#: settings/serializers/feature.py:167
+msgid "Cron"
+msgstr ""
+
+#: settings/serializers/feature.py:170
+msgid "Area"
+msgstr "区域"
+
+#: settings/serializers/feature.py:173
+msgid "Environment"
+msgstr "环境"
 
 #: settings/serializers/msg.py:25
 msgid "SMTP"
