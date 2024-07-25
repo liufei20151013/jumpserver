@@ -15,6 +15,7 @@ default_interface = dict((
     ('theme', 'classic_green'),
     ('theme_info', {}),
     ('footer_content', ''),
+    ('support', _('JumpServer operation and maintenance support')),
 ))
 
 current_year = datetime.datetime.now().year

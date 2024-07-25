@@ -3986,7 +3986,10 @@ msgstr ""
 
 #: jumpserver/context_processor.py:14
 msgid "JumpServer Open Source Bastion Host"
-msgstr "湘财证券  堡垒机<br> \n如有疑问，请联系安全组人员 韩宇 +86-13361852933；黄辉 +86-18916525942"
+msgstr ""
+
+msgid "JumpServer operation and maintenance support"
+msgstr ""
 
 #: jumpserver/views/celery_flower.py:22
 msgid "<h1>Flower service unavailable, check it</h1>"

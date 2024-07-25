@@ -14,7 +14,7 @@ def get_interface_setting_or_default():
 
 
 def get_login_title():
-    return get_interface_setting_or_default()['login_title']
+    return get_interface_setting_or_default()['support']
 
 
 def generate_ips(address_string):
