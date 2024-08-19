@@ -18,6 +18,7 @@ user_perms = (
     ('assets', 'asset', 'match', 'asset'),
     ('assets', 'systemuser', 'match', 'systemuser'),
     ('assets', 'node', 'match', 'node'),
+    ('assets', 'favoritenode', '*', 'favoritenode'),
     ("ops", "adhoc", "*", "*"),
     ("ops", "playbook", "*", "*"),
     ("ops", "job", "*", "*"),

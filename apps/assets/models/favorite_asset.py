@@ -11,6 +11,7 @@ __all__ = ['FavoriteAsset']
 class FavoriteAsset(JMSBaseModel):
     user = models.ForeignKey('users.User', on_delete=models.CASCADE)
     asset = models.ForeignKey('assets.Asset', on_delete=models.CASCADE)
+    favoriteNode = models.ForeignKey('assets.FavoriteNode', default='', on_delete=models.CASCADE)
 
     class Meta:
         unique_together = ('user', 'asset')

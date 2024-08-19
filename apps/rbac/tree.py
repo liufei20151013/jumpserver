@@ -54,6 +54,7 @@ extra_nodes_data = [
     {"id": "terminal_node", "name": _("Terminal setting"), "pId": "view_setting"},
     {'id': "task_center", "name": _("Task Center"), "pId": "view_console"},
     {'id': "my_assets", "name": _("My assets"), "pId": "view_workbench"},
+    {'id': "my_favorite_nodes", "name": _("My favorite nodes"), "pId": "view_workbench"},
     {'id': "operation_center", "name": _('App ops'), "pId": "view_workbench"},
     {'id': "remote_application", "name": _("Applet"), "pId": "view_setting"},
 ]
@@ -103,6 +104,10 @@ special_pid_mapper = {
     'terminal.endpointrule': 'terminal_node',
     'audits.ftplog': 'terminal',
     'perms.view_myassets': 'my_assets',
+    'assets.view_favoritenode': 'my_favorite_nodes',
+    'assets.add_favoritenode': 'my_favorite_nodes',
+    'assets.change_favoritenode': 'my_favorite_nodes',
+    'assets.delete_favoritenode': 'my_favorite_nodes',
     'ops.celerytask': 'task_center',
     'ops.view_celerytaskexecution': 'task_center',
     'ops.view_taskmonitor': 'task_center',

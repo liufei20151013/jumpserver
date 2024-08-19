@@ -1,6 +1,7 @@
 from .asset import *
 from .category import *
 from .domain import *
+from .favorite_node import *
 from .favorite_asset import *
 from .mixin import *
 from .node import *
