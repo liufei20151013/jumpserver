@@ -17,4 +17,4 @@ class FavoriteAssetSerializer(BulkSerializerMixin, serializers.ModelSerializer):
 
     class Meta:
         model = FavoriteAsset
-        fields = ['user', 'asset']
+        fields = ['user', 'asset', 'favoriteNode']

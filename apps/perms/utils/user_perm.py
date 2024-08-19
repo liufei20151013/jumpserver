@@ -7,9 +7,10 @@ from django.db.models import Q
 from rest_framework.utils.encoders import JSONEncoder
 
 from assets.const import AllTypes
-from assets.models import FavoriteAsset, Asset, Node
+from assets.models import FavoriteAsset, Asset, FavoriteNode, Node
 from common.utils.common import timeit, get_logger
-from orgs.utils import current_org
+from orgs.models import Organization
+from orgs.utils import current_org, get_current_org_id
 from perms.models import PermNode, UserAssetGrantedTreeNodeRelation, AssetPermission
 from .permission import AssetPermissionUtil
 
@@ -189,6 +190,34 @@ class UserPermAssetUtil(AssetPermissionPermAssetUtil):
 
         return Asset.objects.filter(id__in=asset_ids)
 
+    def get_favorite_node_all_assets(self, node_id):
+        # 如果是全局组织，查询所有
+        if Organization.ROOT_ID == get_current_org_id():
+            nodes = Node.objects.filter(parent_key='')
+        else:
+            nodes = Node.objects.filter(org_id=get_current_org_id(), parent_key='')
+
+        all_perm_asset_ids = set()
+        for node in nodes:
+            node2, assets = self.get_node_all_assets(node.id)
+            perm_asset_ids = assets.values_list('id', flat=True)
+            if len(perm_asset_ids) == 0:
+                permNode = PermNode.objects.get(id=node.id)
+                permNode.node_from = 'asset'
+                perm_asset_ids = self._get_indirect_perm_node_all_assets(permNode).values_list('id', flat=True)
+            all_perm_asset_ids.update(list(perm_asset_ids))
+
+        """ 获取节点下的所有资产 """
+        favoriteNode = FavoriteNode.objects.get(id=node_id)
+        favoriteAssets = FavoriteAsset.objects.filter(user=self.user, favoriteNode=favoriteNode,
+                                                      asset_id__in=all_perm_asset_ids)
+        if favoriteAssets.exists():
+            asset_ids = favoriteAssets.values_list('asset_id', flat=True)
+            assets = Asset.objects.filter(id__in=asset_ids)
+        else:
+            assets = Asset.objects.none()
+        return assets
+
 
 class UserPermNodeUtil:
 
@@ -230,7 +259,20 @@ class UserPermNodeUtil:
             nodes.append(ung_node)
         fav_node = self.get_favorite_node()
         nodes.append(fav_node)
+        self.get_favorite_node_children(nodes)
         return nodes
+
+    def get_favorite_node_children(self, nodes):
+        # 如果是全局组织，查询所有
+        if Organization.ROOT_ID == get_current_org_id():
+            favoriteNodes = FavoriteNode.objects.filter(user=self.user)
+        else:
+            favoriteNodes = FavoriteNode.objects.filter(user=self.user, org_id=get_current_org_id())
+        if favoriteNodes.exists():
+            for index, favoriteNode in enumerate(favoriteNodes):
+                assets_amount = FavoriteAsset.objects.filter(user=self.user, favoriteNode=favoriteNode).count()
+                node = PermNode.get_favorite_node_children(assets_amount, index, favoriteNode)
+                nodes.append(node)
 
     def get_node_children(self, key):
         if not key:
