@@ -35,6 +35,14 @@
         - user_info.failed
         - params.groups
 
+    - name: "Add {{ account.username }} home dir"
+      ansible.builtin.file:
+        path: "{{ params.home | default('/home/' + account.username, true) }}"
+        state: directory
+        owner: "{{ account.username }}"
+        group: "{{ account.username }}"
+        mode: "0700"
+
     - name: "Change {{ account.username }} password"
       ansible.builtin.user:
         name: "{{ account.username }}"
