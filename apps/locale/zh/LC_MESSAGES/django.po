@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: JumpServer 0.3.3\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-07-10 18:14+0800\n"
+"POT-Creation-Date: 2024-08-28 16:41+0800\n"
 "PO-Revision-Date: 2021-05-20 10:54+0800\n"
 "Last-Translator: ibuler <ibuler@qq.com>\n"
 "Language-Team: JumpServer team<ibuler@qq.com>\n"
@@ -298,7 +298,7 @@ msgid "Version"
 msgstr "版本"
 
 #: accounts/models/account.py:57 accounts/serializers/account/account.py:218
-#: users/models/user.py:860
+#: users/models/user.py:866
 msgid "Source"
 msgstr "来源"
 
@@ -657,7 +657,7 @@ msgstr "特权账号"
 #: authentication/serializers/connect_token_secret.py:117
 #: terminal/models/applet/applet.py:40
 #: terminal/models/component/endpoint.py:120
-#: terminal/models/virtualapp/virtualapp.py:23 users/serializers/user.py:175
+#: terminal/models/virtualapp/virtualapp.py:23 users/serializers/user.py:178
 msgid "Is active"
 msgstr "激活"
 
@@ -871,8 +871,8 @@ msgstr "ID"
 #: terminal/notifications.py:205 terminal/serializers/command.py:16
 #: terminal/templates/terminal/_msg_command_warning.html:6
 #: terminal/templates/terminal/_msg_session_sharing.html:6
-#: tickets/models/comment.py:21 users/const.py:14 users/models/user.py:1020
-#: users/models/user.py:1058 users/serializers/group.py:21
+#: tickets/models/comment.py:21 users/const.py:14 users/models/user.py:1026
+#: users/models/user.py:1064 users/serializers/group.py:21
 msgid "User"
 msgstr "用户"
 
@@ -964,7 +964,7 @@ msgstr "关联平台，可配置推送参数，如果不关联，将使用默认
 #: terminal/models/component/endpoint.py:119
 #: terminal/models/session/session.py:47
 #: terminal/models/virtualapp/virtualapp.py:28 tickets/models/comment.py:32
-#: tickets/models/ticket/general.py:295 users/models/user.py:851
+#: tickets/models/ticket/general.py:295 users/models/user.py:857
 #: xpack/plugins/cloud/models.py:40 xpack/plugins/cloud/models.py:108
 msgid "Comment"
 msgstr "备注"
@@ -1687,18 +1687,18 @@ msgstr "SSH公钥"
 #: assets/models/_user.py:28 assets/models/automations/base.py:114
 #: assets/models/cmd_filter.py:41 assets/models/group.py:19
 #: audits/models.py:269 common/db/models.py:34 ops/models/base.py:54
-#: ops/models/job.py:241 users/models/user.py:1059
+#: ops/models/job.py:241 users/models/user.py:1065
 msgid "Date created"
 msgstr "创建日期"
 
 #: assets/models/_user.py:29 assets/models/cmd_filter.py:42
-#: common/db/models.py:35 users/models/user.py:869
+#: common/db/models.py:35 users/models/user.py:875
 msgid "Date updated"
 msgstr "更新日期"
 
 #: assets/models/_user.py:30 assets/models/cmd_filter.py:44
 #: assets/models/cmd_filter.py:91 assets/models/group.py:18
-#: common/db/models.py:32 users/models/user.py:858
+#: common/db/models.py:32 users/models/user.py:864
 #: users/serializers/group.py:32
 msgid "Created by"
 msgstr "创建者"
@@ -1937,7 +1937,7 @@ msgstr "默认"
 msgid "Default asset group"
 msgstr "默认资产组"
 
-#: assets/models/label.py:15 rbac/const.py:6 users/models/user.py:1044
+#: assets/models/label.py:15 rbac/const.py:6 users/models/user.py:1050
 msgid "System"
 msgstr "系统"
 
@@ -2583,7 +2583,7 @@ msgstr "登录 IP"
 
 #: audits/models.py:200 audits/serializers.py:52
 #: authentication/templates/authentication/_mfa_confirm_modal.html:14
-#: users/forms/profile.py:63 users/models/user.py:838
+#: users/forms/profile.py:63 users/models/user.py:844
 #: users/serializers/profile.py:102
 msgid "MFA"
 msgstr "MFA"
@@ -2632,7 +2632,7 @@ msgstr "用户 %s %s 了当前资源"
 #: audits/serializers.py:172 authentication/models/connection_token.py:47
 #: authentication/models/temp_token.py:13 perms/models/asset_permission.py:80
 #: tickets/models/ticket/apply_application.py:31
-#: tickets/models/ticket/apply_asset.py:20 users/models/user.py:856
+#: tickets/models/ticket/apply_asset.py:20 users/models/user.py:862
 msgid "Date expired"
 msgstr "失效日期"
 
@@ -2666,28 +2666,28 @@ msgstr "认证令牌"
 #: audits/signal_handlers/login_log.py:37 authentication/notifications.py:73
 #: authentication/views/login.py:77 notifications/backends/__init__.py:11
 #: settings/serializers/auth/wecom.py:10 users/models/user.py:760
-#: users/models/user.py:870
+#: users/models/user.py:876
 msgid "WeCom"
 msgstr "企业微信"
 
 #: audits/signal_handlers/login_log.py:38 authentication/views/feishu.py:105
 #: authentication/views/login.py:89 notifications/backends/__init__.py:14
 #: settings/serializers/auth/feishu.py:10 users/models/user.py:762
-#: users/models/user.py:872
+#: users/models/user.py:878
 msgid "FeiShu"
 msgstr "飞书"
 
 #: audits/signal_handlers/login_log.py:40 authentication/views/login.py:101
 #: authentication/views/slack.py:87 notifications/backends/__init__.py:16
 #: settings/serializers/auth/slack.py:10 users/models/user.py:764
-#: users/models/user.py:874
+#: users/models/user.py:880
 msgid "Slack"
 msgstr ""
 
 #: audits/signal_handlers/login_log.py:41 authentication/views/dingtalk.py:161
 #: authentication/views/login.py:83 notifications/backends/__init__.py:12
 #: settings/serializers/auth/dingtalk.py:10 users/models/user.py:761
-#: users/models/user.py:871
+#: users/models/user.py:877
 msgid "DingTalk"
 msgstr "钉钉"
 
@@ -3271,7 +3271,7 @@ msgstr "动作"
 
 #: authentication/serializers/connection_token.py:42
 #: perms/serializers/permission.py:40 perms/serializers/permission.py:60
-#: users/serializers/user.py:102 users/serializers/user.py:179
+#: users/serializers/user.py:102 users/serializers/user.py:182
 msgid "Is expired"
 msgstr "已过期"
 
@@ -3286,7 +3286,7 @@ msgstr "IP 白名单"
 
 #: authentication/serializers/token.py:92 perms/serializers/permission.py:39
 #: perms/serializers/permission.py:61 users/serializers/user.py:103
-#: users/serializers/user.py:176
+#: users/serializers/user.py:179
 msgid "Is valid"
 msgstr "是否有效"
 
@@ -3783,7 +3783,7 @@ msgstr "忽略的"
 msgid "discard time"
 msgstr "忽略时间"
 
-#: common/db/models.py:33 users/models/user.py:859
+#: common/db/models.py:33 users/models/user.py:865
 msgid "Updated by"
 msgstr "最后更新者"
 
@@ -4520,17 +4520,17 @@ msgstr "Job ID"
 msgid "Name of the job"
 msgstr "Job 名称"
 
-#: orgs/api.py:61
+#: orgs/api.py:70
 msgid "The current organization ({}) cannot be deleted"
 msgstr "当前组织 ({}) 不能被删除"
 
-#: orgs/api.py:66
+#: orgs/api.py:75
 msgid ""
 "LDAP synchronization is set to the current organization. Please switch to "
 "another organization before deleting"
 msgstr "LDAP 同步设置组织为当前组织，请切换其他组织后再进行删除操作"
 
-#: orgs/api.py:76
+#: orgs/api.py:85
 msgid "The organization have resource ({}) cannot be deleted"
 msgstr "组织存在资源 ({}) 不能被删除"
 
@@ -4542,7 +4542,7 @@ msgstr "组织管理"
 msgid "Please save in a org"
 msgstr "请选择一个组织后再保存"
 
-#: orgs/mixins/models.py:57 orgs/mixins/serializers.py:25 orgs/models.py:91
+#: orgs/mixins/models.py:57 orgs/mixins/serializers.py:25 orgs/models.py:95
 #: rbac/const.py:7 rbac/models/rolebinding.py:56
 #: rbac/serializers/rolebinding.py:44 settings/serializers/auth/ldap.py:63
 #: terminal/templates/terminal/_msg_command_warning.html:21
@@ -4567,20 +4567,26 @@ msgstr "默认组织"
 msgid "SYSTEM"
 msgstr "系统组织"
 
-#: orgs/models.py:83 rbac/models/role.py:36 settings/models.py:183
+#: orgs/models.py:84 orgs/serializers.py:23
+
+#| msgid "Organization role"
+msgid "Organization Code"
+msgstr "组织编码"
+
+#: orgs/models.py:87 rbac/models/role.py:36 settings/models.py:183
 #: terminal/models/applet/applet.py:41
 msgid "Builtin"
 msgstr "内置的"
 
-#: orgs/models.py:93
+#: orgs/models.py:97
 msgid "Can view root org"
 msgstr "可以查看全局组织"
 
-#: orgs/models.py:94
+#: orgs/models.py:98
 msgid "Can view all joined org"
 msgstr "可以查看所有加入的组织"
 
-#: orgs/models.py:236
+#: orgs/models.py:240
 msgid "Can not delete virtual org"
 msgstr "无法删除虚拟组织"
 
@@ -7281,7 +7287,7 @@ msgstr "端点后缀"
 msgid "HOST"
 msgstr "主机"
 
-#: terminal/serializers/storage.py:146 users/models/user.py:845
+#: terminal/serializers/storage.py:146 users/models/user.py:851
 #: xpack/plugins/cloud/serializers/account_attrs.py:213
 msgid "Private key"
 msgstr "ssh私钥"
@@ -7835,11 +7841,11 @@ msgstr "无效的审批动作"
 msgid "This user is not authorized to approve this ticket"
 msgstr "此用户无权审批此工单"
 
-#: users/api/user.py:155
+#: users/api/user.py:158
 msgid "Can not invite self"
 msgstr "不能邀请自己"
 
-#: users/api/user.py:208
+#: users/api/user.py:211
 msgid "Could not reset self otp, use profile reset instead"
 msgstr "不能在该页面重置 MFA 多因子认证, 请去个人信息页面重置"
 
@@ -7990,7 +7996,7 @@ msgstr "不能和原来的密钥相同"
 msgid "Not a valid ssh public key"
 msgstr "SSH密钥不合法"
 
-#: users/forms/profile.py:172 users/models/user.py:848
+#: users/forms/profile.py:172 users/models/user.py:854
 #: xpack/plugins/cloud/serializers/account_attrs.py:210
 msgid "Public key"
 msgstr "SSH公钥"
@@ -8007,7 +8013,7 @@ msgstr "强制启用"
 msgid "Lark"
 msgstr ""
 
-#: users/models/user.py:827 users/serializers/user.py:177
+#: users/models/user.py:827 users/serializers/user.py:180
 msgid "Is service account"
 msgstr "服务账号"
 
@@ -8023,54 +8029,66 @@ msgstr "微信"
 msgid "Phone"
 msgstr "手机"
 
-#: users/models/user.py:841
+#: users/models/user.py:838 users/serializers/user.py:119
+
+#| msgid "Component"
+msgid "Companies"
+msgstr "公司"
+
+#: users/models/user.py:841 users/serializers/user.py:120
+
+#| msgid "Mobile number"
+msgid "Job Number"
+msgstr "工号"
+
+#: users/models/user.py:847
 msgid "OTP secret key"
 msgstr "OTP 密钥"
 
 # msgid "Private key"
 # msgstr "ssh私钥"
-#: users/models/user.py:853 users/serializers/profile.py:128
-#: users/serializers/user.py:174
+#: users/models/user.py:859 users/serializers/profile.py:128
+#: users/serializers/user.py:177
 msgid "Is first login"
 msgstr "首次登录"
 
-#: users/models/user.py:863
+#: users/models/user.py:869
 msgid "Date password last updated"
 msgstr "最后更新密码日期"
 
-#: users/models/user.py:866
+#: users/models/user.py:872
 msgid "Need update password"
 msgstr "需要更新密码"
 
-#: users/models/user.py:868
+#: users/models/user.py:874
 msgid "Date api key used"
 msgstr "Api key 最后使用日期"
 
-#: users/models/user.py:1001
+#: users/models/user.py:1007
 msgid "Can not delete admin user"
 msgstr "无法删除管理员用户"
 
-#: users/models/user.py:1029
+#: users/models/user.py:1035
 msgid "Can invite user"
 msgstr "可以邀请用户"
 
-#: users/models/user.py:1030
+#: users/models/user.py:1036
 msgid "Can remove user"
 msgstr "可以移除用户"
 
-#: users/models/user.py:1031
+#: users/models/user.py:1037
 msgid "Can match user"
 msgstr "可以匹配用户"
 
-#: users/models/user.py:1040
+#: users/models/user.py:1046
 msgid "Administrator"
 msgstr "管理员"
 
-#: users/models/user.py:1043
+#: users/models/user.py:1049
 msgid "Administrator is the super user of system"
 msgstr "Administrator是初始的超级管理员"
 
-#: users/models/user.py:1068
+#: users/models/user.py:1074
 msgid "User password history"
 msgstr "用户密码历史"
 
@@ -8228,7 +8246,7 @@ msgstr "强制 MFA"
 msgid "Login blocked"
 msgstr "登录被锁定"
 
-#: users/serializers/user.py:104 users/serializers/user.py:183
+#: users/serializers/user.py:104 users/serializers/user.py:186
 msgid "Is OTP bound"
 msgstr "是否绑定了虚拟 MFA"
 
@@ -8244,27 +8262,27 @@ msgstr "组织管理员"
 msgid "Can public key authentication"
 msgstr "可以使用公钥认证"
 
-#: users/serializers/user.py:178
+#: users/serializers/user.py:181
 msgid "Is org admin"
 msgstr "组织管理员"
 
-#: users/serializers/user.py:180
+#: users/serializers/user.py:183
 msgid "Avatar url"
 msgstr "头像路径"
 
-#: users/serializers/user.py:184
+#: users/serializers/user.py:187
 msgid "MFA level"
 msgstr "MFA 级别"
 
-#: users/serializers/user.py:310
+#: users/serializers/user.py:313
 msgid "Select users"
 msgstr "选择用户"
 
-#: users/serializers/user.py:311
+#: users/serializers/user.py:314
 msgid "For security, only list several users"
 msgstr "为了安全，仅列出几个用户"
 
-#: users/serializers/user.py:344
+#: users/serializers/user.py:347
 msgid "name not unique"
 msgstr "名称重复"
 
@@ -8755,7 +8773,7 @@ msgid "Fully synchronous"
 msgstr "完全同步"
 
 #: xpack/plugins/cloud/models.py:106
-#, fuzzy
+
 #| msgid "permed assets"
 msgid "Release assets"
 msgstr "授权的资产"

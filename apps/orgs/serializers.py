@@ -3,6 +3,7 @@ from rest_framework.serializers import ModelSerializer
 
 from .models import Organization
 from .utils import get_current_org
+from django.utils.translation import gettext_lazy as _
 
 
 class ResourceStatisticsSerializer(serializers.Serializer):
@@ -19,6 +20,7 @@ class ResourceStatisticsSerializer(serializers.Serializer):
 
 class OrgSerializer(ModelSerializer):
     resource_statistics = ResourceStatisticsSerializer(source='resource_statistics_cache', read_only=True)
+    org_code = serializers.CharField(max_length=64, required=False, allow_blank=True, label=_('Organization Code'))
 
     class Meta:
         model = Organization
@@ -27,7 +29,7 @@ class OrgSerializer(ModelSerializer):
             'resource_statistics',
             'is_default', 'is_root', 'internal',
             'date_created', 'created_by',
-            'comment', 'created_by',
+            'comment', 'created_by', 'org_code',
         ]
 
         fields_m2m = []
@@ -49,3 +51,9 @@ class CurrentOrgDefault:
 
     def __repr__(self):
         return '%s()' % self.__class__.__name__
+
+
+class AddOrgSerializer(ModelSerializer):
+    class Meta:
+        model = Organization
+        fields = ['name']

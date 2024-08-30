@@ -1,26 +1,35 @@
 # -*- coding: utf-8 -*-
 #
+import json
 
 from django.conf import settings
 from django.utils.translation import gettext as _
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import RetrieveAPIView
+from rest_framework.response import Response
 
 from assets.models import (
     Asset, Domain, Label, Node,
 )
 from common.api import JMSBulkModelViewSet
 from common.permissions import IsValidUser
-from common.utils import get_logger
+from common.utils import get_logger, response_message
 from orgs.utils import current_org, tmp_to_root_org
 from perms.models import AssetPermission
 from users.models import User, UserGroup
+from . import serializers
+from .mixins import generics
+from .mixins.mixins import OrgQuerysetMixin
 from .models import Organization
 from .serializers import (
     OrgSerializer, CurrentOrgSerializer
 )
 
 logger = get_logger(__file__)
+__all__ = [
+    'OrgViewSet', 'CurrentOrgDetailApi',
+    'AddOrUpdateOrgApi'
+]
 
 # 部分 org 相关的 model，需要清空这些数据之后才能删除该组织
 org_related_models = [
@@ -86,3 +95,25 @@ class CurrentOrgDetailApi(RetrieveAPIView):
 
     def get_object(self):
         return current_org
+
+
+class AddOrUpdateOrgApi(OrgQuerysetMixin, generics.CreateAPIView):
+    serializer_class = serializers.AddOrgSerializer
+
+    def create(self, request, *args, **kwargs):
+        try:
+            data = request.data
+            logger.info("Save org, request data: {}".format(json.dumps(data)))
+            orgs = Organization.objects.filter(org_code=data['orgCode'])
+            if orgs.exists():
+                org = orgs.first()
+                org.name = data['name']
+                org.save()
+            else:
+                Organization.objects.create(name=data['name'], org_code=data['orgCode'])
+
+        except Exception as e:
+            logger.error('组织创建失败：{}'.format(e))
+            return Response(response_message('failed', '参数错误:' + e))
+
+        return Response(response_message('success', '提交成功!'))
