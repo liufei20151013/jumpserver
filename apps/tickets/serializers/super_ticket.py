@@ -6,7 +6,7 @@ from tickets.const import TicketStatus, TicketState
 from ..models import SuperTicket
 
 
-__all__ = ['SuperTicketSerializer']
+__all__ = ['SuperTicketSerializer', 'ApproveTicketSerializer']
 
 
 class SuperTicketSerializer(serializers.ModelSerializer):
@@ -21,3 +21,9 @@ class SuperTicketSerializer(serializers.ModelSerializer):
     @staticmethod
     def get_processor(instance):
         return str(instance.processor) if instance.processor else ''
+
+
+class ApproveTicketSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SuperTicket
+        fields = []

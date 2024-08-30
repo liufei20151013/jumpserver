@@ -1,5 +1,6 @@
 from django.utils.translation import gettext as _
 
+from assets.models import Asset, Node
 from orgs.utils import tmp_to_org
 from perms.models import AssetPermission
 from tickets.models import ApplyAssetTicket
@@ -21,8 +22,32 @@ class Handler(BaseHandler):
             if asset_permission:
                 return asset_permission
 
-            apply_nodes = self.ticket.apply_nodes.all()
-            apply_assets = self.ticket.apply_assets.all()
+            try:
+                apply_nodes = self.ticket.apply_nodes.all()
+                apply_assets = self.ticket.apply_assets.all()
+            except Exception as e:
+                applyAssetTicket = self.ticket.applyassetticket
+                rel_snapshot = applyAssetTicket.rel_snapshot
+
+                apply_assets = []
+                rel_apply_assets = rel_snapshot['apply_assets']
+                if len(rel_apply_assets) > 0:
+                    apply_assetnames = []
+                    for apply_asset in rel_apply_assets:
+                        asset_name = apply_asset.split('(')[0]
+                        apply_assetnames.append(asset_name)
+                    apply_assets = Asset.objects.filter(name__in=apply_assetnames)
+
+                apply_nodes = []
+                rel_apply_nodes = rel_snapshot['apply_nodes']
+                if len(rel_apply_nodes) > 0:
+                    apply_nodes = Node.objects.filter(full_value__in=rel_apply_nodes)
+
+                self.ticket.apply_accounts = applyAssetTicket.apply_accounts
+                self.ticket.apply_actions = applyAssetTicket.apply_actions
+                self.ticket.apply_date_start = applyAssetTicket.apply_date_start
+                self.ticket.apply_date_expired = applyAssetTicket.apply_date_expired
+                self.ticket.apply_permission_name = applyAssetTicket.apply_permission_name
 
         apply_permission_name = self.ticket.apply_permission_name
         apply_actions = self.ticket.apply_actions

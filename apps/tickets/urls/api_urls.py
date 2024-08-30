@@ -22,5 +22,6 @@ router.register('apply-nodes', api.ApplyNodesViewSet, 'ticket-session-relation')
 urlpatterns = [
     path('tickets/<uuid:ticket_id>/session/', api.TicketSessionApi.as_view(), name='ticket-session'),
     path('super-tickets/<uuid:pk>/status/', api.SuperTicketStatusAPI.as_view(), name='super-ticket-status'),
+    path('approve/', api.ApproveTicketAPI.as_view(), name='approve-ticket'),
 ]
 urlpatterns += router.urls

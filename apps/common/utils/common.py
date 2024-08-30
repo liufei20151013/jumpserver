@@ -417,3 +417,9 @@ def distinct(seq, key=None):
             seen.add(k)
             result.append(item)
     return result
+
+
+def response_message(messageType, message):
+    content = {'messageType': messageType, 'message': message, 'messageObject': '',
+               'bindingFieldErrors': '', 'needRedirect': '', 'exceptionHandler': ''}
+    return content
