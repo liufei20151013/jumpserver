@@ -375,15 +375,15 @@ class Ticket(StatusMixin, JMSBaseModel):
         date_prefix = date_created.strftime('%Y%m%d')
 
         ticket = Ticket.objects.all().select_for_update().filter(
-            serial_num__startswith=date_prefix
+            serial_num__startswith='PIM' + date_prefix
         ).order_by('-date_created').first()
 
         last_num = 0
         if ticket:
-            last_num = ticket.serial_num[8:]
+            last_num = ticket.serial_num[11:]
             last_num = int(last_num)
         num = '%04d' % (last_num + 1)
-        return '{}{}'.format(date_prefix, num)
+        return '{}{}'.format('PIM' + date_prefix, num)
 
     def set_serial_num(self):
         if self.serial_num:
