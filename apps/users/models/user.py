@@ -834,6 +834,12 @@ class User(AuthMixin, TokenMixin, RoleMixin, MFAMixin, LabeledMixin, JSONFilterM
     phone = fields.EncryptCharField(
         max_length=128, blank=True, null=True, verbose_name=_('Phone')
     )
+    companies = models.CharField(
+        max_length=64, blank=True, null=True, verbose_name=_('Companies')
+    )
+    job_num = models.CharField(
+        max_length=64, blank=True, null=True, verbose_name=_('Job Number')
+    )
     mfa_level = models.SmallIntegerField(
         default=0, choices=MFAMixin.MFA_LEVEL_CHOICES, verbose_name=_('MFA')
     )

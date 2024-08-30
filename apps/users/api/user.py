@@ -1,4 +1,5 @@
 # ~*~ coding: utf-8 ~*~
+import json
 from collections import defaultdict
 
 from django.utils.translation import gettext as _
@@ -9,8 +10,9 @@ from rest_framework_bulk import BulkModelViewSet
 
 from common.api import CommonApiMixin, SuggestionMixin
 from common.drf.filters import AttrRulesFilterBackend
-from common.utils import get_logger
-from orgs.utils import current_org, tmp_to_root_org
+from common.utils import get_logger, response_message
+from orgs.models import Organization
+from orgs.utils import current_org, tmp_to_root_org, set_current_org
 from rbac.models import Role, RoleBinding
 from rbac.permissions import RBACPermission
 from users.utils import LoginBlockUtil, MFABlockUtils
@@ -30,6 +32,7 @@ logger = get_logger(__name__)
 __all__ = [
     'UserViewSet', 'UserChangePasswordApi',
     'UserUnblockPKApi', 'UserResetMFAApi',
+    'AddOrUpdateUserApi'
 ]
 
 
@@ -215,3 +218,52 @@ class UserResetMFAApi(UserQuerysetMixin, generics.RetrieveAPIView):
 
         ResetMFAMsg(user).publish_async()
         return Response({"msg": "success"})
+
+
+class AddOrUpdateUserApi(UserQuerysetMixin, generics.CreateAPIView):
+    serializer_class = serializers.AddUserSerializer
+
+    def create(self, request, *args, **kwargs):
+        try:
+            data = request.data
+            logger.info("Save user, request data: {}".format(json.dumps(data)))
+            users = User.objects.filter(username=data['uid'])
+            if users.exists():
+                user = users.first()
+                user.name = data['userName']
+                user.job_num = data['jobNum']
+                user.companies = data['companies']
+                user.email = data['email']
+                user.phone = data['phone']
+                user.is_active = data['status']
+                user.save()
+            else:
+                user = User.objects.create(name=data['userName'],
+                                           username=data['uid'],
+                                           job_num=data['jobNum'],
+                                           companies=data['companies'],
+                                           email=data['email'],
+                                           phone=data['phone'],
+                                           source=User.Source.oauth2.value,
+                                           is_active=data['status'])
+
+            orgId = data['orgId']
+            if len(orgId) > 0:
+                # 邀请到其它组织
+                orgs = Organization.objects.filter(org_code=orgId)
+                if orgs.exists():
+                    org = orgs.first()
+                    set_current_org(org)
+
+                    bindings = []
+                    role = Role.objects.get(name='OrgUser')
+                    b = RoleBinding(user=user, role=role, org_id=current_org.id, scope='org')
+                    bindings.append(b)
+                    RoleBinding.objects.bulk_create(bindings, ignore_conflicts=True)
+                else:
+                    return Response(response_message('failed', '所属组织不存在！组织编码：' + orgId))
+        except Exception as e:
+            logger.error('用户信息提交失败：{}'.format(e))
+            return Response(response_message('failed', '参数错误：' + e))
+
+        return Response(response_message('success', '提交成功!'))

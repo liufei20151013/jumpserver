@@ -116,6 +116,8 @@ class UserSerializer(RolesSerializerMixin, CommonBulkSerializerMixin, ResourceLa
         "system_roles": [BuiltinRole.system_user],
         "org_roles": [BuiltinRole.org_user],
     }
+    companies = serializers.CharField(max_length=64, required=False, allow_blank=True, label=_('Companies'))
+    job_num = serializers.CharField(max_length=64, required=False, allow_blank=True, label=_('Job Number'))
 
     class Meta:
         model = User
@@ -130,7 +132,8 @@ class UserSerializer(RolesSerializerMixin, CommonBulkSerializerMixin, ResourceLa
         # small 指的是 不需要计算的直接能从一张表中获取到的数据
         fields_small = fields_mini + fields_write_only + [
             "email", "wechat", "phone", "mfa_level", "source",
-            *fields_xpack, "created_by", "updated_by", "comment",  # 通用字段
+            *fields_xpack, "created_by", "updated_by", "comment",
+            "companies", "job_num",  # 通用字段
         ]
         fields_date = [
             "date_expired", "date_joined", "last_login",
