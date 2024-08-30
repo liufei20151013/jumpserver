@@ -56,7 +56,7 @@ class ApproveTicketAPI(TicketQuerysetMixin, StatusMixin, generics.CreateAPIView)
 
                 self.kwargs.__setitem__('pk', ticket.id)
                 instance = self.get_object()
-                if data['approveResult'] == '0':
+                if data['approveResult'] == 0:
                     serializer = self.get_serializer(instance, data=ticket.rel_snapshot, partial=False)
                     with tmp_to_root_org():
                         serializer.is_valid(raise_exception=True)
