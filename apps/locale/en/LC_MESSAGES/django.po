@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-07-10 18:14+0800\n"
+"POT-Creation-Date: 2024-08-28 16:41+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,6 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
 #: accounts/api/automations/base.py:79 tickets/api/ticket.py:132
 msgid "The parameter 'action' must be [{}]"
 msgstr ""
@@ -298,7 +299,7 @@ msgid "Version"
 msgstr ""
 
 #: accounts/models/account.py:57 accounts/serializers/account/account.py:218
-#: users/models/user.py:860
+#: users/models/user.py:866
 msgid "Source"
 msgstr ""
 
@@ -657,7 +658,7 @@ msgstr ""
 #: authentication/serializers/connect_token_secret.py:117
 #: terminal/models/applet/applet.py:40
 #: terminal/models/component/endpoint.py:120
-#: terminal/models/virtualapp/virtualapp.py:23 users/serializers/user.py:175
+#: terminal/models/virtualapp/virtualapp.py:23 users/serializers/user.py:178
 msgid "Is active"
 msgstr ""
 
@@ -862,8 +863,8 @@ msgstr ""
 #: terminal/notifications.py:205 terminal/serializers/command.py:16
 #: terminal/templates/terminal/_msg_command_warning.html:6
 #: terminal/templates/terminal/_msg_session_sharing.html:6
-#: tickets/models/comment.py:21 users/const.py:14 users/models/user.py:1020
-#: users/models/user.py:1058 users/serializers/group.py:21
+#: tickets/models/comment.py:21 users/const.py:14 users/models/user.py:1026
+#: users/models/user.py:1064 users/serializers/group.py:21
 msgid "User"
 msgstr ""
 
@@ -953,7 +954,7 @@ msgstr ""
 #: terminal/models/component/endpoint.py:119
 #: terminal/models/session/session.py:47
 #: terminal/models/virtualapp/virtualapp.py:28 tickets/models/comment.py:32
-#: tickets/models/ticket/general.py:295 users/models/user.py:851
+#: tickets/models/ticket/general.py:295 users/models/user.py:857
 #: xpack/plugins/cloud/models.py:40 xpack/plugins/cloud/models.py:108
 msgid "Comment"
 msgstr ""
@@ -1660,18 +1661,18 @@ msgstr ""
 #: assets/models/_user.py:28 assets/models/automations/base.py:114
 #: assets/models/cmd_filter.py:41 assets/models/group.py:19
 #: audits/models.py:269 common/db/models.py:34 ops/models/base.py:54
-#: ops/models/job.py:241 users/models/user.py:1059
+#: ops/models/job.py:241 users/models/user.py:1065
 msgid "Date created"
 msgstr ""
 
 #: assets/models/_user.py:29 assets/models/cmd_filter.py:42
-#: common/db/models.py:35 users/models/user.py:869
+#: common/db/models.py:35 users/models/user.py:875
 msgid "Date updated"
 msgstr ""
 
 #: assets/models/_user.py:30 assets/models/cmd_filter.py:44
 #: assets/models/cmd_filter.py:91 assets/models/group.py:18
-#: common/db/models.py:32 users/models/user.py:858
+#: common/db/models.py:32 users/models/user.py:864
 #: users/serializers/group.py:32
 msgid "Created by"
 msgstr ""
@@ -1910,7 +1911,7 @@ msgstr ""
 msgid "Default asset group"
 msgstr ""
 
-#: assets/models/label.py:15 rbac/const.py:6 users/models/user.py:1044
+#: assets/models/label.py:15 rbac/const.py:6 users/models/user.py:1050
 msgid "System"
 msgstr ""
 
@@ -2554,7 +2555,7 @@ msgstr ""
 
 #: audits/models.py:200 audits/serializers.py:52
 #: authentication/templates/authentication/_mfa_confirm_modal.html:14
-#: users/forms/profile.py:63 users/models/user.py:838
+#: users/forms/profile.py:63 users/models/user.py:844
 #: users/serializers/profile.py:102
 msgid "MFA"
 msgstr ""
@@ -2603,7 +2604,7 @@ msgstr ""
 #: audits/serializers.py:172 authentication/models/connection_token.py:47
 #: authentication/models/temp_token.py:13 perms/models/asset_permission.py:80
 #: tickets/models/ticket/apply_application.py:31
-#: tickets/models/ticket/apply_asset.py:20 users/models/user.py:856
+#: tickets/models/ticket/apply_asset.py:20 users/models/user.py:862
 msgid "Date expired"
 msgstr ""
 
@@ -2637,28 +2638,28 @@ msgstr ""
 #: audits/signal_handlers/login_log.py:37 authentication/notifications.py:73
 #: authentication/views/login.py:77 notifications/backends/__init__.py:11
 #: settings/serializers/auth/wecom.py:10 users/models/user.py:760
-#: users/models/user.py:870
+#: users/models/user.py:876
 msgid "WeCom"
 msgstr ""
 
 #: audits/signal_handlers/login_log.py:38 authentication/views/feishu.py:105
 #: authentication/views/login.py:89 notifications/backends/__init__.py:14
 #: settings/serializers/auth/feishu.py:10 users/models/user.py:762
-#: users/models/user.py:872
+#: users/models/user.py:878
 msgid "FeiShu"
 msgstr ""
 
 #: audits/signal_handlers/login_log.py:40 authentication/views/login.py:101
 #: authentication/views/slack.py:87 notifications/backends/__init__.py:16
 #: settings/serializers/auth/slack.py:10 users/models/user.py:764
-#: users/models/user.py:874
+#: users/models/user.py:880
 msgid "Slack"
 msgstr ""
 
 #: audits/signal_handlers/login_log.py:41 authentication/views/dingtalk.py:161
 #: authentication/views/login.py:83 notifications/backends/__init__.py:12
 #: settings/serializers/auth/dingtalk.py:10 users/models/user.py:761
-#: users/models/user.py:871
+#: users/models/user.py:877
 msgid "DingTalk"
 msgstr ""
 
@@ -3239,7 +3240,7 @@ msgstr ""
 
 #: authentication/serializers/connection_token.py:42
 #: perms/serializers/permission.py:40 perms/serializers/permission.py:60
-#: users/serializers/user.py:102 users/serializers/user.py:179
+#: users/serializers/user.py:102 users/serializers/user.py:182
 msgid "Is expired"
 msgstr ""
 
@@ -3254,7 +3255,7 @@ msgstr ""
 
 #: authentication/serializers/token.py:92 perms/serializers/permission.py:39
 #: perms/serializers/permission.py:61 users/serializers/user.py:103
-#: users/serializers/user.py:176
+#: users/serializers/user.py:179
 msgid "Is valid"
 msgstr ""
 
@@ -3746,7 +3747,7 @@ msgstr ""
 msgid "discard time"
 msgstr ""
 
-#: common/db/models.py:33 users/models/user.py:859
+#: common/db/models.py:33 users/models/user.py:865
 msgid "Updated by"
 msgstr ""
 
@@ -4474,17 +4475,17 @@ msgstr ""
 msgid "Name of the job"
 msgstr ""
 
-#: orgs/api.py:61
+#: orgs/api.py:70
 msgid "The current organization ({}) cannot be deleted"
 msgstr ""
 
-#: orgs/api.py:66
+#: orgs/api.py:75
 msgid ""
 "LDAP synchronization is set to the current organization. Please switch to "
 "another organization before deleting"
 msgstr ""
 
-#: orgs/api.py:76
+#: orgs/api.py:85
 msgid "The organization have resource ({}) cannot be deleted"
 msgstr ""
 
@@ -4496,7 +4497,7 @@ msgstr ""
 msgid "Please save in a org"
 msgstr ""
 
-#: orgs/mixins/models.py:57 orgs/mixins/serializers.py:25 orgs/models.py:91
+#: orgs/mixins/models.py:57 orgs/mixins/serializers.py:25 orgs/models.py:95
 #: rbac/const.py:7 rbac/models/rolebinding.py:56
 #: rbac/serializers/rolebinding.py:44 settings/serializers/auth/ldap.py:63
 #: terminal/templates/terminal/_msg_command_warning.html:21
@@ -4521,20 +4522,24 @@ msgstr ""
 msgid "SYSTEM"
 msgstr ""
 
-#: orgs/models.py:83 rbac/models/role.py:36 settings/models.py:183
+#: orgs/models.py:84 orgs/serializers.py:23
+msgid "Organization Code"
+msgstr ""
+
+#: orgs/models.py:87 rbac/models/role.py:36 settings/models.py:183
 #: terminal/models/applet/applet.py:41
 msgid "Builtin"
 msgstr ""
 
-#: orgs/models.py:93
+#: orgs/models.py:97
 msgid "Can view root org"
 msgstr ""
 
-#: orgs/models.py:94
+#: orgs/models.py:98
 msgid "Can view all joined org"
 msgstr ""
 
-#: orgs/models.py:236
+#: orgs/models.py:240
 msgid "Can not delete virtual org"
 msgstr ""
 
@@ -7165,7 +7170,7 @@ msgstr ""
 msgid "HOST"
 msgstr ""
 
-#: terminal/serializers/storage.py:146 users/models/user.py:845
+#: terminal/serializers/storage.py:146 users/models/user.py:851
 #: xpack/plugins/cloud/serializers/account_attrs.py:213
 msgid "Private key"
 msgstr ""
@@ -7716,11 +7721,11 @@ msgstr ""
 msgid "This user is not authorized to approve this ticket"
 msgstr ""
 
-#: users/api/user.py:155
+#: users/api/user.py:158
 msgid "Can not invite self"
 msgstr ""
 
-#: users/api/user.py:208
+#: users/api/user.py:211
 msgid "Could not reset self otp, use profile reset instead"
 msgstr ""
 
@@ -7867,7 +7872,7 @@ msgstr ""
 msgid "Not a valid ssh public key"
 msgstr ""
 
-#: users/forms/profile.py:172 users/models/user.py:848
+#: users/forms/profile.py:172 users/models/user.py:854
 #: xpack/plugins/cloud/serializers/account_attrs.py:210
 msgid "Public key"
 msgstr ""
@@ -7884,7 +7889,7 @@ msgstr ""
 msgid "Lark"
 msgstr ""
 
-#: users/models/user.py:827 users/serializers/user.py:177
+#: users/models/user.py:827 users/serializers/user.py:180
 msgid "Is service account"
 msgstr ""
 
@@ -7900,52 +7905,60 @@ msgstr ""
 msgid "Phone"
 msgstr ""
 
-#: users/models/user.py:841
+#: users/models/user.py:838 users/serializers/user.py:119
+msgid "Companies"
+msgstr ""
+
+#: users/models/user.py:841 users/serializers/user.py:120
+msgid "Job Number"
+msgstr ""
+
+#: users/models/user.py:847
 msgid "OTP secret key"
 msgstr ""
 
-#: users/models/user.py:853 users/serializers/profile.py:128
-#: users/serializers/user.py:174
+#: users/models/user.py:859 users/serializers/profile.py:128
+#: users/serializers/user.py:177
 msgid "Is first login"
 msgstr ""
 
-#: users/models/user.py:863
+#: users/models/user.py:869
 msgid "Date password last updated"
 msgstr ""
 
-#: users/models/user.py:866
+#: users/models/user.py:872
 msgid "Need update password"
 msgstr ""
 
-#: users/models/user.py:868
+#: users/models/user.py:874
 msgid "Date api key used"
 msgstr ""
 
-#: users/models/user.py:1001
+#: users/models/user.py:1007
 msgid "Can not delete admin user"
 msgstr ""
 
-#: users/models/user.py:1029
+#: users/models/user.py:1035
 msgid "Can invite user"
 msgstr ""
 
-#: users/models/user.py:1030
+#: users/models/user.py:1036
 msgid "Can remove user"
 msgstr ""
 
-#: users/models/user.py:1031
+#: users/models/user.py:1037
 msgid "Can match user"
 msgstr ""
 
-#: users/models/user.py:1040
+#: users/models/user.py:1046
 msgid "Administrator"
 msgstr ""
 
-#: users/models/user.py:1043
+#: users/models/user.py:1049
 msgid "Administrator is the super user of system"
 msgstr ""
 
-#: users/models/user.py:1068
+#: users/models/user.py:1074
 msgid "User password history"
 msgstr ""
 
@@ -8099,7 +8112,7 @@ msgstr ""
 msgid "Login blocked"
 msgstr ""
 
-#: users/serializers/user.py:104 users/serializers/user.py:183
+#: users/serializers/user.py:104 users/serializers/user.py:186
 msgid "Is OTP bound"
 msgstr ""
 
@@ -8115,27 +8128,27 @@ msgstr ""
 msgid "Can public key authentication"
 msgstr ""
 
-#: users/serializers/user.py:178
+#: users/serializers/user.py:181
 msgid "Is org admin"
 msgstr ""
 
-#: users/serializers/user.py:180
+#: users/serializers/user.py:183
 msgid "Avatar url"
 msgstr ""
 
-#: users/serializers/user.py:184
+#: users/serializers/user.py:187
 msgid "MFA level"
 msgstr ""
 
-#: users/serializers/user.py:310
+#: users/serializers/user.py:313
 msgid "Select users"
 msgstr ""
 
-#: users/serializers/user.py:311
+#: users/serializers/user.py:314
 msgid "For security, only list several users"
 msgstr ""
 
-#: users/serializers/user.py:344
+#: users/serializers/user.py:347
 msgid "name not unique"
 msgstr ""
 

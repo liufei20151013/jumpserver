@@ -14,6 +14,7 @@ router.register(r'orgs', api.OrgViewSet, 'org')
 
 urlpatterns = [
     path('orgs/current/', api.CurrentOrgDetailApi.as_view(), name='current-org-detail'),
+    path('doAddOrg/', api.AddOrUpdateOrgApi.as_view(), name='org-save'),
 ]
 
 urlpatterns += router.urls

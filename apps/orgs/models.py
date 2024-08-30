@@ -80,6 +80,10 @@ class OrgRoleMixin:
 
 class Organization(OrgRoleMixin, JMSBaseModel):
     name = models.CharField(max_length=128, unique=True, verbose_name=_("Name"))
+    org_code = models.CharField(
+        max_length=64, blank=True, null=True, verbose_name=_('Organization Code')
+    )
+
     builtin = models.BooleanField(default=False, verbose_name=_('Builtin'))
     members = models.ManyToManyField(
         'users.User', related_name='orgs', through='rbac.RoleBinding', through_fields=('org', 'user')
