@@ -30,7 +30,7 @@ class AssetPermedSerializer(OrgResourceModelSerializerMixin, ResourceLabelsMixin
     class Meta:
         model = Asset
         only_fields = [
-            'id', 'name', 'address', 'domain', 'platform',
+            'id', 'name', 'address', 'domain', 'platform', 'director',
             'comment', 'org_id', 'is_active', 'date_verified',
             'created_by', 'date_created', 'connectivity', 'nodes', 'labels'
         ]
