@@ -21,6 +21,7 @@ from common.drf.filters import BaseFilterSet, AttrRulesFilterBackend
 from common.utils import get_logger, is_uuid
 from orgs.mixins import generics
 from orgs.mixins.api import OrgBulkModelViewSet
+from users.serializers import UserSerializer
 from ...notifications import BulkUpdatePlatformSkipAssetUserMsg
 
 logger = get_logger(__file__)
@@ -32,6 +33,7 @@ __all__ = [
 
 class AssetFilterSet(BaseFilterSet):
     platform = django_filters.CharFilter(method='filter_platform')
+    director = django_filters.CharFilter(method='filter_director')
     exclude_platform = django_filters.CharFilter(field_name="platform__name", lookup_expr='exact', exclude=True)
     domain = django_filters.CharFilter(method='filter_domain')
     type = django_filters.CharFilter(field_name="platform__type", lookup_expr="exact")
@@ -74,6 +76,13 @@ class AssetFilterSet(BaseFilterSet):
             return queryset.filter(platform__name=value)
 
     @staticmethod
+    def filter_director(queryset, name, value):
+        if is_uuid(value):
+            return queryset.filter(director_id=value)
+        else:
+            return queryset.filter(director__name=value)
+
+    @staticmethod
     def filter_domain(queryset, name, value):
         if is_uuid(value):
             return queryset.filter(domain_id=value)
@@ -93,10 +102,11 @@ class AssetViewSet(SuggestionMixin, OrgBulkModelViewSet):
     model = Asset
     filterset_class = AssetFilterSet
     search_fields = ("name", "address", "comment")
-    ordering_fields = ('name', 'address', 'connectivity', 'platform', 'date_updated', 'date_created')
+    ordering_fields = ('name', 'address', 'connectivity', 'platform', 'director', 'date_updated', 'date_created')
     serializer_classes = (
         ("default", serializers.AssetSerializer),
         ("platform", serializers.PlatformSerializer),
+        ("director", UserSerializer),
         ("suggestion", serializers.MiniAssetSerializer),
         ("gateways", serializers.GatewaySerializer),
     )

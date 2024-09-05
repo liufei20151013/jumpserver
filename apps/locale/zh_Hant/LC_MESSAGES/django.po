@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: JumpServer 0.3.3\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-08-28 16:41+0800\n"
+"POT-Creation-Date: 2024-09-05 10:43+0800\n"
 "PO-Revision-Date: 2021-05-20 10:54+0800\n"
 "Last-Translator: ibuler <ibuler@qq.com>\n"
 "Language-Team: JumpServer team<ibuler@qq.com>\n"
@@ -19,7 +19,7 @@ msgstr ""
 "X-ZhConverter: 繁化姬 dict-74c8d060-r1048 @ 2024/04/07 18:19:20 | https://"
 "zhconvert.org\n"
 
-#: accounts/api/automations/base.py:79 tickets/api/ticket.py:132
+#: accounts/api/automations/base.py:79 tickets/api/ticket.py:192
 msgid "The parameter 'action' must be [{}]"
 msgstr "參數 'action' 必須是 [{}]"
 
@@ -272,8 +272,8 @@ msgstr "用戶 %s 查看/匯出 了密碼"
 #: accounts/serializers/automations/change_secret.py:140
 #: accounts/templates/accounts/asset_account_change_info.html:7
 #: accounts/templates/accounts/change_secret_failed_info.html:11
-#: acls/serializers/base.py:123 assets/models/asset/common.py:95
-#: assets/models/asset/common.py:350 assets/models/cmd_filter.py:36
+#: acls/serializers/base.py:123 assets/models/asset/common.py:97
+#: assets/models/asset/common.py:354 assets/models/cmd_filter.py:36
 #: audits/models.py:58 authentication/models/connection_token.py:36
 #: perms/models/asset_permission.py:69 perms/serializers/permission.py:36
 #: terminal/backends/command/models.py:17 terminal/models/session/session.py:32
@@ -313,7 +313,7 @@ msgstr "來源 ID"
 #: accounts/serializers/automations/change_secret.py:141
 #: accounts/templates/accounts/change_secret_failed_info.html:12
 #: acls/serializers/base.py:124 acls/templates/acls/asset_login_reminder.html:7
-#: assets/serializers/asset/common.py:128 assets/serializers/gateway.py:28
+#: assets/serializers/asset/common.py:129 assets/serializers/gateway.py:28
 #: audits/models.py:59 authentication/api/connection_token.py:411
 #: ops/models/base.py:18 perms/models/asset_permission.py:75
 #: perms/serializers/permission.py:41 settings/serializers/msg.py:33
@@ -622,11 +622,11 @@ msgstr "密碼規則"
 #: accounts/models/base.py:64 accounts/serializers/account/virtual.py:20
 #: acls/models/base.py:35 acls/models/base.py:96 acls/models/command_acl.py:21
 #: acls/serializers/base.py:35 applications/models.py:9
-#: assets/models/_user.py:22 assets/models/asset/common.py:93
-#: assets/models/asset/common.py:159 assets/models/cmd_filter.py:21
+#: assets/models/_user.py:22 assets/models/asset/common.py:95
+#: assets/models/asset/common.py:162 assets/models/cmd_filter.py:21
 #: assets/models/domain.py:19 assets/models/group.py:17
 #: assets/models/label.py:18 assets/models/platform.py:15
-#: assets/models/platform.py:94 assets/serializers/asset/common.py:149
+#: assets/models/platform.py:94 assets/serializers/asset/common.py:150
 #: assets/serializers/platform.py:118 assets/serializers/platform.py:228
 #: authentication/backends/passkey/models.py:10
 #: authentication/serializers/connect_token_secret.py:113
@@ -641,8 +641,8 @@ msgstr "密碼規則"
 #: terminal/models/component/storage.py:26 terminal/models/component/task.py:13
 #: terminal/models/component/terminal.py:85
 #: terminal/models/virtualapp/provider.py:10
-#: terminal/models/virtualapp/virtualapp.py:19 tickets/api/ticket.py:87
-#: users/forms/profile.py:32 users/models/group.py:13
+#: terminal/models/virtualapp/virtualapp.py:19 tickets/api/super_ticket.py:90
+#: tickets/api/ticket.py:147 users/forms/profile.py:32 users/models/group.py:13
 #: users/models/preference.py:11 users/models/user.py:815
 #: xpack/plugins/cloud/models.py:33 xpack/plugins/cloud/models.py:281
 #: xpack/plugins/cloud/serializers/task.py:70
@@ -653,7 +653,7 @@ msgstr "名稱"
 msgid "Privileged"
 msgstr "特權帳號"
 
-#: accounts/models/base.py:70 assets/models/asset/common.py:166
+#: accounts/models/base.py:70 assets/models/asset/common.py:169
 #: assets/models/automations/base.py:21 assets/models/cmd_filter.py:39
 #: assets/models/label.py:22
 #: authentication/serializers/connect_token_secret.py:117
@@ -775,7 +775,7 @@ msgstr "帳號存在策略"
 
 #: accounts/serializers/account/account.py:196 applications/models.py:11
 #: assets/models/label.py:21 assets/models/platform.py:95
-#: assets/serializers/asset/common.py:125 assets/serializers/cagegory.py:12
+#: assets/serializers/asset/common.py:126 assets/serializers/cagegory.py:12
 #: assets/serializers/platform.py:140 assets/serializers/platform.py:229
 #: perms/serializers/user_permission.py:26 settings/models.py:35
 #: tickets/models/ticket/apply_application.py:13 users/models/preference.py:12
@@ -787,7 +787,7 @@ msgstr "類別"
 #: acls/serializers/command_acl.py:19 applications/models.py:14
 #: assets/models/_user.py:50 assets/models/automations/base.py:20
 #: assets/models/cmd_filter.py:74 assets/models/platform.py:96
-#: assets/serializers/asset/common.py:126 assets/serializers/platform.py:120
+#: assets/serializers/asset/common.py:127 assets/serializers/platform.py:120
 #: assets/serializers/platform.py:139 audits/serializers.py:53
 #: audits/serializers.py:170
 #: authentication/serializers/connect_token_secret.py:126 ops/models/job.py:150
@@ -846,7 +846,7 @@ msgstr "帳號已存在"
 
 #: accounts/serializers/account/account.py:441
 #: accounts/serializers/account/template.py:72
-#: assets/serializers/asset/common.py:387
+#: assets/serializers/asset/common.py:388
 msgid "Spec info"
 msgstr "特殊資訊"
 
@@ -1166,7 +1166,7 @@ msgid "Users"
 msgstr "用戶管理"
 
 #: acls/models/base.py:98 assets/models/automations/base.py:17
-#: assets/models/cmd_filter.py:38 assets/serializers/asset/common.py:386
+#: assets/models/cmd_filter.py:38 assets/serializers/asset/common.py:387
 #: perms/serializers/user_permission.py:75 rbac/tree.py:35
 msgid "Accounts"
 msgstr "帳號管理"
@@ -1362,7 +1362,7 @@ msgstr "應用程式"
 msgid "Can match application"
 msgstr "匹配應用"
 
-#: assets/api/asset/asset.py:180
+#: assets/api/asset/asset.py:182
 msgid "Cannot create asset directly, you should create a host or other"
 msgstr "不能直接創建資產, 你應該創建主機或其他資產"
 
@@ -1778,59 +1778,63 @@ msgstr "可以匹配系統用戶"
 msgid "Cloud"
 msgstr "雲服務"
 
-#: assets/models/asset/common.py:94 assets/models/platform.py:16
+#: assets/models/asset/common.py:96 assets/models/platform.py:16
 #: settings/serializers/auth/radius.py:17 settings/serializers/auth/sms.py:72
 #: settings/serializers/msg.py:32 terminal/serializers/storage.py:133
 #: xpack/plugins/cloud/serializers/account_attrs.py:73
 msgid "Port"
 msgstr "埠"
 
-#: assets/models/asset/common.py:160 assets/serializers/asset/common.py:150
+#: assets/models/asset/common.py:163 assets/serializers/asset/common.py:151
 msgid "Address"
 msgstr "地址"
 
-#: assets/models/asset/common.py:161 assets/models/platform.py:134
+#: assets/models/asset/common.py:164 assets/models/platform.py:134
 #: authentication/backends/passkey/models.py:12
 #: authentication/serializers/connect_token_secret.py:118
 #: perms/serializers/user_permission.py:25 xpack/plugins/cloud/models.py:334
 msgid "Platform"
 msgstr "系統平台"
 
-#: assets/models/asset/common.py:163 assets/models/domain.py:22
+#: assets/models/asset/common.py:166 assets/models/domain.py:22
 #: authentication/serializers/connect_token_secret.py:136
 #: perms/serializers/user_permission.py:28 xpack/plugins/cloud/models.py:336
 msgid "Domain"
 msgstr "網域"
 
-#: assets/models/asset/common.py:165 assets/models/automations/base.py:18
+#: assets/models/asset/common.py:168 assets/models/automations/base.py:18
 #: assets/models/cmd_filter.py:32 assets/models/node.py:553
 #: perms/models/asset_permission.py:72 perms/serializers/permission.py:37
 #: tickets/models/ticket/apply_asset.py:14 xpack/plugins/cloud/models.py:335
 msgid "Node"
 msgstr "節點"
 
-#: assets/models/asset/common.py:167 assets/serializers/asset/common.py:388
+#: assets/models/asset/common.py:170 assets/serializers/asset/common.py:389
 #: assets/serializers/asset/host.py:11
 msgid "Gathered info"
 msgstr "收集資產硬體資訊"
 
-#: assets/models/asset/common.py:168 assets/serializers/asset/custom.py:14
+#: assets/models/asset/common.py:171 assets/serializers/asset/custom.py:14
 msgid "Custom info"
 msgstr "自訂屬性"
 
-#: assets/models/asset/common.py:353
+#: assets/models/asset/common.py:172
+msgid "Director"
+msgstr "負責人"
+
+#: assets/models/asset/common.py:357
 msgid "Can refresh asset hardware info"
 msgstr "可以更新資產硬體資訊"
 
-#: assets/models/asset/common.py:354
+#: assets/models/asset/common.py:358
 msgid "Can test asset connectivity"
 msgstr "可以測試資產連接性"
 
-#: assets/models/asset/common.py:355
+#: assets/models/asset/common.py:359
 msgid "Can match asset"
 msgstr "可以匹配資產"
 
-#: assets/models/asset/common.py:356
+#: assets/models/asset/common.py:360
 msgid "Can change asset nodes"
 msgstr "可以修改資產節點"
 
@@ -2127,7 +2131,7 @@ msgid ""
 "type"
 msgstr "資產中批次更新平台，不符合平台類型跳過的資產"
 
-#: assets/serializers/asset/common.py:127 assets/serializers/platform.py:141
+#: assets/serializers/asset/common.py:128 assets/serializers/platform.py:141
 #: authentication/serializers/connect_token_secret.py:30
 #: authentication/serializers/connect_token_secret.py:75
 #: perms/models/asset_permission.py:76 perms/serializers/permission.py:42
@@ -2136,29 +2140,29 @@ msgstr "資產中批次更新平台，不符合平台類型跳過的資產"
 msgid "Protocols"
 msgstr "協議組"
 
-#: assets/serializers/asset/common.py:129
-#: assets/serializers/asset/common.py:151
+#: assets/serializers/asset/common.py:130
+#: assets/serializers/asset/common.py:152
 msgid "Node path"
 msgstr "節點路徑"
 
-#: assets/serializers/asset/common.py:148
-#: assets/serializers/asset/common.py:389
+#: assets/serializers/asset/common.py:149
+#: assets/serializers/asset/common.py:390
 msgid "Auto info"
 msgstr "自動化資訊"
 
-#: assets/serializers/asset/common.py:245
+#: assets/serializers/asset/common.py:246
 msgid "Platform not exist"
 msgstr "平台不存在"
 
-#: assets/serializers/asset/common.py:281
+#: assets/serializers/asset/common.py:282
 msgid "port out of range (0-65535)"
 msgstr "埠超出範圍 (0-65535)"
 
-#: assets/serializers/asset/common.py:288
+#: assets/serializers/asset/common.py:289
 msgid "Protocol is required: {}"
 msgstr "協議是必填的: {}"
 
-#: assets/serializers/asset/common.py:316
+#: assets/serializers/asset/common.py:317
 msgid "Invalid data"
 msgstr "無效的數據"
 
@@ -4569,8 +4573,6 @@ msgid "SYSTEM"
 msgstr "系統組織"
 
 #: orgs/models.py:84 orgs/serializers.py:23
-
-#| msgid "Organization role"
 msgid "Organization Code"
 msgstr "組織編碼"
 
@@ -7497,7 +7499,8 @@ msgstr "沒有埠可以使用，檢查並修改配置文件中 Magnus 監聽的�
 msgid "All available port count: {}, Already use port count: {}"
 msgstr "所有可用埠數量：{}，已使用埠數量：{}"
 
-#: tickets/api/ticket.py:88 tickets/models/ticket/general.py:286
+#: tickets/api/super_ticket.py:91 tickets/api/ticket.py:148
+#: tickets/models/ticket/general.py:286
 msgid "Applicant"
 msgstr "申請人"
 
@@ -7565,7 +7568,7 @@ msgstr "有效授權的資產"
 msgid "Ticket already closed"
 msgstr "工單已經關閉"
 
-#: tickets/handlers/apply_asset.py:36
+#: tickets/handlers/apply_asset.py:61
 msgid ""
 "Created by the ticket ticket title: {} ticket applicant: {} ticket "
 "processor: {} ticket ID: {}"
@@ -8031,13 +8034,10 @@ msgid "Phone"
 msgstr "手機"
 
 #: users/models/user.py:838 users/serializers/user.py:119
-
-#| msgid "Component"
 msgid "Companies"
 msgstr "公司"
 
 #: users/models/user.py:841 users/serializers/user.py:120
-#| msgid "Mobile number"
 msgid "Job Number"
 msgstr "工號"
 
@@ -8773,8 +8773,6 @@ msgid "Fully synchronous"
 msgstr "完全同步"
 
 #: xpack/plugins/cloud/models.py:106
-
-#| msgid "permed assets"
 msgid "Release assets"
 msgstr "授權的資產"
 
