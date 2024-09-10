@@ -1,4 +1,4 @@
-FROM debian:buster-slim as build-xpack
+FROM debian:buster-slim AS build-xpack
 
 COPY apps/xpack /opt/xpack
 
@@ -15,7 +15,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked,id=xpack \
     && chmod 755 /opt/xpack/plugins/license/bin/fit2license \
     && rm -rf /var/lib/apt/lists/*
 
-FROM python:3.11-slim-bullseye as stage-build
+FROM python:3.11-slim-bullseye AS stage-build
 ARG TARGETARCH
 
 ARG VERSION
@@ -83,7 +83,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked,id=core \
 COPY --from=stage-build /opt/jumpserver/release/jumpserver /opt/jumpserver
 WORKDIR /opt/jumpserver
 
-ARG PIP_MIRROR=https://pypi.tuna.tsinghua.edu.cn/simple
+ARG PIP_MIRROR=https://mirrors.aliyun.com/pypi/simple/
 RUN --mount=type=cache,target=/root/.cache \
     set -ex \
     && echo > /opt/jumpserver/config.yml \
