@@ -33,7 +33,7 @@ class ApplyAssetSerializer(BaseApplyAssetSerializer, TicketApplySerializer):
         writeable_fields = [
             'id', 'title', 'type', 'apply_nodes', 'apply_assets', 'apply_accounts',
             'apply_actions', 'apply_date_start', 'apply_date_expired',
-            'comment', 'org_id'
+            'comment', 'org_id', 'approver'
         ]
         read_only_fields = TicketApplySerializer.Meta.read_only_fields + ['apply_permission_name', ]
         fields = TicketApplySerializer.Meta.fields_small + writeable_fields + read_only_fields

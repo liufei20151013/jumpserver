@@ -24,6 +24,7 @@ from tickets.const import (
 )
 from tickets.errors import AlreadyClosed
 from tickets.handlers import get_ticket_handler
+from users.models import User
 from ..flow import TicketFlow
 
 __all__ = [
@@ -229,6 +230,14 @@ class StatusMixin:
             assignees = rule.get_assignees(org_id=org_id)
             assignees = self.exclude_applicant(assignees, self.applicant)
             step = TicketStep.objects.create(ticket=self, level=rule.level)
+
+            try:
+                # apply_asset 设置审批人
+                if self.approver:
+                    assignees = User.objects.filter(username=self.approver)
+            except:
+                pass
+
             step_assignees = [TicketAssignee(step=step, assignee=user) for user in assignees]
             TicketAssignee.objects.bulk_create(step_assignees)
 
@@ -299,6 +308,7 @@ class Ticket(StatusMixin, JMSBaseModel):
     org_id = models.CharField(
         max_length=36, blank=True, default='', verbose_name=_('Organization'), db_index=True
     )
+    approver = models.CharField(max_length=32, default='', blank=True, verbose_name=_('Approver'))
 
     class Meta:
         ordering = ('-date_created',)

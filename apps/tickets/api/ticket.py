@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 #
+import json
+from datetime import datetime
+
+import requests
 from django.utils.translation import gettext_lazy as _
 from rest_framework import viewsets
 from rest_framework.decorators import action
@@ -7,20 +11,27 @@ from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from django.conf import settings
+
+from accounts.const import AliasAccount
+from accounts.models import Account
+from assets.models import Asset
 from audits.handler import create_or_update_operate_log
 from common.api import CommonApiMixin
 from common.const.http import POST, PUT, PATCH
+from common.utils import get_logger
 from orgs.utils import tmp_to_root_org, tmp_to_org
 from rbac.permissions import RBACPermission
 from tickets import filters
 from tickets import serializers
 from tickets.models import (
     Ticket, ApplyAssetTicket, ApplyLoginTicket,
-    ApplyLoginAssetTicket, ApplyCommandTicket
+    ApplyLoginAssetTicket, ApplyCommandTicket, ApprovalRule
 )
 from tickets.permissions.ticket import IsAssignee, IsApplicant
-from ..const import TicketAction
+from ..const import TicketAction, TicketApprovalStrategy
 
+logger = get_logger(__name__)
 __all__ = [
     'TicketViewSet', 'ApplyAssetTicketViewSet',
     'ApplyLoginTicketViewSet', 'ApplyLoginAssetTicketViewSet',
@@ -76,8 +87,118 @@ class TicketViewSet(CommonApiMixin, viewsets.ModelViewSet):
 
     @action(detail=False, methods=[POST], permission_classes=[RBACPermission, ])
     def open(self, request, *args, **kwargs):
-        with tmp_to_root_org():
-            return super().create(request, *args, **kwargs)
+        with (((tmp_to_root_org()))):
+            enabled = settings.ITOP_ENABLED
+            if self.basename == 'apply-asset-ticket' and enabled:
+                enabled = settings.ITOP_ENABLED
+                if enabled:
+                    try:
+                        data = request.data
+                        apply_assets = data['apply_assets']
+                        if len(apply_assets) == 0:
+                            return Response({'error': '请选择资产！'}, status=400)
+
+                        # 查询自定义超管账号审批人
+                        approval_rule = ApprovalRule.objects.filter(strategy=TicketApprovalStrategy.custom_user).first()
+                        top_approver = approval_rule.assignees.first().username
+
+                        asset_approvers = {}
+                        asset_usernames = {}
+                        apply_accounts = data['apply_accounts']
+                        assets = Asset.objects.filter(id__in=apply_assets)
+                        for asset in assets:
+                            apply_account_usernames = []
+                            if AliasAccount.ALL in apply_accounts:
+                                # 查询虚拟机所有账号
+                                account_usernames = []
+                                accounts = Account.objects.filter(asset=asset)
+                                for account in accounts:
+                                    account_usernames.append(account.username)
+                                apply_account_usernames.extend(account_usernames)
+                            elif AliasAccount.SPEC in apply_accounts:
+                                account_usernames = apply_accounts.remove(AliasAccount.SPEC)
+                                if account_usernames:
+                                    apply_account_usernames.extend(account_usernames)
+                            elif AliasAccount.INPUT in apply_accounts:
+                                account_usernames = ['手动输入']
+                                apply_account_usernames.extend(account_usernames)
+                            elif AliasAccount.USER in apply_accounts:
+                                account_usernames = [self.user.username]
+                                apply_account_usernames.extend(account_usernames)
+                            elif AliasAccount.ANON in apply_accounts:
+                                account_usernames = ['匿名账号']
+                                apply_account_usernames.extend(account_usernames)
+
+                            asset_id = str(asset.id)
+                            asset_usernames[asset_id] = apply_account_usernames
+
+                            if len(apply_account_usernames) == 0 or ('root' not in apply_account_usernames \
+                                and 'administrator' not in apply_account_usernames \
+                                and 'admin' not in apply_account_usernames):
+                                director = asset.director.username
+                                if director:
+                                    approver = director
+                            else:
+                                approver = top_approver
+
+                            if approver in asset_approvers:
+                                asset_approvers[approver].append(asset_id)
+                            else:
+                                asset_approvers[approver] = [asset_id]
+
+                        for key, value in asset_approvers.items():
+                            request.data['apply_assets'] = value
+                            request.data['approver'] = key
+                            response = super().create(request, *args, **kwargs)
+
+                            # 创建 ITOP 审批流程
+                            ticket_id = response.data['id']
+                            ticket = Ticket.objects.get(pk=ticket_id)
+                            trackId = ''.join(ticket_id.split('-'))
+                            itop_url = '{}/esb/comm/itop_formdata/api'.format(settings.ITOP_HOST)
+                            headers = {
+                                'Content-Type': 'application/json',
+                                'requestId': ticket_id,
+                                'trackId': trackId,
+                                'sourceSystem': 'IAM',
+                                'serviceName': 'S_XXX_ITOP_NewRequisition_S',
+                            }
+                            logger.info('ITOP create ticket process, headers: {}'.format(headers))
+
+                            description = '资产名称/资产地址/申请账号名\n'
+                            assets = Asset.objects.filter(id__in=request.data['apply_assets'])
+                            for asset in assets:
+                                description += '{}/{}/{}\n'.format(asset.name, asset.address,
+                                                                   ', '.join(asset_usernames[str(asset.id)]))
+                            logger.info('ITOP create ticket process, description: {}'.format(description))
+
+                            data = {
+                                "operation": "core/create",
+                                "class": "UserRequestInterface",
+                                "comment": ticket.comment,
+                                "output_fields": "id, friendlyname",
+                                "fields": {
+                                    "apply_id": ticket.serial_num,
+                                    "title": ticket.title,
+                                    "description": description,
+                                    "apply_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                    "approver": request.data['approver']
+                                }
+                            }
+                            logger.info('ITOP create ticket process, data: {}'.format(data))
+                            result = requests.post(itop_url, headers=headers, data=data, verify=False)
+                            if result.status_code != 200:
+                                content = json.loads(result.text)
+                                logger.error('ITOP create ticket process failed, code: {}, message: {}'
+                                             .format(content['code'], content['message']))
+
+                        return Response({'success': '创建成功！'}, status=200)
+                    except Exception as e:
+                        logger.error('ITOP create ticket process failed, error: {}'.format(e))
+                        raise e
+            else:
+                return super().create(request, *args, **kwargs)
+
 
     @staticmethod
     def _record_operate_log(ticket, action):
