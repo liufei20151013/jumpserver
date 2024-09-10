@@ -4,6 +4,7 @@
 import json
 import logging
 from collections import defaultdict
+from uuid import UUID
 
 from django.db import models
 from django.db.models import Q
@@ -156,7 +157,6 @@ class JSONFilterMixin:
 class Asset(NodesRelationMixin, LabeledMixin, AbsConnectivity, JSONFilterMixin, JMSOrgBaseModel):
     Category = const.Category
     Type = const.AllTypes
-    user = User.objects.filter(username='admin').first()
 
     name = models.CharField(max_length=128, verbose_name=_('Name'))
     address = models.CharField(max_length=767, verbose_name=_('Address'), db_index=True)
@@ -168,7 +168,7 @@ class Asset(NodesRelationMixin, LabeledMixin, AbsConnectivity, JSONFilterMixin, 
     is_active = models.BooleanField(default=True, verbose_name=_('Is active'))
     gathered_info = models.JSONField(verbose_name=_('Gathered info'), default=dict, blank=True)  # 资产的一些信息，如 硬件信息
     custom_info = models.JSONField(verbose_name=_('Custom info'), default=dict)
-    director = models.ForeignKey(User, default=user.id, on_delete=models.PROTECT, verbose_name=_("Director"), related_name='assets')
+    director = models.ForeignKey(User, default=UUID('123e4567-e89b-12d3-a456-426614174000'), on_delete=models.PROTECT, verbose_name=_("Director"), related_name='assets')
 
     objects = AssetManager.from_queryset(AssetQuerySet)()
 
