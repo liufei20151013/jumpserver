@@ -99,3 +99,6 @@ REDIS_PORT: 6379
 # 开启 Vault 账号存储
 # VAULT_ENABLED: False
 
+# 开启 ITSM 同步
+ITOP_ENABLED: False
+ITOP_HOST:
