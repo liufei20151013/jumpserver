@@ -4128,7 +4128,7 @@ msgstr "メッセージのバックエンド"
 
 #: notifications/models/notification.py:18
 msgid "User message"
-msgstr "ユーザメッセージ"
+msgstr "ユーザー情報"
 
 #: notifications/models/notification.py:21
 msgid "{} subscription"
