@@ -4076,7 +4076,7 @@ msgstr "消息后端"
 
 #: notifications/models/notification.py:18
 msgid "User message"
-msgstr "用户消息"
+msgstr "用户信息"
 
 #: notifications/models/notification.py:21
 msgid "{} subscription"
