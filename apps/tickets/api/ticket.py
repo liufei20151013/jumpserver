@@ -115,19 +115,32 @@ class TicketViewSet(CommonApiMixin, viewsets.ModelViewSet):
                                 for account in accounts:
                                     account_usernames.append(account.username)
                                 apply_account_usernames.extend(account_usernames)
-                            elif AliasAccount.SPEC in apply_accounts:
-                                account_usernames = apply_accounts.remove(AliasAccount.SPEC)
-                                if account_usernames:
-                                    apply_account_usernames.extend(account_usernames)
-                            elif AliasAccount.INPUT in apply_accounts:
+
+                            if AliasAccount.SPEC in apply_accounts:
+                                # 查询虚拟机所有账号
+                                account_usernames = []
+                                accounts = Account.objects.filter(asset=asset)
+                                for account in accounts:
+                                    if account.username in apply_accounts:
+                                        account_usernames.append(account.username)
+                                apply_account_usernames.extend(account_usernames)
+                                # apply_account_usernames.extend(apply_accounts)
+
+                            if AliasAccount.INPUT in apply_accounts:
                                 account_usernames = ['手动输入']
                                 apply_account_usernames.extend(account_usernames)
-                            elif AliasAccount.USER in apply_accounts:
-                                account_usernames = [self.user.username]
+
+                            if AliasAccount.USER in apply_accounts:
+                                account_usernames = [request.user.username]
                                 apply_account_usernames.extend(account_usernames)
-                            elif AliasAccount.ANON in apply_accounts:
+
+                            if AliasAccount.ANON in apply_accounts:
                                 account_usernames = ['匿名账号']
                                 apply_account_usernames.extend(account_usernames)
+
+                            apply_account_usernames = [item for item in apply_account_usernames if not item.startswith('@')]
+                            apply_account_usernames = list(set(apply_account_usernames))
+                            apply_account_usernames = self.sort_list(apply_account_usernames)
 
                             asset_id = str(asset.id)
                             asset_usernames[asset_id] = apply_account_usernames
@@ -156,20 +169,21 @@ class TicketViewSet(CommonApiMixin, viewsets.ModelViewSet):
                             ticket = Ticket.objects.get(pk=ticket_id)
                             trackId = ''.join(ticket_id.split('-'))
                             itop_url = '{}/esb/comm/itop_formdata/api'.format(settings.ITOP_HOST)
+                            # 参数要用双引号，ITOP 那边是 java 开发的，用单引号则 json 字符串转换会有问题
                             headers = {
-                                'Content-Type': 'application/json',
-                                'requestId': ticket_id,
-                                'trackId': trackId,
-                                'sourceSystem': 'IAM',
-                                'serviceName': 'S_XXX_ITOP_NewRequisition_S',
+                                "Content-Type": "application/json",
+                                "requestId": ticket_id,
+                                "trackId": trackId,
+                                "sourceSystem": "IAM",
+                                "serviceName": "S_XXX_ITOP_NewRequisition_S",
                             }
                             logger.info('ITOP create ticket process, headers: {}'.format(headers))
 
                             description = '资产名称/资产地址/申请账号名\n'
                             assets = Asset.objects.filter(id__in=request.data['apply_assets'])
                             for asset in assets:
-                                description += '{}/{}/{}\n'.format(asset.name, asset.address,
-                                                                   ', '.join(asset_usernames[str(asset.id)]))
+                                description += "{}/{}/{}\n".format(asset.name, asset.address,
+                                                                   ", ".join(asset_usernames[str(asset.id)]))
                             logger.info('ITOP create ticket process, description: {}'.format(description))
 
                             data = {
@@ -185,8 +199,9 @@ class TicketViewSet(CommonApiMixin, viewsets.ModelViewSet):
                                     "approver": request.data['approver']
                                 }
                             }
-                            logger.info('ITOP create ticket process, data: {}'.format(data))
-                            result = requests.post(itop_url, headers=headers, data=data, verify=False)
+                            logger.info('ITOP create ticket process, data: {}'.format(json.dumps(data)))
+                            result = requests.post(itop_url, headers=headers, data=json.dumps(data), verify=False)
+                            logger.info('ITOP create ticket process, result: {}'.format(json.loads(result.text)))
                             if result.status_code != 200:
                                 content = json.loads(result.text)
                                 logger.error('ITOP create ticket process failed, code: {}, message: {}'
@@ -198,6 +213,14 @@ class TicketViewSet(CommonApiMixin, viewsets.ModelViewSet):
                         raise e
             else:
                 return super().create(request, *args, **kwargs)
+
+    def sort_list(self, lst):
+        def custom_sort(item):
+            # 提取英文部分并转换为小写
+            english_part = ''.join([char for char in item if char.isalpha() and not char.isascii()]).lower()
+            return english_part
+
+        return sorted(lst, key=custom_sort)
 
 
     @staticmethod
