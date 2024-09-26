@@ -13,7 +13,6 @@ from rest_framework.response import Response
 
 from django.conf import settings
 
-from accounts.const import AliasAccount
 from accounts.models import Account
 from assets.models import Asset
 from audits.handler import create_or_update_operate_log
@@ -87,16 +86,20 @@ class TicketViewSet(CommonApiMixin, viewsets.ModelViewSet):
 
     @action(detail=False, methods=[POST], permission_classes=[RBACPermission, ])
     def open(self, request, *args, **kwargs):
-        with (((tmp_to_root_org()))):
+        with tmp_to_root_org():
             enabled = settings.ITOP_ENABLED
             if self.basename == 'apply-asset-ticket' and enabled:
                 enabled = settings.ITOP_ENABLED
                 if enabled:
                     try:
                         data = request.data
-                        apply_assets = data['apply_assets']
-                        if len(apply_assets) == 0:
+                        apply_assets = data.get('apply_assets', None)
+                        if not apply_assets:
                             return Response({'error': '请选择资产！'}, status=400)
+
+                        apply_accounts = data.get('apply_accounts', [])
+                        if len(apply_accounts) <= 1:
+                            return Response({'error': '未指定账号！'}, status=400)
 
                         # 查询自定义超管账号审批人
                         approval_rule = ApprovalRule.objects.filter(strategy=TicketApprovalStrategy.custom_user).first()
@@ -104,50 +107,20 @@ class TicketViewSet(CommonApiMixin, viewsets.ModelViewSet):
 
                         asset_approvers = {}
                         asset_usernames = {}
-                        apply_accounts = data['apply_accounts']
+                        super_account_usernames = ['root', 'administrator', 'admin']
+
                         assets = Asset.objects.filter(id__in=apply_assets)
                         for asset in assets:
-                            apply_account_usernames = []
-                            if AliasAccount.ALL in apply_accounts:
-                                # 查询虚拟机所有账号
-                                account_usernames = []
-                                accounts = Account.objects.filter(asset=asset)
-                                for account in accounts:
-                                    account_usernames.append(account.username)
-                                apply_account_usernames.extend(account_usernames)
-
-                            if AliasAccount.SPEC in apply_accounts:
-                                # 查询虚拟机所有账号
-                                account_usernames = []
-                                accounts = Account.objects.filter(asset=asset)
-                                for account in accounts:
-                                    if account.username in apply_accounts:
-                                        account_usernames.append(account.username)
-                                apply_account_usernames.extend(account_usernames)
-                                # apply_account_usernames.extend(apply_accounts)
-
-                            if AliasAccount.INPUT in apply_accounts:
-                                account_usernames = ['手动输入']
-                                apply_account_usernames.extend(account_usernames)
-
-                            if AliasAccount.USER in apply_accounts:
-                                account_usernames = [request.user.username]
-                                apply_account_usernames.extend(account_usernames)
-
-                            if AliasAccount.ANON in apply_accounts:
-                                account_usernames = ['匿名账号']
-                                apply_account_usernames.extend(account_usernames)
-
-                            apply_account_usernames = [item for item in apply_account_usernames if not item.startswith('@')]
-                            apply_account_usernames = list(set(apply_account_usernames))
+                            accounts = Account.objects.filter(asset=asset).values_list('username', flat=True)
+                            apply_account_usernames = list(set(accounts) & set(apply_accounts))
                             apply_account_usernames = self.sort_list(apply_account_usernames)
 
                             asset_id = str(asset.id)
-                            asset_usernames[asset_id] = apply_account_usernames
+                            asset_usernames[asset_id] = apply_account_usernames if len(apply_account_usernames) > 0 else ['-']
 
-                            if len(apply_account_usernames) == 0 or ('root' not in apply_account_usernames \
-                                and 'administrator' not in apply_account_usernames \
-                                and 'admin' not in apply_account_usernames):
+                            # 非特权账号则由资产负责人审批
+                            intersection_account_usernames = list(set(apply_account_usernames) & set(super_account_usernames))
+                            if len(intersection_account_usernames) == 0:
                                 director = asset.director.username
                                 if director:
                                     approver = director
@@ -194,12 +167,12 @@ class TicketViewSet(CommonApiMixin, viewsets.ModelViewSet):
                                 "fields": {
                                     "apply_id": ticket.serial_num,
                                     "title": ticket.title,
-                                    "description": description,
+                                    "description": "{}",
                                     "apply_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                                     "approver": request.data['approver']
                                 }
                             }
-                            logger.info('ITOP create ticket process, data: {}'.format(json.dumps(data)))
+                            logger.info('ITOP create ticket process, data: {}'.format(json.dumps(data).replace("{}", description)))
                             result = requests.post(itop_url, headers=headers, data=json.dumps(data), verify=False)
                             logger.info('ITOP create ticket process, result: {}'.format(json.loads(result.text)))
                             if result.status_code != 200:
