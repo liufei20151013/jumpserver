@@ -20,7 +20,8 @@ from .mixins import UserQuerysetMixin
 from .. import serializers
 from ..exceptions import UnableToDeleteAllUsers
 from ..filters import UserFilter
-from ..models import User
+from ..mixins.mixins import UserGroupQuerysetMixin
+from ..models import User, UserGroup
 from ..notifications import ResetMFAMsg
 from ..permissions import UserObjectPermission
 from ..serializers import (
@@ -32,7 +33,7 @@ logger = get_logger(__name__)
 __all__ = [
     'UserViewSet', 'UserChangePasswordApi',
     'UserUnblockPKApi', 'UserResetMFAApi',
-    'AddOrUpdateUserApi'
+    'AddOrUpdateUserApi', 'AddOrUpdateUserGroupApi'
 ]
 
 
@@ -265,5 +266,27 @@ class AddOrUpdateUserApi(UserQuerysetMixin, generics.CreateAPIView):
         except Exception as e:
             logger.error('用户信息提交失败：{}'.format(e))
             return Response(response_message('failed', '参数错误：' + e))
+
+        return Response(response_message('success', '提交成功!'))
+
+
+class AddOrUpdateUserGroupApi(UserGroupQuerysetMixin, generics.CreateAPIView):
+    serializer_class = serializers.AddGroupSerializer
+
+    def create(self, request, *args, **kwargs):
+        try:
+            data = request.data
+            logger.info("Save user group, request data: {}".format(json.dumps(data)))
+            userGroups = UserGroup.objects.filter(org_code=data['orgCode'])
+            if userGroups.exists():
+                userGroup = userGroups.first()
+                userGroup.name = data['name']
+                userGroup.save()
+            else:
+                UserGroup.objects.create(name=data['name'], org_code=data['orgCode'])
+
+        except Exception as e:
+            logger.error('用户组创建失败：{}'.format(e))
+            return Response(response_message('failed', '参数错误:' + e))
 
         return Response(response_message('success', '提交成功!'))

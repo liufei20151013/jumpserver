@@ -3,6 +3,7 @@
 from django.db.models import Count, Q
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
+from rest_framework.serializers import ModelSerializer
 
 from common.serializers.fields import ObjectRelatedField
 from common.serializers.mixin import ResourceLabelsMixin
@@ -11,7 +12,7 @@ from .. import utils
 from ..models import User, UserGroup
 
 __all__ = [
-    'UserGroupSerializer', 'UserGroupListSerializer',
+    'UserGroupSerializer', 'UserGroupListSerializer', 'AddGroupSerializer'
 ]
 
 
@@ -20,12 +21,13 @@ class UserGroupSerializer(ResourceLabelsMixin, BulkOrgResourceModelSerializer):
         required=False, many=True, queryset=User.objects,
         attrs=("id", "name", "is_service_account"), label=_('User'),
     )
+    org_code = serializers.CharField(max_length=64, required=False, allow_blank=True, label=_('Organization Code'))
 
     class Meta:
         model = UserGroup
         fields_mini = ['id', 'name']
         fields_small = fields_mini + [
-            'comment', 'date_created', 'created_by'
+            'comment', 'date_created', 'created_by', 'org_code',
         ]
         fields = fields_mini + fields_small + ['users', 'labels']
         extra_kwargs = {
@@ -59,3 +61,8 @@ class UserGroupListSerializer(UserGroupSerializer):
             **UserGroupSerializer.Meta.extra_kwargs,
             'users_amount': {'label': _('Users amount')},
         }
+
+class AddGroupSerializer(ModelSerializer):
+    class Meta:
+        model = UserGroup
+        fields = ['name']
