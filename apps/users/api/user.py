@@ -11,8 +11,7 @@ from rest_framework_bulk import BulkModelViewSet
 from common.api import CommonApiMixin, SuggestionMixin
 from common.drf.filters import AttrRulesFilterBackend
 from common.utils import get_logger, response_message
-from orgs.models import Organization
-from orgs.utils import current_org, tmp_to_root_org, set_current_org
+from orgs.utils import current_org, tmp_to_root_org
 from rbac.models import Role, RoleBinding
 from rbac.permissions import RBACPermission
 from users.utils import LoginBlockUtil, MFABlockUtils
@@ -228,6 +227,16 @@ class AddOrUpdateUserApi(UserQuerysetMixin, generics.CreateAPIView):
         try:
             data = request.data
             logger.info("Save user, request data: {}".format(json.dumps(data)))
+
+            userGroup = None
+            orgId = data['orgId']
+            if len(orgId) > 0:
+                userGroups = UserGroup.objects.filter(org_code=orgId)
+                if not userGroups.exists():
+                    return Response(response_message('failed', '用户组不存在！请先创建用户组，组织编码：' + orgId))
+
+                userGroup = userGroups.first()
+
             users = User.objects.filter(username=data['uid'])
             if users.exists():
                 user = users.first()
@@ -238,31 +247,24 @@ class AddOrUpdateUserApi(UserQuerysetMixin, generics.CreateAPIView):
                 user.phone = data['phone']
                 user.is_active = data['status']
                 user.save()
+
+                # 这里要做下判断，防止对授权给用户组的有影响，同用户组不做更新；IAM 用户只有一个所属用户组
+                if userGroup and userGroup not in user.groups.all():
+                    for user_group in user.groups.all():
+                        user.groups.remove(user_group)
+                    user.groups.set([userGroup])
             else:
                 user = User.objects.create(name=data['userName'],
-                                           username=data['uid'],
-                                           job_num=data['jobNum'],
-                                           companies=data['companies'],
-                                           email=data['email'],
-                                           phone=data['phone'],
-                                           source=User.Source.oauth2.value,
-                                           is_active=data['status'])
+                                    username=data['uid'],
+                                    job_num=data['jobNum'],
+                                    companies=data['companies'],
+                                    email=data['email'],
+                                    phone=data['phone'],
+                                    source=User.Source.oauth2.value,
+                                    is_active=data['status'])
 
-            orgId = data['orgId']
-            if len(orgId) > 0:
-                # 邀请到其它组织
-                orgs = Organization.objects.filter(org_code=orgId)
-                if orgs.exists():
-                    org = orgs.first()
-                    set_current_org(org)
-
-                    bindings = []
-                    role = Role.objects.get(name='OrgUser')
-                    b = RoleBinding(user=user, role=role, org_id=current_org.id, scope='org')
-                    bindings.append(b)
-                    RoleBinding.objects.bulk_create(bindings, ignore_conflicts=True)
-                else:
-                    return Response(response_message('failed', '所属组织不存在！组织编码：' + orgId))
+                if userGroup:
+                    user.groups.set([userGroup])
         except Exception as e:
             logger.error('用户信息提交失败：{}'.format(e))
             return Response(response_message('failed', '参数错误：' + e))
