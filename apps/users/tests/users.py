@@ -44,7 +44,8 @@ class TestTaskCase(TestCase):
         gmt_form = '%a, %d %b %Y %H:%M:%S GMT'
         now = datetime.utcnow().strftime(gmt_form)
         jms_url = "http://127.0.0.1:8080"
-        url = '{}/api/v1/orgs/doAddOrg/'.format(jms_url)
+        # url = '{}/api/v1/orgs/doAddOrg/'.format(jms_url)
+        url = '{}/api/v1/users/doAddUserGroup/'.format(jms_url)
         headers = {
             'Accept': 'application/json',
             'X-JMS-ORG': Organization.DEFAULT_ID,
