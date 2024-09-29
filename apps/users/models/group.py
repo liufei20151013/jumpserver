@@ -11,6 +11,9 @@ __all__ = ['UserGroup']
 
 class UserGroup(LabeledMixin, JMSOrgBaseModel):
     name = models.CharField(max_length=128, verbose_name=_('Name'))
+    org_code = models.CharField(
+        max_length=64, blank=True, null=True, verbose_name=_('Organization Code')
+    )
 
     def __str__(self):
         return self.name
