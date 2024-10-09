@@ -280,12 +280,13 @@ class AddOrUpdateUserGroupApi(UserGroupQuerysetMixin, generics.CreateAPIView):
             data = request.data
             logger.info("Save user group, request data: {}".format(json.dumps(data)))
             userGroups = UserGroup.objects.filter(org_code=data['orgCode'])
+            userGroupName = '{}({})'.format(data['name'], data['orgCode'])
             if userGroups.exists():
                 userGroup = userGroups.first()
-                userGroup.name = data['name']
+                userGroup.name = userGroupName
                 userGroup.save()
             else:
-                UserGroup.objects.create(name=data['name'], org_code=data['orgCode'])
+                UserGroup.objects.create(name=userGroupName, org_code=data['orgCode'])
 
         except Exception as e:
             logger.error('用户组创建失败：{}'.format(e))
