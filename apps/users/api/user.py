@@ -1,5 +1,6 @@
 # ~*~ coding: utf-8 ~*~
 import json
+import uuid
 from collections import defaultdict
 
 from django.utils.translation import gettext as _
@@ -265,6 +266,13 @@ class AddOrUpdateUserApi(UserQuerysetMixin, generics.CreateAPIView):
 
                 if userGroup:
                     user.groups.set([userGroup])
+
+                role_mapper = {r.id: r for r in Role.objects.all()}
+                system_roles = role_mapper[uuid.UUID('ce708242-3ec7-4ea7-8cbb-041aebe40a8c')]
+                user.system_roles.set({system_roles})
+                org_roles = role_mapper[uuid.UUID('b5616b82-f4b1-4a6a-9ea7-a171f6c1533e')]
+                user.org_roles.set({org_roles})
+
         except Exception as e:
             logger.error('用户信息提交失败：{}'.format(e))
             return Response(response_message('failed', '参数错误：' + e))
