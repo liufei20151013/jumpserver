@@ -301,7 +301,7 @@ class Ticket(StatusMixin, JMSBaseModel):
     approval_step = models.SmallIntegerField(
         default=TicketLevel.one, choices=TicketLevel.choices, verbose_name=_('Approval step')
     )
-    comment = models.TextField(default='', blank=True, verbose_name=_('Comment'))
+    comment = models.TextField(verbose_name=_('Comment'))
     rel_snapshot = models.JSONField(verbose_name=_('Relation snapshot'), default=dict)
     serial_num = models.CharField(_('Serial number'), max_length=128, null=True)
     meta = models.JSONField(encoder=ModelJSONFieldEncoder, default=dict, verbose_name=_("Meta"))
