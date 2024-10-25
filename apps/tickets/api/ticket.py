@@ -152,17 +152,18 @@ class TicketViewSet(CommonApiMixin, viewsets.ModelViewSet):
                             }
                             logger.info('ITOP create ticket process, headers: {}'.format(headers))
 
-                            description = '资产名称/资产地址/申请账号名\n'
+                            description = '申请资产详细：\n资产名称/资产地址/申请账号名\n'
                             assets = Asset.objects.filter(id__in=request.data['apply_assets'])
                             for asset in assets:
                                 description += "{}/{}/{}\n".format(asset.name, asset.address,
                                                                    ", ".join(asset_usernames[str(asset.id)]))
+                            description += "申请备注：\n{}".format(ticket.comment)
                             logger.info('ITOP create ticket process, description: {}'.format(description))
 
                             data = {
                                 "operation": "core/create",
                                 "class": "UserRequestInterface",
-                                "comment": ticket.comment,
+                                "comment": "Synchronization from blah...",
                                 "output_fields": "id, friendlyname",
                                 "fields": {
                                     "apply_id": ticket.serial_num,
