@@ -147,15 +147,16 @@ class TicketViewSet(CommonApiMixin, viewsets.ModelViewSet):
                                 "Content-Type": "application/json",
                                 "requestId": ticket_id,
                                 "trackId": trackId,
-                                "sourceSystem": "IAM",
+                                "sourceSystem": "PAM",
                                 "serviceName": "S_XXX_ITOP_NewRequisition_S",
                             }
                             logger.info('ITOP create ticket process, headers: {}'.format(headers))
 
-                            description = '申请资产详细：\n资产名称/资产地址/申请账号名\n'
+                            title = "用户({})申请 PAM 资源访问".format(request.user.name)
+                            description = '申请资产详细：\n序号：资产名称/资产地址/申请账号名\n'
                             assets = Asset.objects.filter(id__in=request.data['apply_assets'])
-                            for asset in assets:
-                                description += "{}/{}/{}\n".format(asset.name, asset.address,
+                            for index, asset in enumerate(assets):
+                                description += "{}、{}/{}/{}\n".format(index + 1, asset.name, asset.address,
                                                                    ", ".join(asset_usernames[str(asset.id)]))
                             description += "申请备注：\n{}".format(ticket.comment)
                             logger.info('ITOP create ticket process, description: {}'.format(description))
@@ -167,13 +168,13 @@ class TicketViewSet(CommonApiMixin, viewsets.ModelViewSet):
                                 "output_fields": "id, friendlyname",
                                 "fields": {
                                     "apply_id": ticket.serial_num,
-                                    "title": ticket.title,
-                                    "description": "{}",
+                                    "title": title,
+                                    "description": description,
                                     "apply_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                                     "approver": request.data['approver']
                                 }
                             }
-                            logger.info('ITOP create ticket process, data: {}'.format(json.dumps(data).replace("{}", description)))
+                            logger.info('ITOP create ticket process, data: {}'.format(data))
                             result = requests.post(itop_url, headers=headers, data=json.dumps(data), verify=False)
                             logger.info('ITOP create ticket process, result: {}'.format(json.loads(result.text)))
                             if result.status_code != 200:
