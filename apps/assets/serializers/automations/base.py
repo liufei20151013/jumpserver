@@ -1,6 +1,7 @@
 from django.utils.translation import gettext as _
 from rest_framework import serializers
 
+from accounts.models import ChangeSecretRecord
 from assets.models import Asset, Node, BaseAutomation, AutomationExecution
 from common.const.choices import Trigger
 from common.serializers.fields import ObjectRelatedField, LabeledChoiceField
@@ -52,6 +53,16 @@ class AutomationExecutionSerializer(serializers.ModelSerializer):
         from accounts.const import AutomationTypes as AccountTypes
         tp_dict = dict(AssetTypes.choices) | dict(AccountTypes.choices)
         tp = obj.snapshot.get('type', '')
+        success = 0
+        failed = 0
+        if tp == AccountTypes.change_secret:
+            records = ChangeSecretRecord.objects.filter(execution_id=obj.id)
+            for r in records:
+                if r.status == 'success':
+                    success += 1
+                else:
+                    failed += 1
+
         snapshot = {
             'type': {'value': tp, 'label': tp_dict.get(tp, tp)},
             'name': obj.snapshot.get('name'),
@@ -59,6 +70,8 @@ class AutomationExecutionSerializer(serializers.ModelSerializer):
             'accounts': obj.snapshot.get('accounts'),
             'node_amount': len(obj.snapshot.get('nodes', [])),
             'asset_amount': len(obj.snapshot.get('assets', [])),
+            'success_amount': success,
+            'failed_amount': failed,
         }
         return snapshot
 
