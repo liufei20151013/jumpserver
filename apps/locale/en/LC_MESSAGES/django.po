@@ -2862,7 +2862,7 @@ msgstr ""
 msgid ""
 "The username or password you entered is incorrect, please enter it again. "
 "You can also try {times_try} times (The account will be temporarily locked "
-"for {block_time} minutes)"
+"for {block_time} minutes), or confirm your current account password by emailing datacenter@pub.seu.edu.cn."
 msgstr ""
 
 #: authentication/errors/const.py:47 authentication/errors/const.py:55

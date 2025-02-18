@@ -2907,10 +2907,10 @@ msgstr "會話已變更，刷新頁面"
 msgid ""
 "The username or password you entered is incorrect, please enter it again. "
 "You can also try {times_try} times (The account will be temporarily locked "
-"for {block_time} minutes)"
+"for {block_time} minutes, or confirm your current account password by emailing datacenter@pub.seu.edu.cn.)"
 msgstr ""
 "您輸入的使用者名稱或密碼不正確，請重新輸入。 您還可以嘗試 {times_try} 次 (帳"
-"號將被臨時 鎖定 {block_time} 分鐘)"
+"號將被臨時 鎖定 {block_time} 分鐘，或發送郵件至 datacenter@pub.seu.edu.cn 確認當前賬號密碼)"
 
 #: authentication/errors/const.py:47 authentication/errors/const.py:55
 msgid ""

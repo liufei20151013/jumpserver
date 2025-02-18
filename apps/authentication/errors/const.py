@@ -41,7 +41,8 @@ invalid_login_msg = _(
     "The username or password you entered is incorrect, "
     "please enter it again. "
     "You can also try {times_try} times "
-    "(The account will be temporarily locked for {block_time} minutes)"
+    "(The account will be temporarily locked for {block_time} minutes, "
+    "or confirm your current account password by emailing datacenter@pub.seu.edu.cn)."
 )
 block_user_login_msg = _(
     "The account has been locked "
