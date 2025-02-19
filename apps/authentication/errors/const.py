@@ -38,11 +38,9 @@ old_reason_choices = {
 
 session_empty_msg = _("No session found, check your cookie")
 invalid_login_msg = _(
-    "The username or password you entered is incorrect, "
-    "please enter it again. "
-    "You can also try {times_try} times "
-    "(The account will be temporarily locked for {block_time} minutes, "
-    "or confirm your current account password by emailing datacenter@pub.seu.edu.cn)."
+"您输入的用户名或密码不正确，请重新输入。 "
+"您还可以尝试 {times_try} 次 (账号将被临时 锁定 {block_time} 分钟。"
+"请尝试忘记密码，或者发送邮件至datacenter@pub.seu.edu.cn联系管理员重置密码，邮件内容需要提供用户名、手机号以及邮箱)。"
 )
 block_user_login_msg = _(
     "The account has been locked "
