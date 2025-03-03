@@ -8,6 +8,7 @@ from perms.models import AssetPermission, AssetPermissionQuerySet
 from users.models import User, UserGroup
 
 
+
 class PermissionBaseFilter(BaseFilterSet):
     is_valid = filters.BooleanFilter(method='do_nothing')
     user_id = filters.UUIDFilter(method='do_nothing')
@@ -112,6 +113,7 @@ class AssetPermissionFilter(PermissionBaseFilter):
     def qs(self):
         qs = super().qs
         qs = self.filter_effective(qs)
+        qs = self.filter_user(qs)
         qs = self.filter_asset(qs)
         qs = self.filter_node(qs)
         qs = self.filter_accounts(qs)
@@ -150,6 +152,22 @@ class AssetPermissionFilter(PermissionBaseFilter):
         queryset = queryset.filter(nodes__in=nodeids)
         return queryset
 
+    def filter_user(self, queryset):
+        is_query_all = self.get_query_param('all', True)
+        username = self.get_query_param('username')
+
+        if username:
+            users = User.objects.filter(username__icontains=username)
+        else:
+            return queryset
+
+        if not users:
+            return queryset.none()
+        user_ids = list(users.values_list('id', flat=True))
+
+        queryset = queryset.filter(users__in=user_ids)
+        return queryset
+
     def filter_asset(self, queryset):
         is_query_all = self.get_query_param('all', True)
         asset_id = self.get_query_param('asset_id')
@@ -161,7 +179,7 @@ class AssetPermissionFilter(PermissionBaseFilter):
         elif asset_name:
             assets = Asset.objects.filter(name=asset_name)
         elif address:
-            assets = Asset.objects.filter(address=address)
+            assets = Asset.objects.filter(address__icontains=address)
         else:
             return queryset
         if not assets:
