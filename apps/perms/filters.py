@@ -48,19 +48,31 @@ class PermissionBaseFilter(BaseFilterSet):
         is_query_all = self.get_query_param('all', True)
         user_id = self.get_query_param('user_id')
         username = self.get_query_param('username')
+        user = None
+        users = None
 
         if user_id:
             user = get_object_or_none(User, pk=user_id)
         elif username:
-            user = get_object_or_none(User, username=username)
+            users = User.objects.filter(username__icontains=username)
         else:
             return queryset
-        if not user:
+        if not user and not users:
             return queryset.none()
 
         if not is_query_all:
-            queryset = queryset.filter(users=user)
+            if user:
+                queryset = queryset.filter(users=user)
+            else:
+                user_ids = list(users.values_list('id', flat=True))
+                queryset = queryset.filter(users__in=user_ids)
             return queryset
+
+        if users:
+            user_ids = list(users.values_list('id', flat=True))
+            queryset = queryset.filter(users__in=user_ids)
+            return queryset
+
         groups = list(user.groups.all().values_list('id', flat=True))
 
         user_asset_perm_ids = AssetPermission.objects.filter(users=user).distinct().values_list('id', flat=True)
@@ -150,22 +162,6 @@ class AssetPermissionFilter(PermissionBaseFilter):
         nodeids = list(nodeids)
 
         queryset = queryset.filter(nodes__in=nodeids)
-        return queryset
-
-    def filter_user(self, queryset):
-        is_query_all = self.get_query_param('all', True)
-        username = self.get_query_param('username')
-
-        if username:
-            users = User.objects.filter(username__icontains=username)
-        else:
-            return queryset
-
-        if not users:
-            return queryset.none()
-        user_ids = list(users.values_list('id', flat=True))
-
-        queryset = queryset.filter(users__in=user_ids)
         return queryset
 
     def filter_asset(self, queryset):
