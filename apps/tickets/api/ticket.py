@@ -107,7 +107,7 @@ class TicketViewSet(CommonApiMixin, viewsets.ModelViewSet):
 
                         asset_approvers = {}
                         asset_usernames = {}
-                        super_account_usernames = ['root', 'administrator', 'admin']
+                        super_account_usernames = ['root', 'administrator']
 
                         assets = Asset.objects.filter(id__in=apply_assets)
                         for asset in assets:
