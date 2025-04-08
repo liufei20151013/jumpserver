@@ -25,6 +25,7 @@ class RDPResolution(TextChoices):
     RES_1366x768 = '1366x768', '1366x768'
     RES_1600x900 = '1600x900', '1600x900'
     RES_1920x1080 = '1920x1080', '1920x1080'
+    RES_2560x1440 = '2560x1440', '2560x1440'
 
 
 class RDPClientOption(TextChoices):
