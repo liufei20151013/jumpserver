@@ -487,7 +487,10 @@ class RoleMixin:
 
         from rbac.builtin import BuiltinRole
         ids = [str(r.id) for r in self.system_roles.all()]
-        yes = BuiltinRole.system_admin.id in ids
+        # 加上 api管理员
+        api_admin_id = settings.API_ADMIN_ID
+        superuser_ids = [BuiltinRole.system_admin.id, api_admin_id]
+        yes = bool(set(superuser_ids) & set(ids))  # 有交集返回 True
         self._is_superuser = yes
         return yes
 
