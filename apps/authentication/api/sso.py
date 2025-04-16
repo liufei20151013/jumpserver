@@ -16,7 +16,7 @@ from common.api import JMSGenericViewSet
 from common.const.http import POST, GET
 from common.permissions import OnlySuperUser
 from common.serializers import EmptySerializer
-from common.utils import reverse, safe_next_url
+from common.utils import reverse, safe_next_url, get_logger
 from common.utils.timezone import utc_now
 from users.models import User
 from users.utils import LoginBlockUtil, LoginIpBlockUtil
@@ -31,6 +31,7 @@ from ..serializers import SSOTokenSerializer
 NEXT_URL = 'next'
 AUTH_KEY = 'authkey'
 
+logger = get_logger(__name__)
 
 class SSOViewSet(AuthMixin, JMSGenericViewSet):
     queryset = SSOToken.objects.all()
@@ -46,13 +47,14 @@ class SSOViewSet(AuthMixin, JMSGenericViewSet):
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
         username = serializer.validated_data['username']
         user = User.objects.get(username=username)
         next_url = serializer.validated_data.get(NEXT_URL)
         next_url = safe_next_url(next_url, request=request)
 
         operator = request.user.username
+        logger.info('User[{}] generated an sso-login-url for User[{}]!'.format(operator, username))
+
         # TODO `created_by` 和 `created_by` 可以通过 `ThreadLocal` 统一处理
         token = SSOToken.objects.create(user=user, created_by=operator, updated_by=operator)
         query = {
@@ -60,6 +62,7 @@ class SSOViewSet(AuthMixin, JMSGenericViewSet):
             NEXT_URL: next_url or ''
         }
         login_url = '%s?%s' % (reverse('api-auth:sso-login', external=True), urlencode(query))
+        logger.info('login_url={}'.format(login_url))
         return Response(data={'login_url': login_url})
 
     @action(methods=[GET], detail=False, filter_backends=[AuthKeyQueryDeclaration], permission_classes=[AllowAny])
