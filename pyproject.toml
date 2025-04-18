@@ -5,6 +5,14 @@ description = "广受欢迎的开源堡垒机"
 authors = ["ibuler <ibuler@qq.com>"]
 license = "GPLv3"
 readme = "README.md"
+package-mode = false
+repository = "https://github.com/jumpserver/jumpserver"
+homepage = "https://www.jumpserver.org"
+documentation = "https://docs.jumpserver.org"
+
+# 说明
+# poetry install (社区版)
+# poetry install --with=xpack (企业版)
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -185,7 +193,7 @@ volcengine-python-sdk = "1.0.71"
 
 [[tool.poetry.source]]
 name = "tsinghua"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
+url = "https://mirrors.aliyun.com/pypi/simple/"
 priority = "primary"
 
 [[tool.poetry.source]]
