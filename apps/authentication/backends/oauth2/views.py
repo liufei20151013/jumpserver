@@ -1,18 +1,13 @@
-import json
-
 from django.views import View
 from django.conf import settings
 from django.contrib import auth
 from django.http import HttpResponseRedirect
-from django.urls import reverse
 from django.utils.http import urlencode
 
 from authentication.utils import build_absolute_uri
 from authentication.views.mixins import FlashMessageMixin
 from authentication.mixins import authenticate
 from common.utils import get_logger
-from urllib.parse import unquote, parse_qs
-
 
 logger = get_logger(__file__)
 
@@ -23,11 +18,12 @@ class OAuth2AuthRequestView(View):
         log_prompt = "Process OAuth2 GET requests: {}"
         logger.debug(log_prompt.format('Start'))
 
+        redirect_uri = settings.SITE_URL + '/core/auth/login/?admin=1'
         query_dict = {
             'client_id': settings.AUTH_OAUTH2_CLIENT_ID, 'response_type': 'token',
             'scope': settings.AUTH_OAUTH2_SCOPE,
             'redirect_uri': build_absolute_uri(
-                request, path=reverse(settings.AUTH_OAUTH2_AUTH_LOGIN_CALLBACK_URL_NAME)
+                request, path=redirect_uri
             ),
             'state': '7308cad2-aeae-4959-8e9d-df2f6a0b111f'
         }
@@ -46,37 +42,21 @@ class OAuth2AuthRequestView(View):
 
 
 class OAuth2AuthCallbackView(View, FlashMessageMixin):
-    http_method_names = ['get', ]
+    http_method_names = ['get',]
 
-    def get(self, request, params):
+    def get(self, request):
         """ Processes GET requests. """
         log_prompt = "Process GET requests [OAuth2AuthCallbackView]: {}"
         logger.debug(log_prompt.format('Start'))
+        callback_params = request.GET
+
         full_url = request.build_absolute_uri()
         logger.debug(full_url)
 
-        callback_params = request.GET
-        # 解码 URL 编码的参数（如 %26 → &）
-        decoded_params = unquote(params)
-        # 将参数拆分为字典（支持多值参数）
-        param_dict = parse_qs(decoded_params)
-
-        # 打印完整参数字典（含所有键值对）
-        # print("Full Parameter Dictionary:")
-        # for key, values in param_dict.items():
-        #     print(f"{key}: {values[0]}")
-
-        ticket_list = param_dict.get('ticket', [])
-        ticket = ticket_list[0] if ticket_list else ''
-        logger.debug('*********ticket:' + ticket)
-
-        logger.debug('**********************' + json.dumps(callback_params))
-        if len(ticket) > 0:
-        # if 'ticket' in callback_params:
-            logger.debug('**********************1')
+        if 'access_token' in callback_params:
             logger.debug(log_prompt.format('Process authenticate'))
-            # user = authenticate(code=callback_params['ticket'], request=request)
-            user = authenticate(code=ticket, request=request)
+            logger.debug(log_prompt.format(callback_params['access_token']))
+            user = authenticate(code=callback_params['access_token'], request=request)
 
             if user:
                 logger.debug(log_prompt.format('Login: {}'.format(user)))
@@ -86,7 +66,6 @@ class OAuth2AuthCallbackView(View, FlashMessageMixin):
                     settings.AUTH_OAUTH2_AUTHENTICATION_REDIRECT_URI
                 )
 
-        logger.debug('**********************2')
         logger.debug(log_prompt.format('Redirect'))
         redirect_url = settings.AUTH_OAUTH2_PROVIDER_END_SESSION_ENDPOINT or '/'
         return HttpResponseRedirect(redirect_url)
