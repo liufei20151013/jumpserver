@@ -523,7 +523,8 @@ class SuperConnectionTokenViewSet(ConnectionTokenViewSet):
         elif is_false(expire_now):
             logger.debug('Api specified, now expire now')
         else:
-            token.expire()
+            # token.expire()
+            pass
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
