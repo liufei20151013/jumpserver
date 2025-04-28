@@ -151,14 +151,14 @@ class TestTaskCase(TestCase):
         assets = [
             {
                 "asset_type": "host",
-                "asset_name": "salesview 平台243",
-                "address": "10.1.12.18",
+                "asset_name": "10.1.14.12",
+                "address": "10.1.14.12",
                 "platform": "Linux",
                 "assetnode_name": "/Default/开发/test",
                 "protocol": "ssh/22",
                 "default_db": "",
-                "permission_name": "18-permissionwww",
-                "username": "admin",
+                "permission_name": "liufei-permanent",
+                "username": "liufei",
                 "action": ["connect", "upload", "download", "copy", "paste", "delete", "share"],
                 "account_username": "appusr",
                 "secret_type": "password",

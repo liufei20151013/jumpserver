@@ -382,7 +382,7 @@ def save_or_update_asset_permission(permissions):
             isExistPrivilegeAccount = str(permission_name).__contains__('_xcscsa') or \
                                       str(permission_name).__contains__('_administrator') or \
                                       str(account_username).__contains__('xcscsa') or \
-                                      str(account_username).__contains__('_administrator')
+                                      str(account_username).__contains__('administrator')
             if isExistPrivilegeAccount:
                 permissionList = AssetPermission.objects.filter(assets=assets.first(), users=users.first(),
                                                                 name=permission_name)
@@ -397,14 +397,7 @@ def save_or_update_asset_permission(permissions):
                     if len(permission_name) > 0:
                         perms = AssetPermission.objects.filter(name=permission_name)
                         if perms.exists():
-                            print("AssetPermission[{}] is already exist!".format(permission_name))
-                            p = perms.first()
-                            p.users.add(users.first())
-                            p.assets.add(assets.first())
-                            for account in p.accounts:
-                                accounts.add(account)
-                            permissionList.update(accounts=list(accounts))
-                            update(instanceId)
+                            update_perm(perms, permission_name, users, assets, accounts, instanceId)
                             continue
 
                     p = AssetPermission.objects.create(name=permission_name,
@@ -417,7 +410,6 @@ def save_or_update_asset_permission(permissions):
                     p.users.add(users.first())
                     p.assets.add(assets.first())
                     print("Success to save asset[{}]'s permission[{}].".format(asset_name, permission_name))
-
                     update(instanceId)
                 except Exception as e:
                     traceback.print_exc()
@@ -430,6 +422,7 @@ def save_or_update_asset_permission(permissions):
                         permissionList.update(date_start=date_start, date_expired=date_expired)
                     else:
                         perm = permissionList.first()
+                        print("Permission name[{}].".format(perm.name))
                         for account in perm.accounts:
                             accounts.add(account)
                         permissionList.update(name=permission_name,
@@ -439,13 +432,29 @@ def save_or_update_asset_permission(permissions):
                                               date_start=date_start,
                                               date_expired=date_expired)
                     print("Success to update asset[{}]'s permission[{}].".format(asset_name, permission_name))
-
                 update(instanceId)
-
             except Exception as e:
+                if str(e).__contains__('Duplicate entry'):
+                    # 资产授权名称重名冲突：appuser 账号有短期，也有永久使用的特殊情况，这里根据名称再查下吧
+                    perms = AssetPermission.objects.filter(name=permission_name)
+                    if perms.exists():
+                        update_perm(perms, permission_name, users, assets, accounts, instanceId)
+                        continue
+
                 print("Failed to update asset[{}]'s permission[{}], error:{}".format(asset_name, permission_name, e))
         except Exception as e:
             print("Failed to save or update asset permission[{}], error:{}".format(permission_name, e))
+
+
+def update_perm(perms, permission_name, users, assets, accounts, instanceId):
+    print("AssetPermission[{}] is already exist!".format(permission_name))
+    p = perms.first()
+    p.users.add(users.first())
+    p.assets.add(assets.first())
+    for account in p.accounts:
+        accounts.add(account)
+    perms.update(accounts=list(accounts))
+    update(instanceId)
 
 
 def extend_permission(permissions):
