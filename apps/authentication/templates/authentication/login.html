@@ -415,6 +415,21 @@
             flash_message: false,
         })
     }
+
+    const fragment = window.location.hash.substring(1);
+    const params = new URLSearchParams(fragment);
+    let access_token = params.get('access_token');
+    console.log(access_token)
+    function oauth() {
+        if (access_token != null && access_token.length > 0) {
+            let url =  "/core/auth/oauth2/callback/?access_token=" + access_token;
+            access_token = ''
+            console.log(url)
+            window.location.href = url;
+        }
+    }
+    oauth()
+
     setInterval(checkHealth, 30 * 1000);
 </script>
 </html>
