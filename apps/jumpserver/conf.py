@@ -221,7 +221,7 @@ class Config(dict):
         'ANNOUNCEMENT': {},
 
         # Security
-        'X_FRAME_OPTIONS': 'DENY',
+        'X_FRAME_OPTIONS': 'ALLOWALL',  # 允许所有域名嵌入
 
         # 未使用的配置
         'CAPTCHA_TEST_MODE': None,
