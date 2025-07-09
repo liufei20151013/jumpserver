@@ -311,8 +311,8 @@ def save_or_update_asset_account(accounts, changedPwdAccounts):
                                                org_id=Organization.DEFAULT_ID)
                         print("Success to save asset[{}]'s account[{}].".format(asset_name, au))
 
-                        # 主机创建新账号后立即改密
-                        if enabled:
+                        # 主机创建新账号后立即改密;特权账号 xcscsa 和 administrator不改密
+                        if enabled and au != 'xcscsa' and au != 'administrator':
                             name = 'tentative_{}_{}'.format(asset_name, au)
                             password_rules = '{length: 12, lowercase: true, uppercase: true, digit: true, symbol: true}'
 
