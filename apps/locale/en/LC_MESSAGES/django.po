@@ -8410,6 +8410,10 @@ msgstr ""
 msgid "iPhone downloads"
 msgstr ""
 
+#: users/templates/users/user_otp_enable_install_app.html:28
+msgid "Global downloads"
+msgstr ""
+
 #: users/templates/users/user_otp_enable_install_app.html:27
 msgid ""
 "After installation, click the next step to enter the binding page (if "

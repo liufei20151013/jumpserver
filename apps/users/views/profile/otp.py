@@ -65,10 +65,12 @@ class UserOtpEnableInstallAppView(TemplateView):
         user = get_user_or_pre_auth_user(self.request)
         authenticator_android_url = self.replace_authenticator_png('android')
         authenticator_iphone_url = self.replace_authenticator_png('iphone')
+        authenticator_global_url = self.replace_authenticator_png('global')
         context = {
             'user': user,
             'authenticator_android_url': authenticator_android_url,
-            'authenticator_iphone_url': authenticator_iphone_url
+            'authenticator_iphone_url': authenticator_iphone_url,
+            'authenticator_global_url': authenticator_global_url
         }
         kwargs.update(context)
         return super().get_context_data(**kwargs)

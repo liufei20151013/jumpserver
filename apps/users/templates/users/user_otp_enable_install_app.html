@@ -23,8 +23,15 @@
             <p>{% trans 'iPhone downloads' %}</p>
         </div>
 
-        <p style="margin: 20px auto;"><strong
-                style="color: #000000">{% trans 'After installation, click the next step to enter the binding page (if installed, go to the next step directly).' %}</strong>
+        <div style="margin-left:60px">
+            <img src="{{ authenticator_global_url }}" width="128" height="128" alt="">
+            <p>{% trans 'Global downloads' %}</p>
+        </div>
+
+        <p style="margin: 20px auto;">
+            <strong style="color: #000000">
+                {% trans 'After installation, click the next step to enter the binding page (if installed, go to the next step directly).' %}
+            </strong>
         </p>
     </div>
 
