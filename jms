@@ -85,7 +85,9 @@ def perform_db_migrate():
     logging.info("Check database structure change ...")
     logging.info("Migrate model change to database ...")
     try:
-        management.call_command('migrate')
+        # management.call_command('migrate')
+        # 使用 shardingsphere-proxy 代理连接数据库，django 迁移存在 ddl 兼容问题，这里关闭迁移，容器启动后只连接数据库，不做迁移。
+        logging.info("Skip migrate ...")
     except Exception:
         logging.error('Perform migrate failed, exit', exc_info=True)
         sys.exit(11)
