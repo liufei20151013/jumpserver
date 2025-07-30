@@ -263,6 +263,8 @@ if CONFIG.DB_ENGINE.lower() == 'mysql':
     if DB_USE_SSL:
         DB_CA_PATH = exist_or_default(os.path.join(CERTS_DIR, 'db_ca.pem'), None)
         DB_OPTIONS['ssl'] = {'ca': DB_CA_PATH}
+if CONFIG.DB_ENGINE.lower() == 'postgresql':
+    DB_OPTIONS['options'] = '-c search_path=' + CONFIG.DB_NAME
 
 # Password validation
 # https://docs.djangoproject.com/en/1.10/ref/settings/#auth-password-validators
