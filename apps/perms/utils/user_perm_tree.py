@@ -401,6 +401,13 @@ class UserPermTreeBuildUtil(object):
             str_node_id=output_as_string('node_id')
         ).values_list('str_asset_id', 'str_node_id')
         asset_node_pairs = list(asset_node_pairs)
+
+        # pg 数据库需要处理下数据类型，将 uuid 转成无短横线的 str
+        if len(asset_node_pairs) > 0:
+            asset_node_pairs = [
+                (uuid1.hex, uuid2.hex)
+                for uuid1, uuid2 in asset_node_pairs
+            ]
         return asset_node_pairs
 
     @lazyproperty
