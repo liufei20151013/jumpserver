@@ -14,7 +14,7 @@ from rest_framework.response import Response
 from django.conf import settings
 
 from accounts.models import Account
-from assets.models import Asset
+from assets.models import Asset, Platform
 from audits.handler import create_or_update_operate_log
 from common.api import CommonApiMixin
 from common.const.http import POST, PUT, PATCH
@@ -116,10 +116,12 @@ class TicketViewSet(CommonApiMixin, viewsets.ModelViewSet):
                             apply_account_usernames = self.sort_list(apply_account_usernames)
 
                             asset_id = str(asset.id)
-                            asset_usernames[asset_id] = apply_account_usernames if len(apply_account_usernames) > 0 else ['-']
+                            asset_usernames[asset_id] = apply_account_usernames if len(
+                                apply_account_usernames) > 0 else ['-']
 
                             # 非特权账号则由资产负责人审批
-                            intersection_account_usernames = list(set(apply_account_usernames) & set(super_account_usernames))
+                            intersection_account_usernames = list(
+                                set(apply_account_usernames) & set(super_account_usernames))
                             if len(intersection_account_usernames) == 0:
                                 director = asset.director.username
                                 if director:
@@ -153,12 +155,28 @@ class TicketViewSet(CommonApiMixin, viewsets.ModelViewSet):
                             logger.info('ITOP create ticket process, headers: {}'.format(headers))
 
                             title = "用户({})申请 PAM 资源访问".format(request.user.name)
-                            description = '申请资产详细：\n序号：资产名称/资产地址/申请账号名\n'
+                            description = '申请资产详细： <br> 序号：资产名称/资产地址/申请账号名/设备类型 <br> '
                             assets = Asset.objects.filter(id__in=request.data['apply_assets'])
                             for index, asset in enumerate(assets):
-                                description += "{}、{}/{}/{}\n".format(index + 1, asset.name, asset.address,
-                                                                   ", ".join(asset_usernames[str(asset.id)]))
-                            description += "申请备注：\n{}".format(ticket.comment)
+                                platform_type = ''
+                                category = asset.platform.category
+                                if category == 'host':
+                                    platform_type = '主机'
+                                elif category == 'device':
+                                    platform_type = '网络设备'
+                                elif category == 'database':
+                                    platform_type = '数据库'
+                                elif category == 'cloud':
+                                    platform_type = '云服务'
+                                elif category == 'web':
+                                    platform_type = 'Web'
+                                elif category == 'custom':
+                                    platform_type = '自定义'
+                                platform_desc = '{}({})'.format(platform_type, asset.platform.name)
+                                description += "{}、{}/{}/{}/{} <br> ".format(index + 1, asset.name, asset.address,
+                                                                             ", ".join(asset_usernames[str(asset.id)]),
+                                                                             platform_desc)
+                            description += "申请备注： <br> {}".format(ticket.comment)
                             logger.info('ITOP create ticket process, description: {}'.format(description))
 
                             data = {
@@ -196,7 +214,6 @@ class TicketViewSet(CommonApiMixin, viewsets.ModelViewSet):
             return english_part
 
         return sorted(lst, key=custom_sort)
-
 
     @staticmethod
     def _record_operate_log(ticket, action):

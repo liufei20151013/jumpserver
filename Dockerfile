@@ -1,4 +1,4 @@
-FROM debian:buster-slim AS build-xpack
+FROM python:3.11-slim-bullseye AS build-xpack
 
 COPY apps/xpack /opt/xpack
 
