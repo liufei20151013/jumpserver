@@ -2,7 +2,8 @@
 #
 
 from django.db import models
-from django.db.models import F
+from django.db.models import F, Value
+from django.db.models.functions import Concat
 from django.utils.translation import ugettext_lazy as _
 from simple_history.models import HistoricalRecords
 
@@ -131,6 +132,26 @@ class AuthBook(BaseUser, AbsConnectivity):
             .annotate(hostname=F('asset__hostname')) \
             .annotate(platform=F('asset__platform__name')) \
             .annotate(protocols=F('asset__protocols'))
+        return queryset
+
+    @classmethod
+    def get_queryset_filter_ip(cls):
+        queryset = cls.objects.all() \
+            .annotate(
+            # 保留原有注解字段
+            ip=F('asset__ip'),
+            hostname=F('asset__hostname'),
+            platform=F('asset__platform__name'),
+            protocols=F('asset__protocols'),
+            ip_regex=Concat(
+                Value('(^|[\W_])'),
+                F('asset__ip'),
+                Value('($|[\W_])'),
+                output_field=models.CharField()
+            )
+        ) \
+            .filter(systemuser__name__regex=F('ip_regex'))
+
         return queryset
 
     def __str__(self):

@@ -12,7 +12,7 @@ from common.api import CommonGenericViewSet
 from orgs.mixins.api import OrgGenericViewSet, OrgBulkModelViewSet, OrgRelationMixin
 from orgs.utils import current_org
 from ops.models import CommandExecution
-from . import filters
+from . import filters, models
 from .models import FTPLog, UserLoginLog, OperateLog, PasswordChangeLog
 from .serializers import FTPLogSerializer, UserLoginLogSerializer, CommandExecutionSerializer
 from .serializers import OperateLogSerializer, PasswordChangeLogSerializer, CommandExecutionHostsRelationSerializer
@@ -78,6 +78,25 @@ class OperateLogViewSet(ListModelMixin, OrgGenericViewSet):
     filterset_fields = ['user', 'action', 'resource_type', 'resource', 'remote_addr']
     search_fields = ['resource']
     ordering = ['-datetime']
+
+    @classmethod
+    def get_queryset(cls):
+        queryset = cls.objects.all() \
+            .annotate(
+            ip=F('asset__ip'),
+            hostname=F('asset__hostname'),
+            platform=F('asset__platform__name'),
+            protocols=F('asset__protocols'),
+            ip_regex=Concat(
+                Value('(^|[\W_])'),
+                F('asset__ip'),
+                Value('($|[\W_])'),
+                output_field=models.CharField()
+            )
+        ) \
+            .filter(systemuser__name__regex=F('ip_regex'))
+
+        return queryset
 
 
 class PasswordChangeLogViewSet(ListModelMixin, CommonGenericViewSet):

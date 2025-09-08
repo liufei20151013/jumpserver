@@ -12,6 +12,7 @@ app_name = 'assets'
 router = BulkRouter()
 router.register(r'assets', api.AssetViewSet, 'asset')
 router.register(r'accounts', api.AccountViewSet, 'account')
+router.register(r'accounts-filter-ip', api.AccountFilterIPViewSet, 'account')
 router.register(r'account-secrets', api.AccountSecretsViewSet, 'account-secret')
 router.register(r'accounts-history', api.AccountHistoryViewSet, 'account-history')
 router.register(r'account-history-secrets', api.AccountHistorySecretsViewSet, 'account-history-secret')

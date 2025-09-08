@@ -15,7 +15,7 @@ from ..tasks.account_connectivity import test_accounts_connectivity_manual
 from ..models import AuthBook, Node
 from .. import serializers
 
-__all__ = ['AccountFilterSet', 'AccountViewSet', 'AccountSecretsViewSet', 'AccountTaskCreateAPI']
+__all__ = ['AccountFilterSet', 'AccountViewSet', 'AccountFilterIPViewSet', 'AccountSecretsViewSet', 'AccountTaskCreateAPI']
 
 
 class AccountFilterSet(BaseFilterSet):
@@ -72,6 +72,31 @@ class AccountViewSet(OrgBulkModelViewSet):
 
     def get_queryset(self):
         queryset = AuthBook.get_queryset()
+        return queryset
+
+    @action(methods=['post'], detail=True, url_path='verify')
+    def verify_account(self, request, *args, **kwargs):
+        account = super().get_object()
+        task = test_accounts_connectivity_manual.delay([account])
+        return Response(data={'task': task.id})
+
+
+class AccountFilterIPViewSet(OrgBulkModelViewSet):
+    model = AuthBook
+    filterset_fields = ("username", "asset", "systemuser", 'ip', 'hostname')
+    search_fields = ('username', 'ip', 'hostname', 'systemuser__username')
+    filterset_class = AccountFilterSet
+    serializer_classes = {
+        'default': serializers.AccountSerializer,
+        'verify_account': serializers.AssetTaskSerializer
+    }
+    rbac_perms = {
+        'verify_account': 'assets.test_authbook',
+        'partial_update': 'assets.change_assetaccountsecret',
+    }
+
+    def get_queryset(self):
+        queryset = AuthBook.get_queryset_filter_ip()
         return queryset
 
     @action(methods=['post'], detail=True, url_path='verify')
