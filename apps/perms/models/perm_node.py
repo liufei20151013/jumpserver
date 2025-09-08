@@ -66,7 +66,7 @@ class PermNode(Node):
     # 特殊节点
     UNGROUPED_NODE_KEY = 'ungrouped'
     UNGROUPED_NODE_VALUE = _('Ungrouped')
-    FAVORITE_NODE_KEY = 'favorite'
+    FAVORITE_NODE_KEY = '550e8400-e29b-41d4-a716-446655440000'
     FAVORITE_NODE_VALUE = _('Favorite')
 
     node_from = ''
