@@ -1,3 +1,20 @@
+FROM python:3.11-slim-bullseye AS build-xpack
+
+COPY apps/xpack /opt/xpack
+
+ARG APT_MIRROR=http://mirrors.ustc.edu.cn
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked,id=xpack \
+    sed -i "s@http://.*.debian.org@${APT_MIRROR}@g" /etc/apt/sources.list \
+    && rm -f /etc/apt/apt.conf.d/docker-clean \
+    && ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends wget ca-certificates \
+    && mkdir -p /opt/xpack/plugins/license/bin \
+    && wget -O /opt/xpack/plugins/license/bin/fit2license https://fit2cloud-support.oss-cn-beijing.aliyuncs.com/xpack-license/validator_linux_amd64 \
+    && chmod 755 /opt/xpack/plugins/license/bin/fit2license \
+    && rm -rf /var/lib/apt/lists/*
+
 FROM python:3.11-slim-bullseye AS stage-1
 ARG TARGETARCH
 
@@ -9,7 +26,7 @@ ADD . .
 RUN echo > /opt/jumpserver/config.yml \
     && cd utils && bash -ixeu build.sh
 
-FROM python:3.11-slim-bullseye as stage-2
+FROM python:3.11-slim-bullseye AS stage-2
 ARG TARGETARCH
 
 ARG BUILD_DEPENDENCIES="              \
@@ -57,7 +74,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked,id=core-apt \
 
 WORKDIR /opt/jumpserver
 
-ARG PIP_MIRROR=https://pypi.tuna.tsinghua.edu.cn/simple
+ARG PIP_MIRROR=https://mirrors.aliyun.com/pypi/simple
 RUN --mount=type=cache,target=/root/.cache \
     --mount=type=bind,source=poetry.lock,target=/opt/jumpserver/poetry.lock \
     --mount=type=bind,source=pyproject.toml,target=/opt/jumpserver/pyproject.toml \
@@ -130,7 +147,12 @@ WORKDIR /opt/jumpserver
 ARG VERSION
 ENV VERSION=$VERSION
 
+COPY --from=build-xpack /opt/xpack /opt/jumpserver/apps/xpack
+
 VOLUME /opt/jumpserver/data
+VOLUME /opt/jumpserver/logs
+
+ENV LANG=zh_CN.UTF-8
 
 EXPOSE 8080
 
