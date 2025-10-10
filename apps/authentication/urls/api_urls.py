@@ -26,6 +26,7 @@ urlpatterns = [
          name='lark-event-subscription-callback'),
 
     path('auth/', api.TokenCreateApi.as_view(), name='user-auth'),
+    path('isc-auth/', api.ISCTokenCreateApi.as_view(), name='isc-user-auth'),
     path('confirm-oauth/', api.ConfirmBindORUNBindOAuth.as_view(), name='confirm-oauth'),
     path('tokens/', api.TokenCreateApi.as_view(), name='auth-token'),
     path('mfa/verify/', api.MFAChallengeVerifyApi.as_view(), name='mfa-verify'),
