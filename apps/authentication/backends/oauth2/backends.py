@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 #
-import base64
 import requests
 
 from django.utils.translation import gettext_lazy as _
@@ -68,64 +67,47 @@ class OAuth2Backend(JMSModelBackend):
             response_data = response_data['data']
         return response_data
 
+    @staticmethod
+    def get_query_dict(response_data, query_dict):
+        query_dict.update({
+            'uid': response_data.get('uid', ''),
+            'access_token': response_data.get('access_token', '')
+        })
+        return query_dict
+
     def authenticate(self, request, code=None, **kwargs):
         log_prompt = "Process authenticate [OAuth2Backend]: {}"
         logger.debug(log_prompt.format('Start'))
         if code is None:
-            logger.error(log_prompt.format('code is missing'))
+            logger.error(log_prompt.format('access_token is missing'))
             return None
 
         query_dict = {
-            'grant_type': 'authorization_code', 'code': code,
-            'redirect_uri': build_absolute_uri(
-                request, path=reverse(settings.AUTH_OAUTH2_AUTH_LOGIN_CALLBACK_URL_NAME)
-            )
+            'access_token': code
         }
-        separator = '&' if '?' in settings.AUTH_OAUTH2_ACCESS_TOKEN_ENDPOINT else '?'
-        access_token_url = '{url}{separator}{query}'.format(
-            url=settings.AUTH_OAUTH2_ACCESS_TOKEN_ENDPOINT,
-            separator=separator, query=urlencode(query_dict)
-        )
-        # token_method -> get, post(post_data), post_json
-        token_method = settings.AUTH_OAUTH2_ACCESS_TOKEN_METHOD.lower()
-        logger.debug(log_prompt.format('Call the access token endpoint[method: %s]' % token_method))
-        encoded_credentials = base64.b64encode(
-            f"{settings.AUTH_OAUTH2_CLIENT_ID}:{settings.AUTH_OAUTH2_CLIENT_SECRET}".encode()
-        ).decode()
-        headers = {
-            'Accept': 'application/json', 'Authorization': f'Basic {encoded_credentials}'
-        }
-        if token_method.startswith('post'):
-            body_key = 'json' if token_method.endswith('json') else 'data'
-            query_dict.update({
-                'client_id': settings.AUTH_OAUTH2_CLIENT_ID,
-                'client_secret': settings.AUTH_OAUTH2_CLIENT_SECRET,
-            })
-            access_token_response = requests.post(
-                access_token_url, headers=headers, **{body_key: query_dict}
-            )
-        else:
-            access_token_response = requests.get(access_token_url, headers=headers)
-        try:
-            access_token_response.raise_for_status()
-            access_token_response_data = access_token_response.json()
-            response_data = self.get_response_data(access_token_response_data)
-        except Exception as e:
-            error = "Json access token response error, access token response " \
-                    "content is: {}, error is: {}".format(access_token_response.content, str(e))
-            logger.error(log_prompt.format(error))
-            return None
 
         headers = {
             'Accept': 'application/json',
-            'Authorization': 'Bearer {}'.format(response_data.get('access_token', ''))
+            'Authorization': 'Bearer {}'.format(code)
         }
+
         logger.debug(log_prompt.format('Get userinfo endpoint'))
-        userinfo_url = settings.AUTH_OAUTH2_PROVIDER_USERINFO_ENDPOINT
+        if '?' in settings.AUTH_OAUTH2_PROVIDER_USERINFO_ENDPOINT:
+            separator = '&'
+        else:
+            separator = '?'
+        userinfo_url = '{url}{separator}{query}'.format(
+            url=settings.AUTH_OAUTH2_PROVIDER_USERINFO_ENDPOINT, separator=separator,
+            query=urlencode(query_dict)
+        )
+        logger.debug(log_prompt.format(userinfo_url))
+
         userinfo_response = requests.get(userinfo_url, headers=headers)
         try:
             userinfo_response.raise_for_status()
             userinfo_response_data = userinfo_response.json()
+            logger.debug(log_prompt.format(userinfo_response_data))
+
             if 'data' in userinfo_response_data:
                 userinfo = userinfo_response_data['data']
             else:
