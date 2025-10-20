@@ -9,6 +9,7 @@ from django.conf import settings
 from django.urls import reverse
 
 from common.utils import get_logger
+from users.models import User
 from users.utils import construct_user_email
 from authentication.utils import build_absolute_uri
 from authentication.signals import user_auth_failed, user_auth_success
@@ -53,6 +54,13 @@ class OAuth2Backend(JMSModelBackend):
         user, created = get_user_model().objects.get_or_create(
             username=username, defaults=user_attrs
         )
+
+        if created:
+            # 新建的用户，将状态置为禁用状态，需要管理员手动启用
+            u = User.objects.get(username=username)
+            u.is_active = False
+            u.save()
+
         logger.debug(log_prompt.format("user: {}|created: {}".format(user, created)))
         logger.debug(log_prompt.format("Send signal => oauth2 create or update user"))
         oauth2_create_or_update_user.send(
@@ -124,7 +132,7 @@ class OAuth2Backend(JMSModelBackend):
         except JMSException:
             return None
 
-        if self.user_can_authenticate(user):
+        if self.user_can_authenticate(user) and not created:
             logger.debug(log_prompt.format('OAuth2 user login success'))
             logger.debug(log_prompt.format('Send signal => oauth2 user login success'))
             user_auth_success.send(
