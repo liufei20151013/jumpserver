@@ -14,6 +14,7 @@ from uuid import UUID
 
 from django.utils.translation import gettext_lazy as _
 from django.db.models import QuerySet as DJQuerySet
+from django.db.models import Q
 from elasticsearch7 import Elasticsearch
 from elasticsearch7.helpers import bulk
 from elasticsearch7.exceptions import RequestError, SSLError
@@ -78,6 +79,10 @@ class ESClientV7(ESClientBase):
     def get_sort(cls, field, direction):
         return f'{field}:{direction}'
 
+    @classmethod
+    def get_sorts(cls, sorts: list):
+        return ','.join(sorts)
+
 
 class ESClientV6(ESClientV7):
 
@@ -99,6 +104,10 @@ class ESClientV8(ESClientBase):
     def get_sort(cls, field, direction):
         return {field: {'order': direction}}
 
+    @classmethod
+    def get_sorts(cls, sorts: list):
+        return sorts
+
 
 def get_es_client_version(**kwargs):
     try:
@@ -108,13 +117,16 @@ def get_es_client_version(**kwargs):
         return version
     except SSLError:
         raise InvalidElasticsearchSSL
-    except Exception:
-        raise InvalidElasticsearch
+    except Exception as e:
+        raise InvalidElasticsearch(e)
 
 
 class ES(object):
 
-    def __init__(self, config, properties, keyword_fields, exact_fields=None, match_fields=None):
+    def __init__(
+            self, config, properties, keyword_fields,
+            exact_fields=None, fuzzy_fields=None, match_fields=None, **kwargs
+    ):
         self.version = 7
         self.config = config
         hosts = self.config.get('HOSTS')
@@ -123,7 +135,10 @@ class ES(object):
         ignore_verify_certs = kwargs.pop('IGNORE_VERIFY_CERTS', False)
         if ignore_verify_certs:
             kwargs['verify_certs'] = None
-        self.client = ESClient(hosts=hosts, max_retries=0, **kwargs)
+        try:
+            self.client = ESClient(hosts=hosts, max_retries=0, **kwargs)
+        except Exception as e:
+            raise InvalidElasticsearch(e)
         self.es = self.client.es
         self.index_prefix = self.config.get('INDEX') or 'jumpserver'
         self.is_index_by_date = bool(self.config.get('INDEX_BY_DATE', False))
@@ -131,7 +146,7 @@ class ES(object):
         self.index = None
         self.query_index = None
         self.properties = properties
-        self.exact_fields, self.match_fields, self.keyword_fields = set(), set(), set()
+        self.exact_fields, self.match_fields, self.keyword_fields, self.fuzzy_fields = set(), set(), set(), set()
 
         if isinstance(keyword_fields, Iterable):
             self.keyword_fields.update(keyword_fields)
@@ -139,6 +154,8 @@ class ES(object):
             self.exact_fields.update(exact_fields)
         if isinstance(match_fields, Iterable):
             self.match_fields.update(match_fields)
+        if isinstance(fuzzy_fields, Iterable):
+            self.fuzzy_fields.update(fuzzy_fields)
 
         self.init_index()
         self.doc_type = self.config.get("DOC_TYPE") or '_doc'
@@ -190,8 +207,7 @@ class ES(object):
                 mappings['aliases'] = {
                     self.query_index: {}
                 }
-            if self.es.indices.exists(index=self.index):
-                return
+
             try:
                 self.es.indices.create(index=self.index, body=mappings)
             except (RequestError, BadRequestError) as e:
@@ -245,6 +261,7 @@ class ES(object):
         }
         if sort is not None:
             search_params['sort'] = sort
+        logger.info('search_params: {}'.format(search_params))
         data = self.es.search(**search_params)
 
         source_data = []
@@ -306,6 +323,17 @@ class ES(object):
             })
         return _filter
 
+    @staticmethod
+    def handle_fuzzy_fields(exact):
+        _filter = []
+        for k, v in exact.items():
+            _filter.append({'wildcard': {k: f'*{v}*'}})
+        return _filter
+
+    @staticmethod
+    def is_keyword(props: dict, field: str) -> bool:
+        return props.get(field, {}).get("type", "keyword") == "keyword"
+
     def get_query_body(self, **kwargs):
         new_kwargs = {}
         for k, v in kwargs.items():
@@ -319,21 +347,48 @@ class ES(object):
         kwargs = new_kwargs
 
         index_in_field = 'id__in'
+        keyword_fields = self.keyword_fields
         exact_fields = self.exact_fields
         match_fields = self.match_fields
+        fuzzy_fields = self.fuzzy_fields
 
         match = {}
+        search = []
         exact = {}
+        fuzzy = {}
         index = {}
 
         if index_in_field in kwargs:
             index['values'] = kwargs[index_in_field]
 
+        mapping = self.es.indices.get_mapping(index=self.query_index)
+        props = (
+            mapping
+            .get(self.query_index, {})
+            .get('mappings', {})
+            .get('properties', {})
+        )
+
+        common_keyword_able = exact_fields | keyword_fields
+
         for k, v in kwargs.items():
-            if k in exact_fields:
+            if k in ("org_id", "session") and self.is_keyword(props, k):
                 exact[k] = v
+
+            elif k in common_keyword_able:
+                exact[f"{k}.keyword"] = v
+
+            elif k in fuzzy_fields:
+                fuzzy[f"{k}.keyword"] = v
+
             elif k in match_fields:
                 match[k] = v
+
+        args = kwargs.get('search', [])
+        for item in args:
+            for k, v in item.items():
+                if k in match_fields:
+                    search.append(item)
 
         # 处理时间
         time_field_name, time_range = self.handler_time_field(kwargs)
@@ -363,11 +418,14 @@ class ES(object):
         body = {
             'query': {
                 'bool': {
-                    'must': [
+                    'must': [],
+                    'should': should + [
                         {'match': {k: v}} for k, v in match.items()
-                    ],
-                    'should': should,
+                    ] + [
+                                  {'match': item} for item in search
+                              ],
                     'filter': self.handle_exact_fields(exact) +
+                              self.handle_fuzzy_fields(fuzzy) +
                               [
                                   {
                                       'range': {
@@ -386,6 +444,7 @@ class ES(object):
 
 
 class QuerySet(DJQuerySet):
+    custom = True
     default_days_ago = 7
     max_result_window = 10000
 
@@ -402,6 +461,17 @@ class QuerySet(DJQuerySet):
         _method_calls = {k: list(v) for k, v in groupby(self._method_calls, lambda x: x[0])}
         return _method_calls
 
+    def _grouped_search_args(self, query):
+        conditions = {}
+        for q in query:
+            for c in q.children:
+                if isinstance(c, Q):
+                    child = self._grouped_search_args(c)
+                    [conditions.setdefault(k, []).extend(v) for k, v in child.items()]
+                else:
+                    conditions.setdefault(c[0], []).append(c[1])
+        return conditions
+
     @lazyproperty
     def _filter_kwargs(self):
         _method_calls = self._grouped_method_calls
@@ -409,9 +479,14 @@ class QuerySet(DJQuerySet):
         if not filter_calls:
             return {}
         names, multi_args, multi_kwargs = zip(*filter_calls)
-        kwargs = reduce(lambda x, y: {**x, **y}, multi_kwargs, {})
 
-        striped_kwargs = {}
+        # input 输入
+        multi_args = tuple(reduce(lambda x, y: x + y, (sub for sub in multi_args if sub), ()))
+        args = self._grouped_search_args(multi_args)
+        striped_args = [{k.replace('__icontains', ''): v} for k, values in args.items() for v in values]
+
+        kwargs = reduce(lambda x, y: {**x, **y}, multi_kwargs, {})
+        striped_kwargs = {'search': striped_args}
         for k, v in kwargs.items():
             k = k.replace('__exact', '')
             k = k.replace('__startswith', '')
@@ -422,6 +497,7 @@ class QuerySet(DJQuerySet):
     @lazyproperty
     def _sort(self):
         order_by = self._grouped_method_calls.get('order_by')
+        _sorts = [self._storage.client.get_sort('_score', 'desc')]
         if order_by:
             for call in reversed(order_by):
                 fields = call[1]
@@ -434,7 +510,10 @@ class QuerySet(DJQuerySet):
                         direction = 'asc'
                     field = field.lstrip('-+')
                     sort = self._storage.client.get_sort(field, direction)
-                    return sort
+                    _sorts.append(sort)
+                    break
+        sorts = self._storage.client.get_sorts(_sorts)
+        return sorts
 
     def __execute(self):
         _filter_kwargs = self._filter_kwargs
