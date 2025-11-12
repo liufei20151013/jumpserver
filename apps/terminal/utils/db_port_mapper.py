@@ -30,6 +30,14 @@ class DBPortManager(object):
         # 可以使用的端口列表
         self.all_avail_ports = list(range(self.port_start, self.port_end + 1))
 
+        # 禁用的端口
+        magnus_disabled_ports = settings.MAGNUS_DISABLED_PORTS
+        if magnus_disabled_ports:
+            disabled_ports = [int(num) for num in magnus_disabled_ports.split(',')]
+            self.all_avail_ports = sorted(list(set(self.all_avail_ports) - set(disabled_ports)))
+            logger.debug("********************* disabled_ports: " + str(disabled_ports))
+            logger.debug("********************* all_avail_ports: " + str(self.all_avail_ports))
+
     @property
     def oracle_port_range(self):
         oracle_ports = settings.MAGNUS_ORACLE_PORTS

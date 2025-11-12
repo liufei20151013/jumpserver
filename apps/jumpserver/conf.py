@@ -563,6 +563,8 @@ class Config(dict):
         'OPERATE_LOG_ELASTICSEARCH_CONFIG': {},
         # Magnus 组件需要监听的 Oracle 端口范围
         'MAGNUS_ORACLE_PORTS': '30000-30030',
+        # Magnus 组件禁用的端口
+        'MAGNUS_DISABLED_PORTS': '',
 
         # 记录清理清理
         'LOGIN_LOG_KEEP_DAYS': 180,
