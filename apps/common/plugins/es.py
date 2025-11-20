@@ -261,7 +261,6 @@ class ES(object):
         }
         if sort is not None:
             search_params['sort'] = sort
-        logger.info('search_params: {}'.format(search_params))
         data = self.es.search(**search_params)
 
         source_data = []
@@ -480,7 +479,6 @@ class QuerySet(DJQuerySet):
             return {}
         names, multi_args, multi_kwargs = zip(*filter_calls)
 
-        # input 输入
         multi_args = tuple(reduce(lambda x, y: x + y, (sub for sub in multi_args if sub), ()))
         args = self._grouped_search_args(multi_args)
         striped_args = [{k.replace('__icontains', ''): v} for k, values in args.items() for v in values]
@@ -497,7 +495,8 @@ class QuerySet(DJQuerySet):
     @lazyproperty
     def _sort(self):
         order_by = self._grouped_method_calls.get('order_by')
-        _sorts = [self._storage.client.get_sort('_score', 'desc')]
+        _sorts = []
+
         if order_by:
             for call in reversed(order_by):
                 fields = call[1]
@@ -510,17 +509,16 @@ class QuerySet(DJQuerySet):
                         direction = 'asc'
                     field = field.lstrip('-+')
                     sort = self._storage.client.get_sort(field, direction)
-                    _sorts.append(sort)
-                    break
+                    return sort
+
+        if not _sorts:
+            sort = self._storage.client.get_sort('timestamp', 'desc')
+            _sorts.append(sort)
+        else:
+            _sorts.append(self._storage.client.get_sort('_score', 'desc'))
+
         sorts = self._storage.client.get_sorts(_sorts)
         return sorts
-
-    # def __execute(self):
-    #     _filter_kwargs = self._filter_kwargs
-    #     _sort = self._sort
-    #     from_, size = self._slice or (None, None)
-    #     data = self._storage.filter(_filter_kwargs, from_=from_, size=size, sort=_sort)
-    #     return self.model.from_multi_dict(data)
 
     def __stage_method_call(self, item, *args, **kwargs):
         _clone = self.__clone()
@@ -559,50 +557,24 @@ class QuerySet(DJQuerySet):
         attr = partial(self.__stage_method_call, item)
         return attr
 
-    # def __getitem__(self, item):
-    #     max_window = self.max_result_window
-    #     if isinstance(item, slice):
-    #         if self._slice is None:
-    #             clone = self.__clone()
-    #             from_ = item.start or 0
-    #             if item.stop is None:
-    #                 size = self.max_result_window - from_
-    #             else:
-    #                 size = item.stop - from_
-    #
-    #             if from_ + size > max_window:
-    #                 if from_ >= max_window:
-    #                     from_ = max_window
-    #                     size = 0
-    #                 else:
-    #                     size = max_window - from_
-    #             clone._slice = (from_, size)
-    #             return clone
-    #     return self.__execute()[item]
-
     def __getitem__(self, item):
-        # 处理切片参数，确定总查询范围（from_=起始位置，total_size=总需获取条数）
         if isinstance(item, slice):
             from_ = item.start or 0
             total_size = item.stop - from_ if (item.stop is not None and item.start is not None) else None
 
-            # 若未指定结束位置，默认获取到最后一条数据（总数据量通过 self._storage.count 获取）
             if total_size is None or total_size <= 0:
-                # 关键修复：用 self._storage.count 获取总数据量，而非 self.es
                 total_hits = self._storage.count(**self._filter_kwargs)
                 total_size = total_hits - from_
                 if total_size <= 0:
-                    return []  # 起始位置超出总数据量，返回空列表
+                    return []
 
-            # 克隆对象，存储查询上下文
             clone = self.__clone()
             clone._slice = (from_, total_size)
-            clone._scroll_id = None  # 游标ID，用于分批获取
-            clone._fetched_data = []  # 已获取的数据缓存
-            clone._fetched_offset = 0  # 已获取数据的起始偏移量
+            clone._scroll_id = None
+            clone._fetched_data = []
+            clone._fetched_offset = 0
             return clone
 
-        # 非切片参数（如索引），直接执行查询并返回对应数据
         return self.__execute()[item]
 
     def __execute(self):
@@ -617,33 +589,27 @@ class QuerySet(DJQuerySet):
 
         from_, total_size = self._slice
         fetched_data = self._fetched_data if hasattr(self, "_fetched_data") else []
-        fetched_offset = self._fetched_offset if hasattr(self, "_fetched_offset") else 0
         scroll_id = self._scroll_id if hasattr(self, "_scroll_id") else None
 
         if len(fetched_data) >= total_size:
             return self.model.from_multi_dict(fetched_data[:total_size])
 
-        # 初始化 Scroll 查询（首次执行）
         if scroll_id is None:
             body = self._storage.get_query_body(**self._filter_kwargs)
-            # 关键修复：移除 from_ 参数，Scroll 查询不支持 from
             response = self._storage.es.search(
                 index=self._storage.query_index,
                 body=body,
                 scroll=scroll_timeout,
                 track_total_hits=True,
-                size=min(max_window, total_size)  # 仅保留 size，不指定 from
+                size=min(max_window, total_size),
+                sort=self._sort
             )
             self._scroll_id = response["_scroll_id"]
             batch_data = [hit["_source"] for hit in response["hits"]["hits"]]
             self._fetched_data.extend(batch_data)
-            self._fetched_offset = len(batch_data)  # 从 0 开始累计，而非 from_
+            self._fetched_offset = len(batch_data)
 
-        # 循环获取后续批次
         while len(self._fetched_data) < total_size:
-            remaining_size = total_size - len(self._fetched_data)
-            batch_size = min(max_window, remaining_size)
-
             response = self._storage.es.scroll(
                 scroll_id=self._scroll_id,
                 scroll=scroll_timeout
@@ -657,12 +623,10 @@ class QuerySet(DJQuerySet):
             self._fetched_data.extend(batch_data)
             self._fetched_offset += len(batch_data)
 
-        # 清理游标
         if hasattr(self, "_scroll_id") and self._scroll_id:
             self._storage.es.clear_scroll(scroll_id=self._scroll_id)
             del self._scroll_id
 
-        # 截取总需求数据量
         return self.model.from_multi_dict(self._fetched_data[:total_size])
 
     def __repr__(self):
