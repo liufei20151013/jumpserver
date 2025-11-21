@@ -336,6 +336,8 @@ class ES(object):
     def get_query_body(self, **kwargs):
         new_kwargs = {}
         for k, v in kwargs.items():
+            logger.info("11111k, v:{},{}".format(k, v))
+
             if isinstance(v, UUID):
                 v = str(v)
             if k == 'pk':
@@ -371,16 +373,18 @@ class ES(object):
         common_keyword_able = exact_fields | keyword_fields
 
         for k, v in kwargs.items():
+            logger.info("11111k, v:{},{}".format(k, v))
             if k in ("org_id", "session") and self.is_keyword(props, k):
+                # 1. 处理特定的关键字段
                 exact[k] = v
-
             elif k in common_keyword_able:
+                # 2. 处理其他关键字段
                 exact[f"{k}.keyword"] = v
-
             elif k in fuzzy_fields:
+                # 3. 处理模糊查询字段
                 fuzzy[f"{k}.keyword"] = v
-
             elif k in match_fields:
+                # 4. 处理全文搜索字段
                 match[k] = v
 
         args = kwargs.get('search', [])
@@ -413,16 +417,22 @@ class ES(object):
             })
             should.append({'match': {'org_id': real_default_org_id}})
 
+        should_clauses = should + [
+                             {'match': {k: v}} for k, v in match.items()
+                         ] + [
+                             {'match': item} for item in search
+                         ]
+
+        # 动态设置 minimum_should_match：should 非空则为 1，空则为 0
+        minimum_should_match = 1 if should_clauses else 0
+
         # 构建 body
         body = {
             'query': {
                 'bool': {
                     'must': [],
-                    'should': should + [
-                        {'match': {k: v}} for k, v in match.items()
-                    ] + [
-                                  {'match': item} for item in search
-                              ],
+                    'should': should_clauses,
+                    'minimum_should_match': minimum_should_match,
                     'filter': self.handle_exact_fields(exact) +
                               self.handle_fuzzy_fields(fuzzy) +
                               [
@@ -439,6 +449,23 @@ class ES(object):
                 }
             },
         }
+
+        risk_level_value = kwargs.pop('risk_level', None)
+        if risk_level_value is not None:
+            # 将对 risk_level 的查询，转换为对嵌套字段 risk_level.value 的精确匹配
+            # 使用 term 查询，因为 value 是数字类型
+            if 'filter' not in body['query']['bool']:
+                body['query']['bool']['filter'] = []
+
+            term_query = {
+                "term": {
+                    "risk_level": int(risk_level_value)  # 注意：这里 value 是数字
+                }
+            }
+            body['query']['bool']['filter'].append(term_query)
+
+        import json
+        logger.debug(f"Elasticsearch query body: {json.dumps(body, indent=2)}")
         return body
 
 
@@ -509,7 +536,7 @@ class QuerySet(DJQuerySet):
                         direction = 'asc'
                     field = field.lstrip('-+')
                     sort = self._storage.client.get_sort(field, direction)
-                    return sort
+                    _sorts.append(sort)
 
         if not _sorts:
             sort = self._storage.client.get_sort('timestamp', 'desc')
@@ -519,6 +546,58 @@ class QuerySet(DJQuerySet):
 
         sorts = self._storage.client.get_sorts(_sorts)
         return sorts
+
+    def __execute(self):
+        max_window = self.max_result_window
+        scroll_timeout = "10m"
+
+        if not hasattr(self, "_slice"):
+            _filter_kwargs = self._filter_kwargs
+            _sort = self._sort
+            data = self._storage.filter(_filter_kwargs, from_=None, size=None, sort=_sort)
+            return self.model.from_multi_dict(data)
+
+        from_, total_size = self._slice
+        fetched_data = self._fetched_data if hasattr(self, "_fetched_data") else []
+        scroll_id = self._scroll_id if hasattr(self, "_scroll_id") else None
+
+        if len(fetched_data) >= total_size:
+            return self.model.from_multi_dict(fetched_data[:total_size])
+
+        if scroll_id is None:
+            body = self._storage.get_query_body(**self._filter_kwargs)
+            response = self._storage.es.search(
+                index=self._storage.query_index,
+                body=body,
+                scroll=scroll_timeout,
+                track_total_hits=True,
+                size=min(max_window, total_size),
+                sort=self._sort
+            )
+            self._scroll_id = response["_scroll_id"]
+            batch_data = [hit["_source"] for hit in response["hits"]["hits"]]
+            self._fetched_data.extend(batch_data)
+            self._fetched_offset = len(batch_data)
+
+        while len(self._fetched_data) < total_size:
+            response = self._storage.es.scroll(
+                scroll_id=self._scroll_id,
+                scroll=scroll_timeout
+            )
+            self._scroll_id = response["_scroll_id"]
+            batch_data = [hit["_source"] for hit in response["hits"]["hits"]]
+
+            if not batch_data:
+                break
+
+            self._fetched_data.extend(batch_data)
+            self._fetched_offset += len(batch_data)
+
+        if hasattr(self, "_scroll_id") and self._scroll_id:
+            self._storage.es.clear_scroll(scroll_id=self._scroll_id)
+            del self._scroll_id
+
+        return self.model.from_multi_dict(self._fetched_data[:total_size])
 
     def __stage_method_call(self, item, *args, **kwargs):
         _clone = self.__clone()
@@ -576,58 +655,6 @@ class QuerySet(DJQuerySet):
             return clone
 
         return self.__execute()[item]
-
-    def __execute(self):
-        max_window = self.max_result_window
-        scroll_timeout = "10m"
-
-        if not hasattr(self, "_slice"):
-            _filter_kwargs = self._filter_kwargs
-            _sort = self._sort
-            data = self._storage.filter(_filter_kwargs, from_=None, size=None, sort=_sort)
-            return self.model.from_multi_dict(data)
-
-        from_, total_size = self._slice
-        fetched_data = self._fetched_data if hasattr(self, "_fetched_data") else []
-        scroll_id = self._scroll_id if hasattr(self, "_scroll_id") else None
-
-        if len(fetched_data) >= total_size:
-            return self.model.from_multi_dict(fetched_data[:total_size])
-
-        if scroll_id is None:
-            body = self._storage.get_query_body(**self._filter_kwargs)
-            response = self._storage.es.search(
-                index=self._storage.query_index,
-                body=body,
-                scroll=scroll_timeout,
-                track_total_hits=True,
-                size=min(max_window, total_size),
-                sort=self._sort
-            )
-            self._scroll_id = response["_scroll_id"]
-            batch_data = [hit["_source"] for hit in response["hits"]["hits"]]
-            self._fetched_data.extend(batch_data)
-            self._fetched_offset = len(batch_data)
-
-        while len(self._fetched_data) < total_size:
-            response = self._storage.es.scroll(
-                scroll_id=self._scroll_id,
-                scroll=scroll_timeout
-            )
-            self._scroll_id = response["_scroll_id"]
-            batch_data = [hit["_source"] for hit in response["hits"]["hits"]]
-
-            if not batch_data:
-                break
-
-            self._fetched_data.extend(batch_data)
-            self._fetched_offset += len(batch_data)
-
-        if hasattr(self, "_scroll_id") and self._scroll_id:
-            self._storage.es.clear_scroll(scroll_id=self._scroll_id)
-            del self._scroll_id
-
-        return self.model.from_multi_dict(self._fetched_data[:total_size])
 
     def __repr__(self):
         return self.__execute().__repr__()

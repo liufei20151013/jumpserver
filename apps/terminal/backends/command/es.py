@@ -28,7 +28,7 @@ class CommandStore(ES):
             }
         }
         exact_fields = {}
-        fuzzy_fields = {'input', 'risk_level', 'user', 'asset', 'account'}
+        fuzzy_fields = {'input', 'user', 'asset', 'account'}
         match_fields = {'input'}
         keyword_fields = {'session', 'org_id'}
 
