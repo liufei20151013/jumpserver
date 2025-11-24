@@ -106,7 +106,7 @@ class CommandViewSet(JMSBulkModelViewSet):
     serializer_class = SessionCommandSerializer
     filterset_class = CommandFilter
     model = Command
-    search_fields = ('input',)
+    search_fields = ('input', 'asset')
     ordering_fields = ('timestamp', 'risk_level')
 
     def merge_all_storage_list(self, request, *args, **kwargs):

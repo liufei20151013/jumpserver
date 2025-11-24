@@ -11,8 +11,8 @@ class CommandFilter(filters.FilterSet):
     session_id = filters.CharFilter(field_name='session')
     command_storage_id = filters.UUIDFilter(method='do_nothing')
     user = filters.CharFilter(lookup_expr='startswith')
-    input = filters.CharFilter(lookup_expr='icontains')
-    asset = filters.CharFilter(field_name='asset', lookup_expr='icontains')
+    input = filters.CharFilter(field_name='input')
+    asset = filters.CharFilter(field_name='asset')
     asset_id = filters.UUIDFilter(method='filter_by_asset_id')
 
     class Meta:
