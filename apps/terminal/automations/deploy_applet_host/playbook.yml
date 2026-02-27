@@ -48,12 +48,12 @@
     - name: Download JumpServer Tinker installer (jumpserver)
       ansible.windows.win_get_url:
         url: "{{ APPLET_DOWNLOAD_HOST }}/download/applets/{{ TinkerInstaller }}"
-        dest: "{{ ansible_env.TEMP }}\\{{ TinkerInstaller }}"
+        dest: "C:\\Users\\Administrator\\AppData\\Local\\Temp\\{{ TinkerInstaller }}"
         validate_certs: "{{ not IGNORE_VERIFY_CERTS }}"
 
     - name: Install JumpServer Tinker (jumpserver)
       ansible.windows.win_package:
-        path: "{{ ansible_env.TEMP }}\\{{ TinkerInstaller }}"
+        path: "C:\\Users\\Administrator\\AppData\\Local\\Temp\\{{ TinkerInstaller }}"
         arguments:
           - /VERYSILENT
           - /SUPPRESSMSGBOXES
@@ -69,12 +69,12 @@
     - name: Download python-3.11.6
       ansible.windows.win_get_url:
         url: "{{ APPLET_DOWNLOAD_HOST }}/download/applets/python-3.11.6-amd64.exe"
-        dest: "{{ ansible_env.TEMP }}\\python-3.11.6-amd64.exe"
+        dest: "C:\\Users\\Administrator\\AppData\\Local\\Temp\\python-3.11.6-amd64.exe"
         validate_certs: "{{ not IGNORE_VERIFY_CERTS }}"
 
     - name: Install the python-3.11.6
       ansible.windows.win_package:
-        path: "{{ ansible_env.TEMP }}\\python-3.11.6-amd64.exe"
+        path: "C:\\Users\\Administrator\\AppData\\Local\\Temp\\python-3.11.6-amd64.exe"
         arguments:
           - /quiet
           - InstallAllUsers=1
@@ -144,18 +144,18 @@
     - name: Download pip packages
       ansible.windows.win_get_url:
         url: "{{ APPLET_DOWNLOAD_HOST }}/download/applets/pip_packages.zip"
-        dest: "{{ ansible_env.TEMP }}\\pip_packages.zip"
+        dest: "C:\\Users\\Administrator\\AppData\\Local\\Temp\\pip_packages.zip"
         validate_certs: "{{ not IGNORE_VERIFY_CERTS }}"
 
     - name: Unzip pip_packages
       community.windows.win_unzip:
-        src: "{{ ansible_env.TEMP }}\\pip_packages.zip"
-        dest: "{{ ansible_env.TEMP }}\\pip_packages"
+        src: "C:\\Users\\Administrator\\AppData\\Local\\Temp\\pip_packages.zip"
+        dest: "C:\\Users\\Administrator\\AppData\\Local\\Temp\\pip_packages"
 
     - name: Install python requirements offline
       ansible.windows.win_powershell:
         script: |
-          pip install -r '{{ ansible_env.TEMP }}\pip_packages\pip_packages\requirements.txt' --no-index --find-links='{{ ansible_env.TEMP }}\pip_packages\pip_packages'
+          pip install -r 'C:\Users\Administrator\AppData\Local\Temp\pip_packages\pip_packages\requirements.txt' --no-index --find-links='C:\Users\Administrator\AppData\Local\Temp\pip_packages\pip_packages'
 
     - name: Stop chromedriver before install (jumpserver)
       ansible.windows.win_powershell:
@@ -170,7 +170,7 @@
     - name: Download chromedriver (Chrome)
       ansible.windows.win_get_url:
         url: "{{ APPLET_DOWNLOAD_HOST }}/download/applets/chromedriver-win64.zip"
-        dest: "{{ ansible_env.TEMP }}\\chromedriver-win64.zip"
+        dest: "C:\\Users\\Administrator\\AppData\\Local\\Temp\\chromedriver-win64.zip"
         validate_certs: "{{ not IGNORE_VERIFY_CERTS }}"
 
     - name: Remove old chromedriver (Chrome)
@@ -185,7 +185,7 @@
 
     - name: Unzip chromedriver (Chrome)
       community.windows.win_unzip:
-        src: "{{ ansible_env.TEMP }}\\chromedriver-win64.zip"
+        src: "C:\\Users\\Administrator\\AppData\\Local\\Temp\\chromedriver-win64.zip"
         dest: C:\Program Files\JumpServer\drivers
 
     - name: Stop Chrome before install (jumpserver)
@@ -201,7 +201,7 @@
     - name: Download Chrome zip package (Chrome)
       ansible.windows.win_get_url:
         url: "{{ APPLET_DOWNLOAD_HOST }}/download/applets/chrome-win.zip"
-        dest: "{{ ansible_env.TEMP }}\\chrome-win.zip"
+        dest: "C:\\Users\\Administrator\\AppData\\Local\\Temp\\chrome-win.zip"
         validate_certs: "{{ not IGNORE_VERIFY_CERTS }}"
 
     - name: Remove old Chrome (Chrome)
@@ -216,7 +216,7 @@
 
     - name: Unzip Chrome (Chrome)
       community.windows.win_unzip:
-        src: "{{ ansible_env.TEMP }}\\chrome-win.zip"
+        src: "C:\\Users\\Administrator\\AppData\\Local\\Temp\\chrome-win.zip"
         dest: C:\Program Files\JumpServer\applications
 
     - name: Check and Clean global system path (Chrome)
