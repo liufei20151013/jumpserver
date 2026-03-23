@@ -1,19 +1,13 @@
 import uuid
-from platform import platform
 
 import requests
 import json
 
-from rest_framework import serializers
-from django.utils.translation import gettext_lazy as _
-
-from accounts.demos.python.jms_pam.main import DEFAULT_ORG_ID
 from orgs.utils import set_current_org
-from perms.const import ActionChoices
 
 from orgs.models import Organization
 from accounts.models import Account
-from assets.models import Asset, Platform, Database, Web, Node, Host, PlatformProtocol, Protocol, Device
+from assets.models import Asset, Platform, Database, Node, Host, Protocol, Device
 from common.utils import get_logger, get_object_or_none
 
 from django.conf import settings
@@ -81,7 +75,6 @@ def process_data(isFullSync):
     objects = {
         "db_redis": "Redis",
         "db_sqlserver": "SQLserver",
-        # "db_tdsql": "TDSQL",  # 已禁用
         "db_postgresql": "PostgreSQL",
         "db_mysql": "MySQL",
         "db_mongodb": "MongoDB",
@@ -95,8 +88,7 @@ def process_data(isFullSync):
         "db_hana": "HANA",
         "db_oceanbase": "OceanBase",
         "db_tidb": "TiDB",
-        "db_gaussdb": "GaussDB",
-        "db_cluster": "数据库集群信息"
+        "db_gaussdb": "GaussDB"
     }
     for bk_obj_id, bk_obj_name in objects.items():
         print("查询 bk_obj_id: {}, bk_obj_name: {}".format(bk_obj_id, bk_obj_name))
@@ -126,7 +118,7 @@ def process_data(isFullSync):
     print('CMDB 数据处理 End.')
 
 
-def save_db_asset(assets, asset_org_dict, origin_bk_obj_id):
+def save_db_asset(assets, asset_org_dict, bk_obj_id):
     for asset in assets:
         sys_number = asset.get('sys_number', '')
         sys_name = asset.get('sys_name', '')
@@ -152,38 +144,9 @@ def save_db_asset(assets, asset_org_dict, origin_bk_obj_id):
 
         try:
             print("Save or update db asset[{}].".format(asset_name))
-
-            # 数据库集群
-            asset_type = ''
-            bk_obj_id = origin_bk_obj_id
-            if origin_bk_obj_id == 'db_cluster':
-                asset_type = 'cluster'
-                db_type = asset.get('db_tpye', '')
-                if len(db_type) == 0:
-                    continue
-
-                if db_type == 'Redis':
-                    bk_obj_id = 'db_redis'
-                elif db_type == 'SQLserver':
-                    bk_obj_id = 'db_sqlserver'
-                elif db_type == 'PostgreSQL' or db_type == 'TDSQL-PG':
-                    bk_obj_id = 'db_postgresql'
-                elif db_type == 'MySQL' or db_type == 'TDSQL-MYSQL':
-                    bk_obj_id = 'db_mysql'
-                elif db_type == 'MongoDB':
-                    bk_obj_id = 'db_mongodb'
-                elif db_type == 'ORACLE':
-                    bk_obj_id = 'db_oracle'
-                elif db_type == 'DM':
-                    bk_obj_id = 'db_dm'
-                elif (db_type == 'elasticsearch' or db_type == 'ESSBASE' or db_type == 'SybaseIQ' or db_type == 'HANA' or
-                      db_type == 'OceanBase' or db_type == 'TiDB' or db_type == 'GaussDB'):
-                    bk_obj_id = 'db_custom'
-
             default_db = ''
             if bk_obj_id == 'db_redis':
                 protocol = "redis/" + db_port
-                # default_db = asset.get('db_inst_name', '')
                 db_version = asset.get('db_version', '0')
                 if str_to_int(db_version) >= 6:
                     platform = Platform.objects.filter(name='Redis6+').first()
@@ -241,120 +204,59 @@ def save_db_asset(assets, asset_org_dict, origin_bk_obj_id):
                 set_current_org(org)
                 full_assetnode_name = "/" + org.name + "/" + assetnode_name
 
-                if len(asset_type) == 0:
-                    # 用户确认全平台主机名唯一
-                    assetList = Asset.objects.filter(name=asset_name)
-                    if not assetList.exists():
-                        a = Asset.objects.create(name=asset_name,
-                                                 address=ip_addr,
-                                                 platform=platform,
-                                                 org_id=org.id)
+                # 用户确认全平台主机名唯一
+                assetList = Asset.objects.filter(name=asset_name)
+                if not assetList.exists():
+                    a = Asset.objects.create(name=asset_name,
+                                             address=ip_addr,
+                                             platform=platform,
+                                             org_id=org.id)
 
-                        if len(default_db) == 0:
-                            asset_model = Database(asset_ptr_id=a.id)
+                    if len(default_db) == 0:
+                        asset_model = Database(asset_ptr_id=a.id)
+                    else:
+                        asset_model = Database(asset_ptr_id=a.id, db_name=default_db)
+                    asset_model.__dict__.update(a.__dict__)
+                    asset_model.save()
+
+                    key = f"{str(org.id)}_{a.name}"
+                    asset_org_dict.update({key: a.id})
+                    create_asset_node(full_assetnode_name, a)
+                    relate_protocols(asset_protocol, a)
+                    print("Success to create asset[{}].".format(asset_name))
+                    continue
+                else:
+                    for a in assetList:
+                        # 更新资产信息
+                        # 如果平台不同，先删再加
+                        if a.platform_id != platform.id:
+                            print(a.type)
+                            p = Platform.objects.get(id=a.platform_id)
+                            if p.type != platform.type:
+                                Asset.objects.get(id=a.id).delete()
+                                print("Incompatible platform: old-[{}], new-[{}]; Delete asset[{}], create it.".format(p.name, platform.name, asset_name))
+
+                                a = Asset.objects.create(name=asset_name,
+                                                         address=ip_addr,
+                                                         platform=platform,
+                                                         org_id=org.id)
+
+                                if len(default_db) == 0:
+                                    asset_model = Database(asset_ptr_id=a.id)
+                                else:
+                                    asset_model = Database(asset_ptr_id=a.id, db_name=default_db)
+                                asset_model.__dict__.update(a.__dict__)
+                                asset_model.save()
                         else:
-                            asset_model = Database(asset_ptr_id=a.id, db_name=default_db)
-                        asset_model.__dict__.update(a.__dict__)
-                        asset_model.save()
+                            a.address = ip_addr
+                            a.save()
 
                         key = f"{str(org.id)}_{a.name}"
                         asset_org_dict.update({key: a.id})
                         create_asset_node(full_assetnode_name, a)
                         relate_protocols(asset_protocol, a)
-                        print("Success to create asset[{}].".format(asset_name))
+                        print("Success to update asset[{}].".format(asset_name))
                         continue
-                    else:
-                        for a in assetList:
-                            # 更新资产信息
-                            # 如果平台不同，先删再加
-                            if a.platform_id != platform.id:
-                                print(a.type)
-                                p = Platform.objects.get(id=a.platform_id)
-                                if p.type != platform.type:
-                                    Asset.objects.get(id=a.id).delete()
-                                    print("Incompatible platform: old-[{}], new-[{}]; Delete asset[{}], create it.".format(p.name, platform.name, asset_name))
-
-                                    a = Asset.objects.create(name=asset_name,
-                                                             address=ip_addr,
-                                                             platform=platform,
-                                                             org_id=org.id)
-
-                            a.address = ip_addr
-                            a.save()
-
-                            if len(default_db) == 0:
-                                asset_model = Database(asset_ptr_id=a.id)
-                            else:
-                                asset_model = Database(asset_ptr_id=a.id, db_name=default_db)
-                            asset_model.__dict__.update(a.__dict__)
-                            asset_model.save()
-
-                            key = f"{str(org.id)}_{a.name}"
-                            asset_org_dict.update({key: a.id})
-                            create_asset_node(full_assetnode_name, a)
-                            relate_protocols(asset_protocol, a)
-                            print("Success to update asset[{}].".format(asset_name))
-                            continue
-                else:
-                    # 数据库集群 ip_addr 要特殊处理下
-                    address_arr = ip_addr.split(",")
-                    for address in address_arr:
-                        if len(address) == 0:
-                            continue
-
-                        new_asset_name = asset_name + "_" + address
-                        # 用户确认全平台主机名唯一
-                        assetList = Asset.objects.filter(name=new_asset_name)
-                        if not assetList.exists():
-                            a = Asset.objects.create(name=new_asset_name,
-                                                     address=address,
-                                                     platform=platform,
-                                                     org_id=org.id)
-
-                            if len(default_db) == 0:
-                                asset_model = Database(asset_ptr_id=a.id)
-                            else:
-                                asset_model = Database(asset_ptr_id=a.id, db_name=default_db)
-                            asset_model.__dict__.update(a.__dict__)
-                            asset_model.save()
-
-                            key = f"{str(org.id)}_{a.name}"
-                            asset_org_dict.update({key: a.id})
-                            create_asset_node(full_assetnode_name, a)
-                            relate_protocols(asset_protocol, a)
-                            print("Success to create asset[{}].".format(new_asset_name))
-                            continue
-                        else:
-                            for a in assetList:
-                                # 更新资产信息
-                                # 如果平台不同，先删再加
-                                if a.platform_id != platform.id:
-                                    print(a.type)
-                                    p = Platform.objects.get(id=a.platform_id)
-                                    if p.type != platform.type:
-                                        Asset.objects.get(id=a.id).delete()
-                                        print("Incompatible platform: old-[{}], new-[{}]; Delete asset[{}], create it.".format(p.name, platform.name, asset_name))
-
-                                        a = Asset.objects.create(name=new_asset_name,
-                                                                 address=address,
-                                                                 platform=platform,
-                                                                 org_id=org.id)
-                                        if len(default_db) == 0:
-                                            asset_model = Database(asset_ptr_id=a.id)
-                                        else:
-                                            asset_model = Database(asset_ptr_id=a.id, db_name=default_db)
-                                        asset_model.__dict__.update(a.__dict__)
-                                        asset_model.save()
-                                else:
-                                    a.address = ip_addr
-                                    a.save()
-
-                                key = f"{str(org.id)}_{a.name}"
-                                asset_org_dict.update({key: a.id})
-                                create_asset_node(full_assetnode_name, a)
-                                relate_protocols(asset_protocol, a)
-                                print("Success to update asset[{}].".format(new_asset_name))
-                                continue
         except Exception as e:
             print("Failed to save asset[{}], error:{}".format(asset_name, e))
             raise e
