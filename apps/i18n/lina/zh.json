@@ -1650,5 +1650,16 @@
     "AccessTokenTip": "访问令牌是通过 JumpServer 客户端使用 OAuth2（授权码授权）流程生成的临时凭证，用于访问受保护的资源。",
     "Revoke": "撤销",
     "AccountSecretReadDisabled": "账号密码读取功能已被管理员禁用",
-    "Automations": "自动化"
+    "Automations": "自动化",
+    "CMDBHelpText": "1. 由于安全原因，需要配置文件中开启 CMDB。<br>2. 开启后，填写其他配置，进行测试。<br>3. 进行数据同步，同步是单向的，只会从 CMDB 同步数据到 JumpServer。<br>4. 二次修改 CMDB 配置后需重启 JumpServer 服务。",
+    "enableCMDB": "启用 CMDB",
+    "CMDBFullSyncCron": "全量同步 Cron",
+    "CMDBIncrementalSYncCron": "增量同步 Cron",
+    "CMDBUsername": "账号",
+    "CMDBPassword": "密码",
+    "CMDBHost": "服务地址",
+    "CMDBAppCode": "应用 Code",
+    "CMDBAppSecret": "应用 Secret",
+    "fullSync": "全量同步",
+    "incrementalSync": "增量同步"
 }

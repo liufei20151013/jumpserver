@@ -261,7 +261,9 @@ DATABASES = {
         'USER': CONFIG.DB_USER,
         'PASSWORD': CONFIG.DB_PASSWORD,
         'ATOMIC_REQUESTS': True,
-        'OPTIONS': DB_OPTIONS
+        'OPTIONS': DB_OPTIONS,
+        'OPTIONS': DB_OPTIONS,
+        'TEST': {'NAME': 'tpjk'}
     }
 }
 

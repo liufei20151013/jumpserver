@@ -11,6 +11,7 @@ __all__ = [
     'AnnouncementSettingSerializer', 'OpsSettingSerializer', 'VaultSettingSerializer',
     'HashicorpKVSerializer', 'AzureKVSerializer', 'TicketSettingSerializer',
     'ChatAISettingSerializer', 'VirtualAppSerializer', 'AmazonSMSerializer',
+    'CMDBSettingSerializer'
 ]
 
 from settings.const import (
@@ -221,4 +222,33 @@ class VirtualAppSerializer(serializers.Serializer):
             'Virtual applications, you can use the Linux operating system as an application server '
             'in remote applications.'
         )
+    )
+
+
+class CMDBSettingSerializer(serializers.Serializer):
+    PREFIX_TITLE = _('CMDB')
+
+    CMDB_ENABLED = serializers.BooleanField(
+        required=False, label=_('Enable CMDB'), read_only=True
+    )
+    CMDB_USERNAME = serializers.CharField(
+        max_length=256, allow_blank=True, required=False, label=_('CMDB User')
+    )
+    CMDB_PASSWORD = EncryptedField(
+        max_length=256, allow_blank=True, required=False, label=_('CMDB Password')
+    )
+    CMDB_BK_PAAS_HOST = serializers.CharField(
+        max_length=256, allow_blank=True, required=False, label=_('CMDB Host Url')
+    )
+    CMDB_BK_APP_CODE = serializers.CharField(
+        max_length=256, allow_blank=True, required=False, label=_('CMDB APP Code')
+    )
+    CMDB_BK_APP_SECRET = EncryptedField(
+        max_length=256, allow_blank=True, required=False, label=_('CMDB APP Secret')
+    )
+    CMDB_FULL_DATA_SYNC_CRONTAB = serializers.CharField(
+        max_length=256, allow_blank=True, required=False, label=_('Full Synchronization Cron')
+    )
+    CMDB_INCREMENTAL_DATA_SYNC_CRONTAB = serializers.CharField(
+        max_length=256, allow_blank=True, required=False, label=_('Incremental Synchronization Cron')
     )

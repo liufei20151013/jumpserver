@@ -12,3 +12,4 @@ from .slack import *
 from .sms import *
 from .vault import *
 from .wecom import *
+from .cmdb import *

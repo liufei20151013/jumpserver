@@ -749,6 +749,16 @@ class Config(dict):
         'TRUSTED_IP_SOURCE_HEADER': '',
         'TRUSTED_IP_VERIFY_SIGNATURE_HEADER': '',
         'TRUSTED_IP_VERIFY_KEY_PATH': '',
+
+        # CMDB
+        'CMDB_ENABLED': False,
+        'CMDB_USERNAME': '',
+        'CMDB_PASSWORD': '',
+        'CMDB_BK_PAAS_HOST': '',
+        'CMDB_BK_APP_CODE': '',
+        'CMDB_BK_APP_SECRET': '',
+        'CMDB_FULL_DATA_SYNC_CRONTAB': None,
+        'CMDB_INCREMENTAL_DATA_SYNC_CRONTAB': None
     }
 
     old_config_map = {

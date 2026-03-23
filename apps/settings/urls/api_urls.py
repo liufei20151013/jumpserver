@@ -33,6 +33,8 @@ urlpatterns = [
     path('server-info/', api.ServerInfoApi.as_view(), name='server-info'),
     path('i18n/<str:name>/', api.ComponentI18nApi.as_view(), name='i18n-data'),
     path('client/versions/', api.ClientVersionView.as_view(), name='client-version'),
+    path('cmdb/full-sync/', api.CMDBSyncFullDataAPI.as_view(), name='cmdb-full-sync'),
+    path('cmdb/incremental-sync/', api.CMDBSyncIncrementalDataAPI.as_view(), name='cmdb-incremental-sync'),
 ]
 
 urlpatterns += router.urls

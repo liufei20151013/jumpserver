@@ -86,6 +86,7 @@ class PrivateSettingSerializer(PublicSettingSerializer):
     ASSET_PERMISSION_DEFAULT_EXPIRED_DAYS = serializers.IntegerField()
     PRIVACY_MODE = serializers.BooleanField()
     CHANGE_SECRET_AFTER_SESSION_END = serializers.BooleanField()
+    CMDB_ENABLED = serializers.BooleanField()
 
 
 class ServerInfoSerializer(serializers.Serializer):

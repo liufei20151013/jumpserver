@@ -10,6 +10,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from cmdb.task import sync_cmdb_full_data_periodic, sync_cmdb_incremental_data_periodic
 from common.utils import get_logger
 from jumpserver.conf import Config
 from rbac.models import RoleBinding
@@ -71,6 +72,7 @@ class SettingsApi(generics.RetrieveUpdateAPIView):
         'ops': serializers.OpsSettingSerializer,
         'virtualapp': serializers.VirtualAppSerializer,
         'tool': serializers.ToolSerializer,
+        'cmdb': serializers.CMDBSettingSerializer,
     }
 
     rbac_category_permissions = {
@@ -113,6 +115,7 @@ class SettingsApi(generics.RetrieveUpdateAPIView):
         'huawei': 'settings.change_sms',
         'cmpp2': 'settings.change_sms',
         'vault': 'settings.change_vault',
+        'cmdb': 'settings.change_cmdb',
     }
 
     def get_queryset(self):
@@ -129,6 +132,13 @@ class SettingsApi(generics.RetrieveUpdateAPIView):
         has = request.user.has_perm(perm_required)
         if not has:
             self.permission_denied(request)
+        else:
+            try:
+                if category == 'cmdb':
+                    sync_cmdb_full_data_periodic()
+                    sync_cmdb_incremental_data_periodic()
+            except Exception as e:
+                pass
 
     def get_serializer_class(self):
         category = self.request.query_params.get('category', 'basic')
