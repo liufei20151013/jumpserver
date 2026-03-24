@@ -12,7 +12,7 @@ logger = get_logger(__name__)
 
 @shared_task(verbose_name=_('Sync cmdb full data to JumpServer'))
 def sync_cmdb_full_data():
-    process_data(1)
+    process_data(True)
 
 
 @shared_task(verbose_name=_('Registration periodic sync cmdb full data task'))
@@ -42,7 +42,7 @@ def sync_cmdb_full_data_periodic():
 
 @shared_task(verbose_name=_('Sync cmdb incremental data to JumpServer'))
 def sync_cmdb_incremental_data():
-    process_data(0)
+    process_data(False)
 
 
 @shared_task(verbose_name=_('Registration periodic sync cmdb incremental data task'))
