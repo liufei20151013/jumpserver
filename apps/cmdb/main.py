@@ -275,7 +275,7 @@ def save_network_device_asset(assets, asset_org_dict):
     org = Organization.objects.get(id=Organization.DEFAULT_ID)
     set_current_org(org)
 
-    assetnode_name = '/太平金科'
+    assetnode_name = '/' + org.name
     for asset in assets:
         asset_name = asset.get('bk_inst_name', '')
         address = asset.get('ip_address', '')
@@ -480,46 +480,6 @@ def create_asset_node(assetnode_name, asset):
 
         if node:
             asset.nodes.set([node.id])
-
-
-def save_or_update_asset_account(accounts, changedPwdAccounts):
-    enabled = settings.ITSM_CHANGE_SECRET_ENABLED
-    if not enabled:
-        print('当前 ITSM 自动改密功能未开启。')
-
-    # account_username == account_name
-    for account in accounts:
-        asset_name = account.get('asset_name', '')
-        account_username = account.get('account_username', '')
-
-        try:
-            print("Save or update asset[{}]'s account[{}].".format(asset_name, account_username))
-            assets = Asset.objects.filter(name=asset_name)
-            if not assets.exists():
-                print("Asset[{}] does not exist!".format(asset_name))
-                continue
-
-            asset = assets.first()
-            asset_type = asset.platform.category
-            if asset_type == 'host':
-                platform = asset.platform.name.lower()
-
-                # 如果传的是普通账号，也要把 xcscsa 或 administrator 加上
-                account_usernames = []
-                if platform.__contains__('windows'):
-                    account_usernames.append('administrator')
-                else:
-                    account_usernames.append('xcscsa')
-                account_usernames.append(account_username)
-
-                for au in account_usernames:
-                    accountList = Account.objects.filter(asset=asset, username=au)
-                    if accountList.exists():
-                        continue
-        except Exception as e:
-            print("Failed to save or update asset[{}]'s account[{}], error:{}".format(asset_name, account_username, e))
-    return changedPwdAccounts
-
 
 def search_other_asset(bk_token, bk_obj_id, isFullSync):
     limit = 500
