@@ -44,7 +44,7 @@ data/*
 test.py
 .history/
 .test/
-*.mo
+#*.mo
 apps.iml
 *.db
 *.mmdb
