@@ -35,6 +35,8 @@ urlpatterns = [
     path('client/versions/', api.ClientVersionView.as_view(), name='client-version'),
     path('cmdb/full-sync/', api.CMDBSyncFullDataAPI.as_view(), name='cmdb-full-sync'),
     path('cmdb/incremental-sync/', api.CMDBSyncIncrementalDataAPI.as_view(), name='cmdb-incremental-sync'),
+    path('pam/full-sync/', api.PAMSyncFullDataAPI.as_view(), name='pam-full-sync'),
+    path('pam/incremental-sync/', api.PAMSyncIncrementalDataAPI.as_view(), name='pam-incremental-sync'),
 ]
 
 urlpatterns += router.urls

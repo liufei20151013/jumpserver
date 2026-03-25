@@ -13,6 +13,7 @@ from rest_framework.views import APIView
 from cmdb.task import sync_cmdb_full_data_periodic, sync_cmdb_incremental_data_periodic
 from common.utils import get_logger
 from jumpserver.conf import Config
+from pam.task import sync_pam_full_data_periodic, sync_pam_incremental_data_periodic
 from rbac.models import RoleBinding
 from rbac.permissions import RBACPermission
 from users.models import User
@@ -73,6 +74,7 @@ class SettingsApi(generics.RetrieveUpdateAPIView):
         'virtualapp': serializers.VirtualAppSerializer,
         'tool': serializers.ToolSerializer,
         'cmdb': serializers.CMDBSettingSerializer,
+        'pam': serializers.PAMSettingSerializer,
     }
 
     rbac_category_permissions = {
@@ -116,6 +118,7 @@ class SettingsApi(generics.RetrieveUpdateAPIView):
         'cmpp2': 'settings.change_sms',
         'vault': 'settings.change_vault',
         'cmdb': 'settings.change_cmdb',
+        'pam': 'settings.change_pam',
     }
 
     def get_queryset(self):
@@ -137,6 +140,9 @@ class SettingsApi(generics.RetrieveUpdateAPIView):
                 if category == 'cmdb':
                     sync_cmdb_full_data_periodic()
                     sync_cmdb_incremental_data_periodic()
+                elif category == 'pam':
+                    sync_pam_full_data_periodic()
+                    sync_pam_incremental_data_periodic()
             except Exception as e:
                 pass
 

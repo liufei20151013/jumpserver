@@ -182,6 +182,7 @@ class Setting(models.Model):
             ('change_terminal', _('Can change terminal setting')),
             ('change_other', _('Can change other setting')),
             ('change_cmdb', _('Can change cmdb setting')),
+            ('change_pam', _('Can change pam setting')),
         ]
 
 

@@ -13,3 +13,4 @@ from .sms import *
 from .vault import *
 from .wecom import *
 from .cmdb import *
+from .pam import *

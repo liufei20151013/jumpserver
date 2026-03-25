@@ -87,6 +87,7 @@ class PrivateSettingSerializer(PublicSettingSerializer):
     PRIVACY_MODE = serializers.BooleanField()
     CHANGE_SECRET_AFTER_SESSION_END = serializers.BooleanField()
     CMDB_ENABLED = serializers.BooleanField()
+    PAM_ENABLED = serializers.BooleanField()
 
 
 class ServerInfoSerializer(serializers.Serializer):

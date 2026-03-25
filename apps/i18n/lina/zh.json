@@ -1661,5 +1661,9 @@
     "CMDBAppCode": "应用 Code",
     "CMDBAppSecret": "应用 Secret",
     "fullSync": "全量同步",
-    "incrementalSync": "增量同步"
+    "incrementalSync": "增量同步",
+    "PAMHelpText": "1. 由于安全原因，需要配置文件中开启 PAM。<br>2. 开启后，填写其他配置，进行测试。<br>3. 进行数据同步，同步是单向的，只会从 PAM 同步数据到 JumpServer。<br>4. 二次修改 PAM 配置后需重启 JumpServer 服务。",
+    "enablePAM": "启用 PAM",
+    "APIKey": "API Key",
+    "PrivateKey": "Private Key"
 }

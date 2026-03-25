@@ -11,7 +11,7 @@ __all__ = [
     'AnnouncementSettingSerializer', 'OpsSettingSerializer', 'VaultSettingSerializer',
     'HashicorpKVSerializer', 'AzureKVSerializer', 'TicketSettingSerializer',
     'ChatAISettingSerializer', 'VirtualAppSerializer', 'AmazonSMSerializer',
-    'CMDBSettingSerializer'
+    'CMDBSettingSerializer', 'PAMSettingSerializer'
 ]
 
 from settings.const import (
@@ -250,5 +250,24 @@ class CMDBSettingSerializer(serializers.Serializer):
         max_length=256, allow_blank=True, required=False, label=_('Full Synchronization Cron')
     )
     CMDB_INCREMENTAL_DATA_SYNC_CRONTAB = serializers.CharField(
+        max_length=256, allow_blank=True, required=False, label=_('Incremental Synchronization Cron')
+    )
+
+class PAMSettingSerializer(serializers.Serializer):
+    PREFIX_TITLE = _('PAM')
+
+    PAM_ENABLED = serializers.BooleanField(
+        required=False, label=_('Enable PAM'), read_only=True
+    )
+    PAM_SERVER = serializers.CharField(
+        max_length=256, allow_blank=True, required=False, label=_('PAM Host Url')
+    )
+    PAM_API_KEY = serializers.CharField(
+        max_length=256, allow_blank=True, required=False, label=_('PAM API Key')
+    )
+    PAM_FULL_DATA_SYNC_CRONTAB = serializers.CharField(
+        max_length=256, allow_blank=True, required=False, label=_('Full Synchronization Cron')
+    )
+    PAM_INCREMENTAL_DATA_SYNC_CRONTAB = serializers.CharField(
         max_length=256, allow_blank=True, required=False, label=_('Incremental Synchronization Cron')
     )

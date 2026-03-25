@@ -758,7 +758,14 @@ class Config(dict):
         'CMDB_BK_APP_CODE': '',
         'CMDB_BK_APP_SECRET': '',
         'CMDB_FULL_DATA_SYNC_CRONTAB': None,
-        'CMDB_INCREMENTAL_DATA_SYNC_CRONTAB': None
+        'CMDB_INCREMENTAL_DATA_SYNC_CRONTAB': None,
+
+        # PAM
+        'PAM_ENABLED': False,
+        'PAM_SERVER': '',
+        'PAM_API_KEY': '',
+        'PAM_FULL_DATA_SYNC_CRONTAB': None,
+        'PAM_INCREMENTAL_DATA_SYNC_CRONTAB': None,
     }
 
     old_config_map = {
