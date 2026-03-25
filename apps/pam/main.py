@@ -61,8 +61,9 @@ def relate_asset_to_account(assets, accounts, isFullSync):
             pam_asset_dict.update({key: asset_id})
 
         for account in accounts:
+            verify_status = account.get('verifyStatus', '')
             asset_id = account.get('assetId', '')
-            if len(asset_id) == 0:
+            if len(verify_status) == 0 or verify_status != '4' or len(asset_id) == 0:
                 continue
 
             account_arr = pam_asset_account_dict.get(asset_id, [])
@@ -72,8 +73,9 @@ def relate_asset_to_account(assets, accounts, isFullSync):
         # 只同步一个小时前新增的账号或者新校验的账号
         timestamp = int(time.time() * 1000) - 3600000
         for account in accounts:
+            verify_status = account.get('verifyStatus', '')
             asset_id = account.get('assetId', '')
-            if len(asset_id) == 0:
+            if len(verify_status) == 0 or verify_status != '4' or len(asset_id) == 0:
                 continue
 
             create_time = account.get('createTime', 0)
