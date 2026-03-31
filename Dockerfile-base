@@ -1,5 +1,5 @@
 FROM python:3.11.14-slim-trixie
-ARG TARGETARCH
+ARG TARGETARCH=amd64
 # Install APT dependencies
 ARG DEPENDENCIES="                    \
         ca-certificates               \

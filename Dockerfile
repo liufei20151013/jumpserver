@@ -1,8 +1,39 @@
+ARG VERSION=v4.10.16
+
+FROM registry.fit2cloud.com/jumpserver/xpack:${VERSION} AS build-xpack
 FROM jumpserver/core-base:20260122_035753 AS stage-build
 
-ARG VERSION
+COPY pyproject.toml /opt/jumpserver/pyproject.toml
+COPY --from=build-xpack /opt/xpack /opt/jumpserver/apps/xpack
+
+ARG TOOLS="                           \
+        g++                           \
+        curl                          \
+        iputils-ping                  \
+        netcat-openbsd                \
+        nmap                          \
+        telnet                        \
+        vim                           \
+        postgresql-client         \
+        wget                          \
+        wget                          \
+        poppler-utils"
+
+RUN set -ex \
+    && apt-get update \
+    && apt-get -y install --no-install-recommends ${TOOLS} \
+    && apt-get clean all \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt/jumpserver
+
+ARG PIP_MIRROR=https://mirrors.ustc.edu.cn/pypi/simple/
+
+# 添加新的依赖 uv pip install -i${PIP_MIRROR} croniter==6.2.2
+RUN set -ex \
+    && uv pip install -i${PIP_MIRROR} --group xpack \
+    && uv pip install -i${PIP_MIRROR} croniter==6.2.2 \
+    && playwright install chromium  --with-deps --only-shell
 
 ADD . .
 
@@ -36,7 +67,7 @@ ARG TOOLS="                           \
         nmap                          \
         bubblewrap"
 
-ARG APT_MIRROR=http://deb.debian.org
+ARG APT_MIRROR=http://mirrors.ustc.edu.cn
 
 RUN set -ex \
     && sed -i "s@http://.*.debian.org@${APT_MIRROR}@g" /etc/apt/sources.list.d/debian.sources \
