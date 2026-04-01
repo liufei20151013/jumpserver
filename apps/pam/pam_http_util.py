@@ -45,7 +45,7 @@ MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCrQU480Ry/izMvw4/uZlW+HNBbLr6G
             raise RuntimeError("生成签名异常，请重试") from e
 
         json_str = json.dumps(param_dict, ensure_ascii=False)
-        print(f"向 pam 发送请求参数: {json_str}")
+        # print(f"向 pam 发送请求参数: {json_str}")
 
         try:
             response = requests.post(
@@ -57,7 +57,7 @@ MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCrQU480Ry/izMvw4/uZlW+HNBbLr6G
         except Exception as e:
             raise RuntimeError(f"请求PAM服务失败: {e}") from e
 
-        print(f"pam返回：{response.text}")
+        # print(f"pam返回：{response.text}")
 
         if response.status_code != 200:
             print(f"post status : {response.status_code}")

@@ -31,7 +31,7 @@ def process_data(isFullSync):
             print("查询 PAM 上的资产数据失败，code: {}, error: {}".format(result['code'], result['error']))
             return
         assets.extend(result['data']['list'])
-    print("获取 PAM 上的资产数据 End.")
+    print("获取 PAM 上的资产数据 End，total: {} 条.".format(len(assets)))
 
     print("获取 PAM 上的数据 Start.")
     result = search_account()
@@ -39,11 +39,11 @@ def process_data(isFullSync):
         print("查询 PAM 上的资产数据失败，code: {}, error: {}".format(result['code'], result['error']))
         return
     accounts = result['data']['list']
-    print("获取 PAM 上的账号数据 End.")
+    print("获取 PAM 上的账号数据 End，total: {} 条.".format(len(accounts)))
 
     print("关联 PAM 上的账号数据 Start.")
     relate_asset_to_account(assets, accounts, isFullSync)
-    print("关联 PAM 上的账号数据 Start.")
+    print("关联 PAM 上的账号数据 End.")
 
 
 def relate_asset_to_account(assets, accounts, isFullSync):
@@ -55,7 +55,7 @@ def relate_asset_to_account(assets, accounts, isFullSync):
             asset_id = asset.get('id', '')
             asset_address = asset.get('ipv4', '')
             asset_category = asset.get('category', '')
-            if len(asset_id) == 0 or len(asset_address) == 0 or len(asset_category) == 0:
+            if not asset_id or not asset_address or not asset_category:
                 continue
             key = f"{str(asset_address)}_{asset_category}"
             pam_asset_dict.update({key: asset_id})
@@ -63,7 +63,7 @@ def relate_asset_to_account(assets, accounts, isFullSync):
         for account in accounts:
             verify_status = account.get('verifyStatus', '')
             asset_id = account.get('assetId', '')
-            if len(verify_status) == 0 or verify_status != '4' or len(asset_id) == 0:
+            if not verify_status or verify_status != '4' or not asset_id:
                 continue
 
             account_arr = pam_asset_account_dict.get(asset_id, [])
@@ -75,12 +75,11 @@ def relate_asset_to_account(assets, accounts, isFullSync):
         for account in accounts:
             verify_status = account.get('verifyStatus', '')
             asset_id = account.get('assetId', '')
-            if len(verify_status) == 0 or verify_status != '4' or len(asset_id) == 0:
+            if not verify_status or verify_status != '4' or not asset_id:
                 continue
 
-            create_time = account.get('createTime', 0)
-            verify_time = account.get('verifyTime', 0)
-            if create_time > timestamp or verify_time > timestamp:
+            save_time = account.get('verifyTime') or account.get('createTime')
+            if save_time > timestamp:
                 account_arr = pam_asset_account_dict.get(asset_id, [])
                 account_arr.append(account)
                 pam_asset_account_dict.update({asset_id: account_arr})
@@ -91,7 +90,7 @@ def relate_asset_to_account(assets, accounts, isFullSync):
             asset_id = asset.get('id', '')
             asset_address = asset.get('ipv4', '')
             asset_category = asset.get('category', '')
-            if len(asset_id) == 0 or len(asset_address) == 0 or len(asset_category) == 0:
+            if not asset_id or not asset_address or not asset_category:
                 continue
             account_arr = pam_asset_account_dict.get(asset_id, [])
             if len(account_arr) == 0:
@@ -118,7 +117,8 @@ def relate_asset_to_account(assets, accounts, isFullSync):
 
             key = f"{str(asset.address)}_{asset_category}"
             asset_id = pam_asset_dict.get(key, '')
-            if len(asset_id) == 0:
+            if not asset_id:
+                print("Asset[{}-{}] not exist, skip.".format(asset_id, asset.address))
                 continue
 
             account_arr = pam_asset_account_dict.get(asset_id, [])
@@ -127,7 +127,7 @@ def relate_asset_to_account(assets, accounts, isFullSync):
 
             for account in account_arr:
                 username = account.get('assetAccount', '')
-                if len(username) == 0:
+                if not username:
                     continue
 
                 try:
@@ -142,11 +142,20 @@ def relate_asset_to_account(assets, accounts, isFullSync):
                         name = asset.address + "_" + username
                         privileged = True if account.get('accountType', '') == '0' else False
                         if asset.category == 'host' and username == 'root':
-                            accounts = Account.objects.filter(asset=asset, username='appuser')
+                            su_from_username = 'loginuser'
+                            accounts = Account.objects.filter(asset=asset, username=su_from_username)
                             if not accounts.exists():
-                                continue
-
-                            acc = accounts.first()
+                                su_from_name = asset.address + '_' + su_from_username
+                                acc = Account.objects.create(asset=asset,
+                                                       name=su_from_name,
+                                                       username=su_from_username,
+                                                       privileged=False,
+                                                       secret_type=SecretType.PASSWORD,
+                                                       _secret=secret,
+                                                       org_id=org.id)
+                                print("Success to create account[{}] for asset[{}].".format(su_from_username, asset.address))
+                            else:
+                                acc = accounts.first()
                             Account.objects.create(asset=asset,
                                                    name=name,
                                                    username=username,
@@ -173,7 +182,7 @@ def relate_asset_to_account(assets, accounts, isFullSync):
                     print("Failed to save account[{}] for asset[{}], error:{}".format(username, asset.address, e))
 
 def search_asset(category):
-    limit = 10000
+    limit = 1000
     base_param = {
         "pageNum": "",
         "pageSize": limit,
@@ -223,11 +232,11 @@ def search_asset(category):
         result["data"]["list"].extend(res["list"])
         current_page += 1
 
-    print("search asset result: {}".format(json.dumps(result)))
+    # print("search asset result: {}".format(json.dumps(result)))
     return result
 
 def search_account():
-    limit = 10000
+    limit = 1000
     base_param = {
         "pageNum": "",
         "pageSize": limit
@@ -276,7 +285,7 @@ def search_account():
         result["data"]["list"].extend(res["list"])
         current_page += 1
 
-    print("search account result: {}".format(json.dumps(result)))
+    # print("search account result: {}".format(json.dumps(result)))
     return result
 
 def search_by_id(url, id):
@@ -292,5 +301,5 @@ def search_by_id(url, id):
         result_class=dict,
         api_key=settings.PAM_API_KEY
     )
-    print("search result: {}".format(json.dumps(result)))
+    # print("search result: {}".format(json.dumps(result)))
     return result

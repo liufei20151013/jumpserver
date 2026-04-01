@@ -29,10 +29,10 @@ class TestTaskCase(TestCase):
                 "id": "6614fe2549d995000de0eb2b",
                 "assetId": "6670f6c6c47dd6f044896247",
                 "assetAccount": "root",
-                "verifyStatus": "3",
+                "verifyStatus": "4",
                 "accountType": "0",
-                "createTime": 1712651813000,
-                "verifyTime": 1713576681249,
+                "createTime": 1776651813000,
+                "verifyTime": None,
                 "dept": {
                     "deptId": "661618e2d93419000c5a1d79",
                     "deptName": "test"
@@ -41,10 +41,10 @@ class TestTaskCase(TestCase):
                 "id": "6614fe2549d995000de0eb27",
                 "assetId": "6670f6c6c47dd6f044896247",
                 "assetAccount": "appuser",
-                "verifyStatus": "3",
+                "verifyStatus": "4",
                 "accountType": "1",
-                "createTime": 1712651813000,
-                "verifyTime": 1713576681249,
+                "createTime": 1776651813000,
+                "verifyTime": None,
                 "dept": {
                     "deptId": "661618e2d93419000c5a1d79",
                     "deptName": "test"
