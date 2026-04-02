@@ -123,10 +123,11 @@ def process_data(isFullSync):
 
 def save_db_asset(assets, asset_org_dict, bk_obj_id, isFullSync):
     for asset in assets:
-        update_time = asset.get('create_time')
-        # update_time = asset.get('last_time') or asset.get('create_time')
-        if not isFullSync and compare_time(update_time):
-            continue
+        # update_time = asset.get('create_time')
+        update_time = asset.get('last_time') or asset.get('create_time')
+        if not isFullSync:
+            if not compare_time(update_time):
+                continue
 
         sys_number = asset.get('sys_number', '')
         sys_name = asset.get('sys_name', '')
@@ -147,8 +148,10 @@ def save_db_asset(assets, asset_org_dict, bk_obj_id, isFullSync):
         if org:
             orgs.append(org)
         else:
-            print("堡垒机上不存在组织[{}]，请新建组织后全量同步，asset_name: {}.".format(org_name, asset_name))
-            continue
+            print("堡垒机上不存在组织[{}]，asset_name: {}.".format(org_name, asset_name))
+            org = Organization.objects.create(name=org_name)
+            orgs.append(org)
+            print("Success to create org[{}].".format(org_name))
 
 
         try:
@@ -288,10 +291,11 @@ def save_network_device_asset(assets, asset_org_dict, isFullSync):
 
     assetnode_name = '/' + org.name
     for asset in assets:
-        update_time = asset.get('create_time')
-        # update_time = asset.get('last_time') or asset.get('create_time')
-        if not isFullSync and compare_time(update_time):
-            continue
+        # update_time = asset.get('create_time')
+        update_time = asset.get('last_time') or asset.get('create_time')
+        if not isFullSync:
+            if not compare_time(update_time):
+                continue
 
         asset_name = asset.get('bk_inst_name', '')
         address = asset.get('ip_address', '')
@@ -372,10 +376,11 @@ def save_network_device_asset(assets, asset_org_dict, isFullSync):
 
 def save_host_asset(assets, asset_org_dict, isFullSync):
     for asset in assets:
-        update_time = asset.get('create_time')
-        # update_time = asset.get('last_time') or asset.get('create_time')
-        if not isFullSync and compare_time(update_time):
-            continue
+        # update_time = asset.get('create_time')
+        update_time = asset.get('last_time') or asset.get('create_time')
+        if not isFullSync:
+            if not compare_time(update_time):
+                continue
 
         sys_number = asset.get('sys_number', '')
         sys_name = asset.get('sys_name', '')
@@ -664,12 +669,13 @@ def compare_time(time_str: str) -> bool:
 
         # 2. 以该时间为基准，计算cron上一次执行时间 → 时间戳B
         cron_expr = settings.CMDB_INCREMENTAL_DATA_SYNC_CRONTAB
-        cron = croniter.croniter(cron_expr, dt)
+        now = datetime.now()
+        cron = croniter.croniter(cron_expr, now)
         last_exec_dt = cron.get_prev(datetime)
         timestamp_b = last_exec_dt.timestamp()
 
         # 3. 对比返回
-        return timestamp_a < timestamp_b
+        return timestamp_a > timestamp_b
     except Exception as e:
         print("time_str: {}, compare_time error: {}".format(time_str, e))
         return True

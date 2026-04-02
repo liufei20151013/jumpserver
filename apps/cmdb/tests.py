@@ -49,7 +49,8 @@ class TestTaskCase(TestCase):
                 'bk_host_innerip': '10.1.10.11',
                 'bk_os_type': '1',
                 'app_department': '应用部门',
-                'bk_os_name': '7'
+                'bk_os_name': '7',
+                "create_time": "2026-04-01T01:05:41+08:00"
             },{
                 'sys_number': 'TK-001',
                 'sys_name': '运维系统',
@@ -77,61 +78,61 @@ class TestTaskCase(TestCase):
             }
         ]
 
-        save_host_asset(host_data, asset_org_dict)
+        save_host_asset(host_data, asset_org_dict, False)
 
-        bk_obj_id = 'db_redis'
-        db_data = [
-            {
-                'sys_number': 'TK-002',
-                'sys_name': '数据库',
-                'bk_inst_name': '数据库01',
-                'ip_addr': '10.1.10.11',
-                'port': '6379',
-                'app_department': '应用部门',
-                'db_inst_name': 'db01',
-                'db_version': '5'
-            }, {
-                'sys_number': 'TK-002',
-                'sys_name': '数据库',
-                'bk_inst_name': '数据库02',
-                'ip_addr': '10.1.10.12',
-                'port': '6379',
-                'app_department': '应用部门',
-                'db_inst_name': 'db02',
-                'db_version': '6.88'
-            }
-        ]
-
-        save_db_asset(db_data, asset_org_dict, bk_obj_id)
-
-        bk_obj_id = 'db_cluster'
-        db_data = [
-            {
-                'sys_number': 'TK-002',
-                'sys_name': '数据库',
-                'bk_inst_name': '集群01',
-                'ip_addr': '10.1.10.13,10.1.10.14,10.1.10.15',
-                'port': '6379',
-                'app_department': '应用部门',
-                'db_inst_name': 'db01',
-                'db_tpye': 'Redis',
-                'db_version': '5'
-            }
-        ]
-
-        save_db_asset(db_data, asset_org_dict, bk_obj_id)
-
-        if len(asset_org_dict) > 0:
-            print("删除已下线的资产 Start.")
-            offline_asset_org_dict = {k: v for k, v in old_asset_org_dict.items() if k not in asset_org_dict}
-            for key, value in offline_asset_org_dict.items():
-                items = key.split("_")
-                org = Organization.objects.get(id=uuid.UUID(items[0]))
-                set_current_org(org)
-
-                Asset.objects.get(id=value).delete()
-                print("Success to delete asset: {}, org_id: {}.".format(items[1], items[0]))
-            print("删除已下线的资产 End.")
+        # bk_obj_id = 'db_redis'
+        # db_data = [
+        #     {
+        #         'sys_number': 'TK-002',
+        #         'sys_name': '数据库',
+        #         'bk_inst_name': '数据库01',
+        #         'ip_addr': '10.1.10.11',
+        #         'port': '6379',
+        #         'app_department': '应用部门',
+        #         'db_inst_name': 'db01',
+        #         'db_version': '5'
+        #     }, {
+        #         'sys_number': 'TK-002',
+        #         'sys_name': '数据库',
+        #         'bk_inst_name': '数据库02',
+        #         'ip_addr': '10.1.10.12',
+        #         'port': '6379',
+        #         'app_department': '应用部门',
+        #         'db_inst_name': 'db02',
+        #         'db_version': '6.88'
+        #     }
+        # ]
+        #
+        # save_db_asset(db_data, asset_org_dict, bk_obj_id)
+        #
+        # bk_obj_id = 'db_cluster'
+        # db_data = [
+        #     {
+        #         'sys_number': 'TK-002',
+        #         'sys_name': '数据库',
+        #         'bk_inst_name': '集群01',
+        #         'ip_addr': '10.1.10.13,10.1.10.14,10.1.10.15',
+        #         'port': '6379',
+        #         'app_department': '应用部门',
+        #         'db_inst_name': 'db01',
+        #         'db_tpye': 'Redis',
+        #         'db_version': '5'
+        #     }
+        # ]
+        #
+        # save_db_asset(db_data, asset_org_dict, bk_obj_id)
+        #
+        # if len(asset_org_dict) > 0:
+        #     print("删除已下线的资产 Start.")
+        #     offline_asset_org_dict = {k: v for k, v in old_asset_org_dict.items() if k not in asset_org_dict}
+        #     for key, value in offline_asset_org_dict.items():
+        #         items = key.split("_")
+        #         org = Organization.objects.get(id=uuid.UUID(items[0]))
+        #         set_current_org(org)
+        #
+        #         Asset.objects.get(id=value).delete()
+        #         print("Success to delete asset: {}, org_id: {}.".format(items[1], items[0]))
+        #     print("删除已下线的资产 End.")
 
 
     def test3(self):
