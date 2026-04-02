@@ -28,9 +28,9 @@ def process_data(isFullSync):
         print("获取bk_token失败.")
         return
 
+    old_asset_org_dict = {}
     if isFullSync:
         print("获取堡垒机上原始资产数据 Start.")
-        old_asset_org_dict = {}
         orgs = Organization.objects.exclude(id=Organization.SYSTEM_ID)
         for org in orgs:
             set_current_org(org)
@@ -94,7 +94,7 @@ def process_data(isFullSync):
     }
     for bk_obj_id, bk_obj_name in objects.items():
         print("查询 bk_obj_id: {}, bk_obj_name: {}".format(bk_obj_id, bk_obj_name))
-        result = search_other_asset(bk_token, bk_obj_id, isFullSync)
+        result = search_other_asset(bk_token, bk_obj_id)
         if result['code'] != 0:
             print("查询 CMDB 数据库资产数据失败，code: {}, requestId: {}".format(result['code'], result['request_id']))
             return
@@ -102,7 +102,7 @@ def process_data(isFullSync):
         db_data = result['data']['list']
         print("查询 bk_obj_id: {}, bk_obj_name: {}，total: {}条".format(bk_obj_id, bk_obj_name, len(db_data)))
 
-        save_db_asset(db_data, asset_org_dict, bk_obj_id)
+        save_db_asset(db_data, asset_org_dict, bk_obj_id, isFullSync)
     print("查询所有数据库资产、网络设备 End.")
 
 
@@ -123,7 +123,8 @@ def process_data(isFullSync):
 
 def save_db_asset(assets, asset_org_dict, bk_obj_id, isFullSync):
     for asset in assets:
-        update_time = asset.get('last_time') or asset.get('create_time')
+        update_time = asset.get('create_time')
+        # update_time = asset.get('last_time') or asset.get('create_time')
         if not isFullSync and compare_time(update_time):
             continue
 
@@ -135,6 +136,7 @@ def save_db_asset(assets, asset_org_dict, bk_obj_id, isFullSync):
         org_name = asset.get('app_department', '')
         # 未维护信息过滤掉
         if not sys_number or not sys_name or not asset_name or not ip_addr or not db_port or not org_name:
+            print("There exist null parameter situations, skip.")
             continue
         assetnode_name = sys_number + '-' + sys_name
 
@@ -152,6 +154,7 @@ def save_db_asset(assets, asset_org_dict, bk_obj_id, isFullSync):
         try:
             print("Save or update db asset[{}].".format(asset_name))
             default_db = ''
+            db_port = str(db_port)
             if bk_obj_id == 'db_redis':
                 protocol = "redis/" + db_port
                 db_version = asset.get('db_version', '0')
@@ -197,6 +200,7 @@ def save_db_asset(assets, asset_org_dict, bk_obj_id, isFullSync):
                 protocol = "orig_app/" + db_port
                 platform = Platform.objects.filter(name='OriginalApp').first()
             else:
+                print("bk_obj_id[{}] is not exist, skip.".format(bk_obj_id))
                 continue
 
 
@@ -284,7 +288,8 @@ def save_network_device_asset(assets, asset_org_dict, isFullSync):
 
     assetnode_name = '/' + org.name
     for asset in assets:
-        update_time = asset.get('last_time') or asset.get('create_time')
+        update_time = asset.get('create_time')
+        # update_time = asset.get('last_time') or asset.get('create_time')
         if not isFullSync and compare_time(update_time):
             continue
 
@@ -293,6 +298,7 @@ def save_network_device_asset(assets, asset_org_dict, isFullSync):
         manufacturer = asset.get('manufacturer', '')
         # 未维护信息过滤掉
         if not asset_name or not address or not manufacturer:
+            print("There exist null parameter situations, skip.")
             continue
 
         try:
@@ -366,7 +372,8 @@ def save_network_device_asset(assets, asset_org_dict, isFullSync):
 
 def save_host_asset(assets, asset_org_dict, isFullSync):
     for asset in assets:
-        update_time = asset.get('last_time') or asset.get('create_time')
+        update_time = asset.get('create_time')
+        # update_time = asset.get('last_time') or asset.get('create_time')
         if not isFullSync and compare_time(update_time):
             continue
 
@@ -377,6 +384,7 @@ def save_host_asset(assets, asset_org_dict, isFullSync):
         bk_os_type = asset.get('bk_os_type', '')
         org_name = asset.get('app_department', '')
         if not sys_number or not sys_name or not asset_name or not address or not bk_os_type or not org_name:
+            print("There exist null parameter situations, skip.")
             continue
         assetnode_name = sys_number + '-' + sys_name
 
@@ -388,8 +396,10 @@ def save_host_asset(assets, asset_org_dict, isFullSync):
             if org:
                 orgs.append(org)
             else:
-                print("堡垒机上不存在组织[{}]，请新建组织后全量同步，asset_name: {}.".format(org_name, asset_name))
-                continue
+                print("堡垒机上不存在组织[{}]，asset_name: {}.".format(org_name, asset_name))
+                org = Organization.objects.create(name=org_name)
+                orgs.append(org)
+                print("Success to create org[{}].".format(org_name))
 
         try:
             print("Save or update host asset[{}].".format(asset_name))
@@ -407,6 +417,7 @@ def save_host_asset(assets, asset_org_dict, isFullSync):
                 asset_protocol = ["ssh/22", "telnet/23"]
                 platform = Platform.objects.filter(name='AIX').first()
             else:
+                print("bk_os_type[{}] is not exist, skip.".format(bk_os_type))
                 continue
 
             for org in orgs:
