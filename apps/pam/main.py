@@ -182,7 +182,7 @@ def relate_asset_to_account(assets, accounts, isFullSync):
                     print("Failed to save account[{}] for asset[{}], error:{}".format(username, asset.address, e))
 
 def search_asset(category):
-    limit = 1000
+    limit = 10000
     base_param = {
         "pageNum": "",
         "pageSize": limit,
@@ -236,7 +236,7 @@ def search_asset(category):
     return result
 
 def search_account():
-    limit = 1000
+    limit = 10000
     base_param = {
         "pageNum": "",
         "pageSize": limit
