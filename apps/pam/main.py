@@ -142,7 +142,10 @@ def relate_asset_to_account(assets, accounts, isFullSync):
                         name = asset.address + "_" + username
                         privileged = True if account.get('accountType', '') == '0' else False
                         if asset.category == 'host' and username == 'root':
-                            su_from_username = 'loginuser'
+                            if asset.platform.name == 'AIX':
+                                su_from_username = 'cyuser'
+                            else:
+                                su_from_username = 'loginuser'
                             accounts = Account.objects.filter(asset=asset, username=su_from_username)
                             if not accounts.exists():
                                 su_from_name = asset.address + '_' + su_from_username
