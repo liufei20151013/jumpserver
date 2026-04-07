@@ -179,6 +179,14 @@ def relate_asset_to_account(assets, accounts, isFullSync):
                     else:
                         acc = account_list.first()
                         acc._secret = secret
+                        if asset.category == 'host' and username == 'root':
+                            if asset.platform.name == 'AIX':
+                                su_from_username = 'cyuser'
+                            else:
+                                su_from_username = 'loginuser'
+                            accounts = Account.objects.filter(asset=asset, username=su_from_username)
+                            if accounts.exists():
+                                acc.su_from = accounts.first()
                         acc.save()
                         print("Success to update account[{}] for asset[{}].".format(username, asset.address))
                 except Exception as e:
