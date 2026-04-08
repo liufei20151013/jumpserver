@@ -1,7 +1,8 @@
 ARG VERSION=v4.10.16
 
 FROM registry.fit2cloud.com/jumpserver/xpack:${VERSION} AS build-xpack
-FROM jumpserver/core-base:20260122_035753 AS stage-build
+#FROM jumpserver/core-base:20260122_035753 AS stage-build
+FROM jumpserver/core-base:v4.10.16 AS stage-build
 
 COPY pyproject.toml /opt/jumpserver/pyproject.toml
 COPY --from=build-xpack /opt/xpack /opt/jumpserver/apps/xpack
@@ -9,15 +10,7 @@ COPY --from=build-xpack /opt/xpack /opt/jumpserver/apps/xpack
 ARG TOOLS="                           \
         g++                           \
         curl                          \
-        iputils-ping                  \
-        netcat-openbsd                \
-        nmap                          \
-        telnet                        \
-        vim                           \
-        postgresql-client         \
-        wget                          \
-        wget                          \
-        poppler-utils"
+        postgresql-client"
 
 RUN set -ex \
     && apt-get update \
@@ -33,7 +26,7 @@ ARG PIP_MIRROR=https://mirrors.ustc.edu.cn/pypi/simple/
 RUN set -ex \
     && uv pip install -i${PIP_MIRROR} --group xpack \
     && uv pip install -i${PIP_MIRROR} croniter==6.2.2 \
-    && playwright install chromium  --with-deps --only-shell
+    && playwright install chromium --with-deps --only-shell
 
 ADD . .
 
@@ -65,7 +58,14 @@ ARG TOOLS="                           \
         openssh-client                \
         sshpass                       \
         nmap                          \
-        bubblewrap"
+        bubblewrap                    \
+        vim                           \
+        wget                          \
+        curl                          \
+        iputils-ping                  \
+        netcat-openbsd                \
+        telnet                        \
+        postgresql-client"
 
 ARG APT_MIRROR=http://mirrors.ustc.edu.cn
 
