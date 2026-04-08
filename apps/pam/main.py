@@ -63,7 +63,8 @@ def relate_asset_to_account(assets, accounts, isFullSync):
         for account in accounts:
             verify_status = account.get('verifyStatus', '')
             asset_id = account.get('assetId', '')
-            if not verify_status or verify_status != '4' or not asset_id:
+            # 校验状态 0: 未校验(未知) 1:进行中 2:校验无效 3:校验未通过 4:校验通过
+            if not verify_status or (verify_status != '0' and verify_status != '4') or not asset_id:
                 continue
 
             account_arr = pam_asset_account_dict.get(asset_id, [])
