@@ -138,10 +138,10 @@ def relate_asset_to_account(assets, accounts, isFullSync):
                         continue
                     secret = result.get('rows', '')
 
+                    name = asset.address + "_" + username
+                    privileged = True if account.get('accountType', '') == '0' else False
                     account_list = Account.objects.filter(asset=asset, username=username)
                     if not account_list.exists():
-                        name = asset.address + "_" + username
-                        privileged = True if account.get('accountType', '') == '0' else False
                         if asset.category == 'host' and username == 'root':
                             if asset.platform.name == 'AIX':
                                 su_from_username = 'cyuser'
@@ -178,8 +178,6 @@ def relate_asset_to_account(assets, accounts, isFullSync):
                                                    org_id=org.id)
                         print("Success to create account[{}] for asset[{}].".format(username, asset.address))
                     else:
-                        acc = account_list.first()
-                        acc._secret = secret
                         if asset.category == 'host' and username == 'root':
                             if asset.platform.name == 'AIX':
                                 su_from_username = 'cyuser'
@@ -187,8 +185,22 @@ def relate_asset_to_account(assets, accounts, isFullSync):
                                 su_from_username = 'loginuser'
                             accounts = Account.objects.filter(asset=asset, username=su_from_username)
                             if accounts.exists():
-                                acc.su_from = accounts.first()
-                        acc.save()
+                                account_list.update(asset=asset,
+                                                    name=name,
+                                                    username=username,
+                                                    privileged=privileged,
+                                                    secret_type=SecretType.PASSWORD,
+                                                    _secret=secret,
+                                                    su_from=accounts.first(),
+                                                    org_id=org.id)
+                        else:
+                            account_list.update(asset=asset,
+                                                name=name,
+                                                username=username,
+                                                privileged=privileged,
+                                                secret_type=SecretType.PASSWORD,
+                                                _secret=secret,
+                                                org_id=org.id)
                         print("Success to update account[{}] for asset[{}].".format(username, asset.address))
                 except Exception as e:
                     print("Failed to save account[{}] for asset[{}], error:{}".format(username, asset.address, e))
