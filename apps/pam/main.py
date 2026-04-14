@@ -1,5 +1,6 @@
 import time
 import json
+from datetime import datetime, date
 
 from accounts.const import SecretType
 from orgs.utils import set_current_org
@@ -46,9 +47,22 @@ def process_data(isFullSync):
     print("关联 PAM 上的账号数据 End.")
 
 
+def get_timestamp(hour):
+    today = datetime.combine(date.today(), datetime.min.time().replace(hour=hour))
+    timestamp_ms = int(today.timestamp() * 1000)
+    return timestamp_ms
+
+
 def relate_asset_to_account(assets, accounts, isFullSync):
     pam_asset_dict = {}
     pam_asset_account_dict = {}
+
+    isSync = False
+    today_3am_timpstamp = get_timestamp(3)
+    now_hour_timestamp = get_timestamp(datetime.now().hour)
+    if now_hour_timestamp > today_3am_timpstamp and isFullSync:
+        isSync = True
+        isFullSync = False
 
     if isFullSync:
         for asset in assets:
@@ -71,8 +85,11 @@ def relate_asset_to_account(assets, accounts, isFullSync):
             account_arr.append(account)
             pam_asset_account_dict.update({asset_id: account_arr})
     else:
-        # 只同步一个小时前新增的账号或者新校验的账号
-        timestamp = int(time.time() * 1000) - 3600000
+        if isSync:
+            timestamp = today_3am_timpstamp
+        else:
+            # 只同步一个小时前新增的账号或者新校验的账号
+            timestamp = int(time.time() * 1000) - 3600000
         for account in accounts:
             verify_status = account.get('verifyStatus', '')
             asset_id = account.get('assetId', '')
