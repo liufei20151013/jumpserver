@@ -112,6 +112,8 @@ class AppletHost(Host):
         accounts = []
         account_model = self.accounts.model
         for username in usernames:
+            if str(username).__contains__('@'):
+                continue
             password = self.random_password()
             username = 'js_' + username
             account = account_model(
