@@ -11,7 +11,7 @@ __all__ = [
     'AnnouncementSettingSerializer', 'OpsSettingSerializer', 'VaultSettingSerializer',
     'HashicorpKVSerializer', 'AzureKVSerializer', 'TicketSettingSerializer',
     'ChatAISettingSerializer', 'VirtualAppSerializer', 'AmazonSMSerializer',
-    'CMDBSettingSerializer', 'PAMSettingSerializer'
+    'CMDBSettingSerializer', 'PAMSettingSerializer', 'DltSettingSerializer'
 ]
 
 from settings.const import (
@@ -270,4 +270,11 @@ class PAMSettingSerializer(serializers.Serializer):
     )
     PAM_INCREMENTAL_DATA_SYNC_CRONTAB = serializers.CharField(
         max_length=256, allow_blank=True, required=False, label=_('Incremental Synchronization Cron')
+    )
+
+class DltSettingSerializer(serializers.Serializer):
+    PREFIX_TITLE = _('DLT')
+
+    DLT_ENABLED = serializers.BooleanField(
+        required=False, label=_('Enable DLT'), read_only=True
     )

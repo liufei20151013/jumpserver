@@ -88,7 +88,7 @@ class PrivateSettingSerializer(PublicSettingSerializer):
     CHANGE_SECRET_AFTER_SESSION_END = serializers.BooleanField()
     CMDB_ENABLED = serializers.BooleanField()
     PAM_ENABLED = serializers.BooleanField()
-
+    DLT_ENABLED = serializers.BooleanField()
 
 class ServerInfoSerializer(serializers.Serializer):
     CURRENT_TIME = serializers.DateTimeField()

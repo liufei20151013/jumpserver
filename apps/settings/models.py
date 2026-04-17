@@ -183,6 +183,7 @@ class Setting(models.Model):
             ('change_other', _('Can change other setting')),
             ('change_cmdb', _('Can change cmdb setting')),
             ('change_pam', _('Can change pam setting')),
+            ('change_dlt', _('Can change dlt setting')),
         ]
 
 

@@ -50,7 +50,8 @@ class TestTaskCase(TestCase):
                 'bk_os_type': '1',
                 'app_department': '应用部门',
                 'bk_os_name': '7',
-                "create_time": "2026-04-01T01:05:41+08:00"
+                "create_time": "2026-04-16T10:28:41.178+08:00",
+                "last_time": "2026-04-16T10:30:41.178+08:00"
             },{
                 'sys_number': 'TK-001',
                 'sys_name': '运维系统',

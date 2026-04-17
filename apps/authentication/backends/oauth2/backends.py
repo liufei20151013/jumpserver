@@ -76,7 +76,10 @@ class OAuth2Backend(JMSBaseAuthBackend):
             return None
 
         query_dict = {
-            'grant_type': 'authorization_code', 'code': code,
+            # 'grant_type': 'authorization_code',
+            'code': code,
+            'client_id': settings.AUTH_OAUTH2_CLIENT_ID,
+            'client_secret': settings.AUTH_OAUTH2_CLIENT_SECRET,
             'redirect_uri': build_absolute_uri(
                 request, path=reverse(settings.AUTH_OAUTH2_AUTH_LOGIN_CALLBACK_URL_NAME)
             )
@@ -86,6 +89,8 @@ class OAuth2Backend(JMSBaseAuthBackend):
             url=settings.AUTH_OAUTH2_ACCESS_TOKEN_ENDPOINT,
             separator=separator, query=urlencode(query_dict)
         )
+        logger.debug('access_token_url: {}'.format(access_token_url))
+
         # token_method -> get, post(post_data), post_json
         token_method = settings.AUTH_OAUTH2_ACCESS_TOKEN_METHOD.lower()
         logger.debug(log_prompt.format('Call the access token endpoint[method: %s]' % token_method))
@@ -93,7 +98,8 @@ class OAuth2Backend(JMSBaseAuthBackend):
             f"{settings.AUTH_OAUTH2_CLIENT_ID}:{settings.AUTH_OAUTH2_CLIENT_SECRET}".encode()
         ).decode()
         headers = {
-            'Accept': 'application/json', 'Authorization': f'Basic {encoded_credentials}'
+            'Accept': 'application/json'
+            #, 'Authorization': f'Basic {encoded_credentials}'
         }
         if token_method.startswith('post'):
             body_key = 'json' if token_method.endswith('json') else 'data'
@@ -108,20 +114,25 @@ class OAuth2Backend(JMSBaseAuthBackend):
             access_token_response = requests.get(access_token_url, headers=headers)
         try:
             access_token_response.raise_for_status()
-            access_token_response_data = access_token_response.json()
-            response_data = self.get_response_data(access_token_response_data)
+            # access_token_response_data = access_token_response.json()
+            access_token = access_token_response.text.split('=')[1]
+            # response_data = self.get_response_data(access_token_response_data)
         except Exception as e:
             error = "Json access token response error, access token response " \
                     "content is: {}, error is: {}".format(access_token_response.content, str(e))
             logger.error(log_prompt.format(error))
             return None
 
+        # headers = {
+        #     'Accept': 'application/json',
+        #     'Authorization': 'Bearer {}'.format(response_data.get('access_token', ''))
+        # }
         headers = {
-            'Accept': 'application/json',
-            'Authorization': 'Bearer {}'.format(response_data.get('access_token', ''))
+            'Accept': 'application/json'
         }
         logger.debug(log_prompt.format('Get userinfo endpoint'))
-        userinfo_url = settings.AUTH_OAUTH2_PROVIDER_USERINFO_ENDPOINT
+        userinfo_url = settings.AUTH_OAUTH2_PROVIDER_USERINFO_ENDPOINT + '?access_token=' + access_token
+        logger.debug('userinfo_url: {}'.format(userinfo_url))
         userinfo_response = requests.get(userinfo_url, headers=headers)
         try:
             userinfo_response.raise_for_status()
@@ -136,6 +147,7 @@ class OAuth2Backend(JMSBaseAuthBackend):
             logger.error(log_prompt.format(error))
             return None
 
+        logger.debug(userinfo)
         try:
             logger.debug(log_prompt.format('Update or create oauth2 user'))
             user, created = self.get_or_create_user_from_userinfo(request, userinfo)
