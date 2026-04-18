@@ -1665,5 +1665,8 @@
     "PAMHelpText": "1. 由于安全原因，需要配置文件中开启 PAM。<br>2. 开启后，填写其他配置，进行测试。<br>3. 进行数据同步，同步是单向的，只会从 PAM 同步数据到 JumpServer。<br>4. 二次修改 PAM 配置后需重启 JumpServer 服务。",
     "enablePAM": "启用 PAM",
     "APIKey": "API Key",
-    "PrivateKey": "Private Key"
+    "PrivateKey": "Private Key",
+    "DLTHelpText": "1. 由于安全原因，需要配置文件中开启登录通。<br>2. 开启后，填写其他配置，进行测试。<br>3. 二次修改登录通配置后需重启 JumpServer 服务。",
+    "enableDLT": "启用登录通",
+    "DLT": "登录通"
 }

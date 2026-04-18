@@ -278,3 +278,9 @@ class DltSettingSerializer(serializers.Serializer):
     DLT_ENABLED = serializers.BooleanField(
         required=False, label=_('Enable DLT'), read_only=True
     )
+    DLT_FULL_DATA_SYNC_CRONTAB = serializers.CharField(
+        max_length=256, allow_blank=True, required=False, label=_('Full Synchronization Cron')
+    )
+    DLT_INCREMENTAL_DATA_SYNC_CRONTAB = serializers.CharField(
+        max_length=256, allow_blank=True, required=False, label=_('Incremental Synchronization Cron')
+    )

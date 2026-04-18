@@ -27,7 +27,7 @@ def sync_dlt_accounts_full_data_periodic():
     except Exception as e:
         print('sync_dlt_accounts_full_data_periodic does not exist')
 
-    crontab = settings.PAM_FULL_DATA_SYNC_CRONTAB
+    crontab = settings.DLT_FULL_DATA_SYNC_CRONTAB
     if crontab:
         tasks = {
             task_name: {
@@ -57,7 +57,7 @@ def sync_dlt_accounts_incremental_data_periodic():
     except Exception as e:
         print('sync_dlt_accounts_incremental_data_periodic does not exist')
 
-    crontab = settings.PAM_INCREMENTAL_DATA_SYNC_CRONTAB
+    crontab = settings.DLT_INCREMENTAL_DATA_SYNC_CRONTAB
     if crontab:
         tasks = {
             task_name: {

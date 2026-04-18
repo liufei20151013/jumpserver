@@ -769,6 +769,8 @@ class Config(dict):
 
         # DLT
         'DLT_ENABLED': False,
+        'DLT_FULL_DATA_SYNC_CRONTAB': None,
+        'DLT_INCREMENTAL_DATA_SYNC_CRONTAB': None,
     }
 
     old_config_map = {

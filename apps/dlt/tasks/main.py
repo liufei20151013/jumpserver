@@ -21,7 +21,7 @@ def process_data(isFullSync):
     if isFullSync:
         accounts = DltAccount.objects.all()
     else:
-        last_cron_run_time = get_last_cron_run_time(settings.PAM_INCREMENTAL_DATA_SYNC_CRONTAB)
+        last_cron_run_time = get_last_cron_run_time(settings.DLT_INCREMENTAL_DATA_SYNC_CRONTAB)
         accounts = DltAccount.objects.filter(date_updated__gte=last_cron_run_time)
 
     if accounts.exists():
