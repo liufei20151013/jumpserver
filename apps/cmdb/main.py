@@ -131,15 +131,14 @@ def save_db_asset(assets, asset_org_dict, bk_obj_id, isFullSync):
 
         sys_number = asset.get('sys_number', '')
         sys_name = asset.get('sys_name', '')
-        asset_name = asset.get('bk_inst_name', '')
+        asset_name = asset.get('bk_inst_name', 'ip_addr')
         ip_addr = asset.get('ip_addr', '')
         db_port = asset.get('port', '')
         org_name = asset.get('app_department', '')
         # 未维护信息过滤掉
-        if not sys_number or not sys_name or not asset_name or not ip_addr or not db_port or not org_name:
+        if not ip_addr or not db_port or not org_name:
             print("There exist null parameter situations, skip.")
             continue
-        assetnode_name = sys_number + '-' + sys_name
 
         # 在 Default 组织下管理所有资产，在归属部门 app_department 对应组织下管理关联资产
         DEFAULT_ORG = Organization.objects.get(id=Organization.DEFAULT_ID)
@@ -216,6 +215,11 @@ def save_db_asset(assets, asset_org_dict, bk_obj_id, isFullSync):
 
             for org in orgs:
                 set_current_org(org)
+
+                if not sys_number or not sys_name:
+                    assetnode_name = "/" + org.name
+                else:
+                    assetnode_name = sys_number + '-' + sys_name
                 full_assetnode_name = "/" + org.name + "/" + assetnode_name
 
                 # 用户确认全平台主机名唯一
@@ -384,14 +388,13 @@ def save_host_asset(assets, asset_org_dict, isFullSync):
 
         sys_number = asset.get('sys_number', '')
         sys_name = asset.get('sys_name', '')
-        asset_name = asset.get('bk_host_name', '')
+        asset_name = asset.get('bk_host_name', 'bk_host_innerip')
         address = asset.get('bk_host_innerip', '')
         bk_os_type = asset.get('bk_os_type', '')
         org_name = asset.get('app_department', '')
-        if not sys_number or not sys_name or not asset_name or not address or not bk_os_type or not org_name:
+        if not address or not bk_os_type or not org_name:
             print("There exist null parameter situations, skip.")
             continue
-        assetnode_name = sys_number + '-' + sys_name
 
         # 在 Default 组织下管理所有资产，在归属部门 app_department 对应组织下管理关联资产
         org = Organization.objects.get(id=Organization.DEFAULT_ID)
@@ -427,6 +430,11 @@ def save_host_asset(assets, asset_org_dict, isFullSync):
 
             for org in orgs:
                 set_current_org(org)
+
+                if not sys_number or not sys_name:
+                    assetnode_name = "/" + org.name
+                else:
+                    assetnode_name = sys_number + '-' + sys_name
                 full_assetnode_name = "/" + org.name + "/" + assetnode_name
 
                 # 用户确认全平台主机名唯一
