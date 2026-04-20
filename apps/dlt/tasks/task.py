@@ -31,7 +31,7 @@ def sync_dlt_accounts_full_data_periodic():
     if crontab:
         tasks = {
             task_name: {
-                'task': sync_dlt_accounts_full_data_periodic.name,
+                'task': sync_dlt_accounts_full_data.name,
                 'interval': None,
                 'crontab': crontab,
                 'enabled': True,
@@ -61,7 +61,7 @@ def sync_dlt_accounts_incremental_data_periodic():
     if crontab:
         tasks = {
             task_name: {
-                'task': sync_dlt_accounts_incremental_data_periodic.name,
+                'task': sync_dlt_accounts_incremental_data.name,
                 'interval': None,
                 'crontab': crontab,
                 'enabled': True,
