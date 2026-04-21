@@ -2,14 +2,14 @@
   <a name="readme-top"></a>
   <a href="https://jumpserver.com" target="_blank"><img src="https://download.jumpserver.org/images/jumpserver-logo.svg" alt="JumpServer" width="300" /></a>
   
-## 一個開源的 PAM 平台 (堡壘主機)
+## PAM 平台 (堡壘主機)
 
 </div>
 <br/>
 
 ## JumpServer 是什麼？
 
-JumpServer 是一個開源的特權訪問管理 (PAM) 平台，為 DevOps 和 IT 團隊提供按需和安全的 SSH、RDP、Kubernetes、數據庫和 RemoteApp 端點的訪問，通過網頁瀏覽器實現。
+JumpServer 是一個特權訪問管理 (PAM) 平台，為 DevOps 和 IT 團隊提供按需和安全的 SSH、RDP、Kubernetes、數據庫和 RemoteApp 端點的訪問，通過網頁瀏覽器實現。
 
 <picture>
   <source media="(prefers-color-scheme: light)" srcset="https://www.jumpserver.com/images/jumpserver-arch-light.png">

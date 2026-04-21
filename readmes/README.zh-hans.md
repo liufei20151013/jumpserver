@@ -2,7 +2,7 @@
   <a name="readme-top"></a>
   <a href="https://jumpserver.com" target="_blank"><img src="https://download.jumpserver.org/images/jumpserver-logo.svg" alt="JumpServer" width="300" /></a>
   
-## 一个开源的 PAM 平台 (堡垒主机)
+## PAM 平台 (堡垒主机)
 
 [![][license-shield]][license-link]
 [![][docs-shield]][docs-link]
@@ -20,7 +20,7 @@
 
 ## 什么是 JumpServer？
 
-JumpServer 是一个开源的特权访问管理 (PAM) 平台，提供 DevOps 和 IT 团队按需安全访问 SSH、RDP、Kubernetes、数据库和 RemoteApp 端点的功能，均可通过网页浏览器进行访问。
+JumpServer 是一个特权访问管理 (PAM) 平台，提供 DevOps 和 IT 团队按需安全访问 SSH、RDP、Kubernetes、数据库和 RemoteApp 端点的功能，均可通过网页浏览器进行访问。
 
 
 <picture>

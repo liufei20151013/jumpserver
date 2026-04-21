@@ -824,7 +824,7 @@
     "LoginSSHKeySetting": "登入 SSH 公鑰",
     "LoginSource": "登錄來源",
     "LoginSucceeded": "登入成功",
-    "LoginTitleTip": "提示：將會顯示在企業版使用者 SSH 登入 KoKo 登入頁面（eg: 歡迎使用JumpServer開源堡壘機）",
+    "LoginTitleTip": "提示：將會顯示在企業版使用者 SSH 登入 KoKo 登入頁面（eg: 歡迎使用JumpServer堡壘機）",
     "LoginUserRanking": "會話用戶排名",
     "LoginUserToday": "今日登入用戶數",
     "LoginUsers": "活躍帳號",

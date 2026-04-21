@@ -815,7 +815,7 @@
     "LoginSSHKeySetting": "Login SSH key",
     "LoginSource": "Login source",
     "LoginSucceeded": "Login successful",
-    "LoginTitleTip": "Note: it will be displayed on the enterprise edition user ssh login koko login page (e.g.: welcome to use jumpserver open source PAM)",
+    "LoginTitleTip": "Note: it will be displayed on the enterprise edition user ssh login koko login page (e.g.: welcome to use jumpserver PAM)",
     "LoginUserRanking": "Login user ranking",
     "LoginUserToday": "Users logged today",
     "LoginUsers": "Active account",

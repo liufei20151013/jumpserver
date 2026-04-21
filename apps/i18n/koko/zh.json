@@ -200,7 +200,7 @@
     "Warning": "警告",
     "WebSocketClosed": "WebSocket 已关闭",
     "WebSocketConnectionIsClosedHelpText": "WebSocket 连接已关闭，请刷新页面或重新连接。",
-    "Welcome to use JumpServer open source fortress system": "欢迎使用JumpServer开源堡垒机系统",
+    "Welcome to use JumpServer open source fortress system": "欢迎使用JumpServer堡垒机系统",
     "Writable": "可写",
     "You don't have permission login %s": "你无权限登陆%s",
     "You get auth token failed": "你获取认证令牌失败",
