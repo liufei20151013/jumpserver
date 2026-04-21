@@ -1,6 +1,8 @@
 import time
 import json
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
+
+from django.utils import timezone
 
 from accounts.const import SecretType
 from orgs.utils import set_current_org
@@ -63,6 +65,13 @@ def relate_asset_to_account(assets, accounts, isFullSync):
     if now_hour_timestamp > today_3am_timpstamp and isFullSync:
         isSync = True
         isFullSync = False
+
+    # 针对新增的机器
+    date_created = (timezone.now() - timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S.%f")
+    new_assets = Asset.objects.filter(date_created__gte=date_created)
+    if new_assets.exists():
+        isSync = False
+        isFullSync = True
 
     if isFullSync:
         for asset in assets:
