@@ -388,7 +388,7 @@ def save_host_asset(assets, asset_org_dict, isFullSync):
 
         sys_number = asset.get('sys_number', '')
         sys_name = asset.get('sys_name', '')
-        asset_name = asset.get('bk_host_name', 'bk_host_innerip')
+        asset_name = asset.get('bk_host_name', '')
         address = asset.get('bk_host_innerip', '')
         bk_os_type = asset.get('bk_os_type', '')
         org_name = asset.get('app_department', '')
@@ -396,7 +396,12 @@ def save_host_asset(assets, asset_org_dict, isFullSync):
             print("There exist null parameter situations, skip.")
             continue
 
-        # 在 Default 组织下管理所有资产，在归属部门 app_department 对应组织下管理关联资产
+        if asset_name:
+            asset_name = asset_name + '_' + address
+        else:
+            asset_name = address + '_' + bk_os_type
+
+            # 在 Default 组织下管理所有资产，在归属部门 app_department 对应组织下管理关联资产
         org = Organization.objects.get(id=Organization.DEFAULT_ID)
         orgs = [org]
         if len(org_name) > 0:
