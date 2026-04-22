@@ -2,6 +2,7 @@ import os
 
 import django
 
+
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'jumpserver.settings')
 django.setup()
 
@@ -11,6 +12,7 @@ from orgs.models import Organization
 from orgs.utils import set_current_org
 from datetime import datetime, timedelta
 from cmdb.main import save_host_asset, save_db_asset, save_middleware_asset
+from dlt.tasks import process_data
 
 from unittest import TestCase
 
@@ -218,3 +220,7 @@ class TestTaskCase(TestCase):
         ]
 
         save_db_asset(db_data, asset_org_dict, bk_obj_id)
+
+
+    def test4(self):
+        process_data(True)

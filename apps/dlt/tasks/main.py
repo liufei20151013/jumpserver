@@ -34,6 +34,7 @@ def process_data(isFullSync):
                 if not org_list.exists():
                     print('堡垒机组织未关联用户org: {}'.format(org))
                     continue
+                organization = org_list.first()
 
                 action_type = account.action_type
                 is_active = True if account.status == '1' else False
@@ -62,10 +63,13 @@ def process_data(isFullSync):
                         user.is_active = is_active
                         user.date_updated = timezone.now()
                         user.save(update_fields=["email", "name", "is_active", "date_updated"])
+                    else:
+                        if organization.id != Organization.DEFAULT_ID:
+                            DEFAULT_ORG = Organization.objects.get(id=Organization.DEFAULT_ID)
+                            DEFAULT_ORG.members.remove(user)
 
                     # 更新用户：如果用户更换了组织，是否需要把之前绑定的组织移除掉user.orgs.clear()，再绑定新组织？不建议，原组织绑定了一些授权，最好是手动移除，防止影响用户授权等数据
                     org_role = Role.objects.get(name='OrgUser', scope='org')
-                    organization = org_list.first()
                     organization.add_member(user, org_role)
                     print(f"OAuth2 用户创建/更新成功: {account.uid} (新建:{created})")
 
