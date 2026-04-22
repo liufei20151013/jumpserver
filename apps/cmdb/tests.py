@@ -10,21 +10,50 @@ from assets.models import Asset
 from orgs.models import Organization
 from orgs.utils import set_current_org
 from datetime import datetime, timedelta
-from cmdb.main import save_host_asset, save_db_asset
+from cmdb.main import save_host_asset, save_db_asset, save_middleware_asset
 
 from unittest import TestCase
 
 
 class TestTaskCase(TestCase):
     def test(self):
-        current_time = datetime.now()
+        # current_time = datetime.now()
+        #
+        # # 2. 计算往前推指定分钟的时间（timedelta 用于时间差计算）
+        # before_time = current_time - timedelta(minutes=10)
+        #
+        # # 3. 格式化为指定字符串格式
+        # formatted_time = before_time.strftime("%Y-%m-%d %H:%M:%S")
+        # print(formatted_time)
+        asset_org_dict = {}
+        middleware_data = [
+            {
+                'sys_number': 'TK-001',
+                'sys_name': '运维系统',
+                'bk_inst_name': '测试01',
+                'control_addr': 'https://www.baidu.com',
+                'bk_host_innerip': '10.1.10.11',
+                'bk_os_type': '1',
+                'app_department': '应用部门',
+                'listen_port': '443',
+                "create_time": "2026-04-16T10:28:41.178+08:00",
+                "last_time": "2026-04-16T10:30:41.178+08:00"
+            },{
+                'sys_number': 'TK-001',
+                'sys_name': '运维系统',
+                'bk_inst_name': '测试02',
+                'control_addr': 'http://10.1.12.240',
+                'bk_host_innerip': '10.1.10.11',
+                'bk_os_type': '1',
+                'app_department': '应用部门',
+                'listen_port': '80',
+                "create_time": "2026-04-16T10:28:41.178+08:00",
+                "last_time": "2026-04-16T10:30:41.178+08:00"
+            }
+        ]
 
-        # 2. 计算往前推指定分钟的时间（timedelta 用于时间差计算）
-        before_time = current_time - timedelta(minutes=10)
+        save_middleware_asset(middleware_data, asset_org_dict, True)
 
-        # 3. 格式化为指定字符串格式
-        formatted_time = before_time.strftime("%Y-%m-%d %H:%M:%S")
-        print(formatted_time)
 
     def test2(self):
         print("获取堡垒机上原始资产数据 Start.")

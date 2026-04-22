@@ -6,7 +6,7 @@ import json
 from orgs.utils import set_current_org
 
 from orgs.models import Organization
-from assets.models import Asset, Platform, Database, Node, Host, Protocol, Device
+from assets.models import Asset, Platform, Database, Node, Host, Protocol, Device, Web, PlatformProtocol
 from common.utils import get_logger, get_object_or_none
 
 from django.conf import settings
@@ -55,6 +55,25 @@ def process_data(isFullSync):
 
     save_host_asset(host_data, asset_org_dict, isFullSync)
     print("查询所有主机资产 End.")
+
+    print("查询中间件 Start.")
+    objects = {
+        "mid_bes": "Bes",
+        "weblogic_inst": "WebLogic应用实例"
+    }
+    for bk_obj_id, bk_obj_name in objects.items():
+        print("查询 bk_obj_id: {}, bk_obj_name: {}".format(bk_obj_id, bk_obj_name))
+        result = search_other_asset(bk_token, bk_obj_id)
+        if result['code'] != 0:
+            print("查询 CMDB 中间件数据失败，code: {}, requestId: {}".format(result['code'], result['request_id']))
+            return
+
+        middleware_data = result['data']['list']
+        print(
+            "查询 bk_obj_id: {}, bk_obj_name: {}，total: {} 条".format(bk_obj_id, bk_obj_name, len(middleware_data)))
+
+        save_middleware_asset(middleware_data, asset_org_dict, isFullSync)
+    print("查询所有中间件 End.")
 
     print("查询网络设备 Start.")
     objects = {
@@ -216,11 +235,10 @@ def save_db_asset(assets, asset_org_dict, bk_obj_id, isFullSync):
             for org in orgs:
                 set_current_org(org)
 
-                if not sys_number or not sys_name:
-                    assetnode_name = "/" + org.name
-                else:
+                full_assetnode_name = "/" + org.name
+                if sys_number and sys_name:
                     assetnode_name = sys_number + '-' + sys_name
-                full_assetnode_name = "/" + org.name + "/" + assetnode_name
+                    full_assetnode_name = full_assetnode_name + "/" + assetnode_name
 
                 # 用户确认全平台主机名唯一
                 assetList = Asset.objects.filter(name=asset_name)
@@ -378,6 +396,103 @@ def save_network_device_asset(assets, asset_org_dict, isFullSync):
             raise e
 
 
+def save_middleware_asset(assets, asset_org_dict, isFullSync):
+    for asset in assets:
+        update_time = asset.get('last_time') or asset.get('create_time')
+        if not isFullSync:
+            if not compare_time(update_time):
+                continue
+
+        sys_number = asset.get('sys_number', '')
+        sys_name = asset.get('sys_name', '')
+        asset_name = asset.get('bk_inst_name', '')
+        address = asset.get('control_addr', '')
+        listen_port = asset.get('listen_port', '')
+        org_name = asset.get('app_department', '')
+        if not address or not listen_port or not org_name:
+            print("There exist null parameter situations, skip.")
+            continue
+        if not str(address).__contains__('http'):
+            continue
+
+        # 在 Default 组织下管理所有资产，在归属部门 app_department 对应组织下管理关联资产
+        org = Organization.objects.get(id=Organization.DEFAULT_ID)
+        orgs = [org]
+        if len(org_name) > 0:
+            org = Organization.objects.filter(name=org_name).first()
+            if org:
+                orgs.append(org)
+            else:
+                print("堡垒机上不存在组织[{}]，asset_name: {}.".format(org_name, asset_name))
+                org = Organization.objects.create(name=org_name)
+                orgs.append(org)
+                print("Success to create org[{}].".format(org_name))
+
+        try:
+            print("Save or update middleware asset[{}].".format(asset_name))
+            platform = Platform.objects.filter(name='Website').first()
+            asset_protocol = ["http/" + str(listen_port)]
+
+            for org in orgs:
+                set_current_org(org)
+
+                full_assetnode_name = "/" + org.name
+                if sys_number and sys_name:
+                    assetnode_name = sys_number + '-' + sys_name
+                    full_assetnode_name = full_assetnode_name + "/" + assetnode_name
+
+                # 用户确认全平台主机名唯一
+                assetList = Asset.objects.filter(name=asset_name)
+                if not assetList.exists():
+                    a = Asset.objects.create(name=asset_name,
+                                             address=address,
+                                             platform=platform,
+                                             org_id=org.id)
+
+                    asset_model = Web(asset_ptr_id=a.id, autofill='no')
+                    asset_model.__dict__.update(a.__dict__)
+                    asset_model.save()
+
+                    key = f"{str(org.id)}_{a.name}"
+                    asset_org_dict.update({key: a.id})
+                    create_asset_node(full_assetnode_name, a)
+                    relate_protocols(asset_protocol, a)
+                    print("Success to create middleware asset[{}].".format(asset_name))
+                    continue
+
+                for a in assetList:
+                    # 更新资产信息
+                    # 如果平台不同，先删再加
+                    if a.platform_id != platform.id:
+                        print(a.type)
+                        p = Platform.objects.get(id=a.platform_id)
+                        if p.type != platform.type:
+                            Asset.objects.get(id=a.id).delete()
+                            print("Incompatible platform: old-[{}], new-[{}]; Delete middleware asset[{}], create it.".format(p.name, platform.name, asset_name))
+
+                            a = Asset.objects.create(name=asset_name,
+                                                     address=address,
+                                                     platform=platform,
+                                                     org_id=org.id)
+
+                            asset_model = Web(asset_ptr_id=a.id, autofill='no')
+                            asset_model.__dict__.update(a.__dict__)
+                            asset_model.save()
+                            print("Success to create host asset[{}].".format(asset_name))
+                    else:
+                        a.address = address
+                        a.save()
+
+                    key = f"{str(org.id)}_{a.name}"
+                    asset_org_dict.update({key: a.id})
+                    create_asset_node(full_assetnode_name, a)
+                    relate_protocols(asset_protocol, a)
+                    print("Success to update middleware asset[{}].".format(asset_name))
+        except Exception as e:
+            print("Failed to save middleware asset[{}], error:{}".format(asset_name, e))
+            raise e
+
+
 def save_host_asset(assets, asset_org_dict, isFullSync):
     for asset in assets:
         # update_time = asset.get('create_time')
@@ -401,7 +516,7 @@ def save_host_asset(assets, asset_org_dict, isFullSync):
         else:
             asset_name = address + '_' + bk_os_type
 
-            # 在 Default 组织下管理所有资产，在归属部门 app_department 对应组织下管理关联资产
+        # 在 Default 组织下管理所有资产，在归属部门 app_department 对应组织下管理关联资产
         org = Organization.objects.get(id=Organization.DEFAULT_ID)
         orgs = [org]
         if len(org_name) > 0:
@@ -436,11 +551,10 @@ def save_host_asset(assets, asset_org_dict, isFullSync):
             for org in orgs:
                 set_current_org(org)
 
-                if not sys_number or not sys_name:
-                    assetnode_name = "/" + org.name
-                else:
+                full_assetnode_name = "/" + org.name
+                if sys_number and sys_name:
                     assetnode_name = sys_number + '-' + sys_name
-                full_assetnode_name = "/" + org.name + "/" + assetnode_name
+                    full_assetnode_name = full_assetnode_name + "/" + assetnode_name
 
                 # 用户确认全平台主机名唯一
                 assetList = Asset.objects.filter(name=asset_name)
