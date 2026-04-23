@@ -59,7 +59,9 @@ def process_data(isFullSync):
     print("查询中间件 Start.")
     objects = {
         "mid_bes": "Bes",
-        "weblogic_inst": "WebLogic应用实例"
+        "mid_mq": "MQ"
+        # ,
+        # "weblogic_inst": "WebLogic应用实例"
     }
     for bk_obj_id, bk_obj_name in objects.items():
         print("查询 bk_obj_id: {}, bk_obj_name: {}".format(bk_obj_id, bk_obj_name))
