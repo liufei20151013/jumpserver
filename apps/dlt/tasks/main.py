@@ -30,7 +30,7 @@ def process_data(isFullSync):
                 print('dlt account: {}'.format(account))
                 org = account.org
                 # 需要用户org在堡垒机对应组织的备注里填入org信息   组织 comment ->  用户 org
-                org_list = Organization.objects.filter(comment=org)
+                org_list = Organization.objects.filter(comment__contains=org)
                 if not org_list.exists():
                     print('堡垒机组织未关联用户org: {}'.format(org))
                     continue
