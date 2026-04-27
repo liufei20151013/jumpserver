@@ -154,6 +154,10 @@ def relate_asset_to_account(assets, accounts, isFullSync):
             if len(account_arr) == 0:
                 continue
 
+           # 查询堡垒机资产下有哪些账号
+            js_accounts = Account.objects.filter(asset_id=asset.id)
+
+            pam_accounts = []
             for account in account_arr:
                 username = account.get('assetAccount', '')
                 if not username:
@@ -162,6 +166,9 @@ def relate_asset_to_account(assets, accounts, isFullSync):
                     if (org.name != '系统运行与信息安全管理部-网络管理室' and not org.name.__contains__('太平')
                             and username in privileged_accounts):
                         continue
+
+                # 需要添加的账号
+                pam_accounts.append(username)
 
                 try:
                     result = search_by_id(url, account['id'])
@@ -236,6 +243,20 @@ def relate_asset_to_account(assets, accounts, isFullSync):
                         print("Success to update account[{}] for asset[{}].".format(username, asset.address))
                 except Exception as e:
                     print("Failed to save account[{}] for asset[{}], error:{}".format(username, asset.address, e))
+
+            # 清理多余的账号
+            if len(js_accounts) > len(pam_accounts):
+                print("Remove extra accounts.")
+                for ja in js_accounts:
+                    if ja.username not in pam_accounts:
+                        try:
+                            print("Remove account[{}].".format(ja.username))
+                            Account.objects.get(id=ja.id).delete()
+                            print("Success to remove account[{}].".format(ja.username))
+                        except:
+                            print("Failed to remove account[{}].".format(ja.username))
+                            continue
+
 
 def search_asset(category):
     limit = 10000
