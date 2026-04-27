@@ -153,6 +153,7 @@ def save_db_asset(assets, asset_org_dict, bk_obj_id, isFullSync):
     org = orgs.first()
     set_current_org(org)
 
+    regions = ["1", "3", "4"]
     for asset in assets:
         update_time = asset.get('last_time') or asset.get('create_time')
         if not isFullSync:
@@ -165,9 +166,12 @@ def save_db_asset(assets, asset_org_dict, bk_obj_id, isFullSync):
         ip_addr = asset.get('ip_addr', '')
         db_port = asset.get('port', '')
         org_name = asset.get('app_department', '')
+        region = asset.get('region', '0')
         # 未维护信息过滤掉
         if not ip_addr or not db_port or not org_name:
             print("There exist null parameter situations, skip.")
+            continue
+        if str(region) not in regions:
             continue
 
         # 在 Default 组织下管理所有资产，在归属部门 app_department 对应组织下管理关联资产
@@ -413,6 +417,7 @@ def save_network_device_asset(assets, asset_org_dict, isFullSync):
 
 
 def save_middleware_asset(assets, asset_org_dict, isFullSync):
+    regions = ["1", "3", "4"]
     for asset in assets:
         update_time = asset.get('last_time') or asset.get('create_time')
         if not isFullSync:
@@ -425,10 +430,11 @@ def save_middleware_asset(assets, asset_org_dict, isFullSync):
         address = asset.get('control_addr', '')
         listen_port = asset.get('listen_port', '')
         org_name = asset.get('app_department', '')
+        region = asset.get('region', '0')
         if not address or not listen_port or not org_name:
             print("There exist null parameter situations, skip.")
             continue
-        if not str(address).__contains__('http'):
+        if not str(address).__contains__('http') or str(region) not in regions:
             continue
 
         # 在 Default 组织下管理所有资产，在归属部门 app_department 对应组织下管理关联资产
