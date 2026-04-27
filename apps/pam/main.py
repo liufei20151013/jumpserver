@@ -26,7 +26,7 @@ def process_data(isFullSync):
         return
 
     print("获取 PAM 上的资产数据 Start.")
-    category_arr = ["host", "db", "net"]
+    category_arr = ["host", "db", "web"]
     assets = []
     for category in category_arr:
         result = search_asset(category)
@@ -126,6 +126,8 @@ def relate_asset_to_account(assets, accounts, isFullSync):
             key = f"{str(asset_address)}_{asset_category}"
             pam_asset_dict.update({key: asset_id})
 
+    privileged_accounts = ['root', 'loginuser', 'cyuser']
+
     url = '{PAM_SERVER}/openapi/v1/account/info/getPwd'.format(PAM_SERVER=settings.PAM_SERVER)
     orgs = Organization.objects.exclude(id=Organization.SYSTEM_ID)
     for org in orgs:
@@ -137,8 +139,8 @@ def relate_asset_to_account(assets, accounts, isFullSync):
                 asset_category = 'host'
             elif asset.category == 'database':
                 asset_category = 'db'
-            elif asset.category == 'device':
-                asset_category = 'net'
+            elif asset.category == 'web':
+                asset_category = 'web'
             else:
                 continue
 
@@ -156,6 +158,10 @@ def relate_asset_to_account(assets, accounts, isFullSync):
                 username = account.get('assetAccount', '')
                 if not username:
                     continue
+                if asset_category == 'host':
+                    if (org.name != '系统运行与信息安全管理部-网络管理室' and not org.name.__contains__('太平')
+                            and username in privileged_accounts):
+                        continue
 
                 try:
                     result = search_by_id(url, account['id'])
