@@ -142,9 +142,18 @@ def process_data(isFullSync):
     print('CMDB 数据处理 End.')
 
 
+# 专业公司的数据库资产不在CMDB管理，所有数据库资产归属 系统运行与信息安全管理部-系统管理室 管理
+# 所有的数据库资产都同步到太平金科的 系统运行与信息安全管理部-系统管理室 组织下
 def save_db_asset(assets, asset_org_dict, bk_obj_id, isFullSync):
+    network_dept = '系统运行与信息安全管理部-系统管理室'
+    orgs = Organization.objects.filter(name=network_dept)
+    if not orgs.exists():
+        print("It does not exist organization [{}].".format(network_dept))
+        return
+    org = orgs.first()
+    set_current_org(org)
+
     for asset in assets:
-        # update_time = asset.get('create_time')
         update_time = asset.get('last_time') or asset.get('create_time')
         if not isFullSync:
             if not compare_time(update_time):
@@ -162,16 +171,16 @@ def save_db_asset(assets, asset_org_dict, bk_obj_id, isFullSync):
             continue
 
         # 在 Default 组织下管理所有资产，在归属部门 app_department 对应组织下管理关联资产
-        DEFAULT_ORG = Organization.objects.get(id=Organization.DEFAULT_ID)
-        orgs = [DEFAULT_ORG]
-        org = Organization.objects.filter(name=org_name).first()
-        if org:
-            orgs.append(org)
-        else:
-            print("堡垒机上不存在组织[{}]，asset_name: {}.".format(org_name, asset_name))
-            org = Organization.objects.create(name=org_name)
-            orgs.append(org)
-            print("Success to create org[{}].".format(org_name))
+        # DEFAULT_ORG = Organization.objects.get(id=Organization.DEFAULT_ID)
+        # orgs = [DEFAULT_ORG]
+        # org = Organization.objects.filter(name=org_name).first()
+        # if org:
+        #     orgs.append(org)
+        # else:
+        #     print("堡垒机上不存在组织[{}]，asset_name: {}.".format(org_name, asset_name))
+        #     org = Organization.objects.create(name=org_name)
+        #     orgs.append(org)
+        #     print("Success to create org[{}].".format(org_name))
 
 
         try:
@@ -308,14 +317,19 @@ def str_to_int(str_num):
         print("输入的字符串无法转换为整数")
         return 0
 
-# 所有的网络设备都同步到太平金科组织下
+# 专业公司的网络设备资产不在CMDB管理，所有网络设备资产归属 系统运行与信息安全管理部-网络管理室 管理
+# 所有的网络设备都同步到太平金科的系统运行与信息安全管理部-网络管理室组织下
 def save_network_device_asset(assets, asset_org_dict, isFullSync):
-    org = Organization.objects.get(id=Organization.DEFAULT_ID)
+    network_dept = '系统运行与信息安全管理部-网络管理室'
+    orgs = Organization.objects.filter(name=network_dept)
+    if not orgs.exists():
+        print("It does not exist organization [{}].".format(network_dept))
+        return
+    org = orgs.first()
     set_current_org(org)
 
     assetnode_name = '/' + org.name
     for asset in assets:
-        # update_time = asset.get('create_time')
         update_time = asset.get('last_time') or asset.get('create_time')
         if not isFullSync:
             if not compare_time(update_time):
@@ -418,17 +432,18 @@ def save_middleware_asset(assets, asset_org_dict, isFullSync):
             continue
 
         # 在 Default 组织下管理所有资产，在归属部门 app_department 对应组织下管理关联资产
+        # 专业公司的中间件资产不在CMDB管理，所有中间件资产归属 系统运行与信息安全管理部-系统管理室 管理
         org = Organization.objects.get(id=Organization.DEFAULT_ID)
         orgs = [org]
-        if len(org_name) > 0:
-            org = Organization.objects.filter(name=org_name).first()
-            if org:
-                orgs.append(org)
-            else:
-                print("堡垒机上不存在组织[{}]，asset_name: {}.".format(org_name, asset_name))
-                org = Organization.objects.create(name=org_name)
-                orgs.append(org)
-                print("Success to create org[{}].".format(org_name))
+        # if len(org_name) > 0:
+        #     org = Organization.objects.filter(name=org_name).first()
+        #     if org:
+        #         orgs.append(org)
+        #     else:
+        #         print("堡垒机上不存在组织[{}]，asset_name: {}.".format(org_name, asset_name))
+        #         org = Organization.objects.create(name=org_name)
+        #         orgs.append(org)
+        #         print("Success to create org[{}].".format(org_name))
 
         try:
             print("Save or update middleware asset[{}].".format(asset_name))
@@ -497,7 +512,6 @@ def save_middleware_asset(assets, asset_org_dict, isFullSync):
 
 def save_host_asset(assets, asset_org_dict, isFullSync):
     for asset in assets:
-        # update_time = asset.get('create_time')
         update_time = asset.get('last_time') or asset.get('create_time')
         if not isFullSync:
             if not compare_time(update_time):
@@ -509,6 +523,7 @@ def save_host_asset(assets, asset_org_dict, isFullSync):
         address = asset.get('bk_host_innerip', '')
         bk_os_type = asset.get('bk_os_type', '')
         org_name = asset.get('app_department', '')
+        use_office = asset.get('UseOffice', '')
         if not address or not bk_os_type or not org_name:
             print("There exist null parameter situations, skip.")
             continue
@@ -519,17 +534,48 @@ def save_host_asset(assets, asset_org_dict, isFullSync):
             asset_name = address + '_' + bk_os_type
 
         # 在 Default 组织下管理所有资产，在归属部门 app_department 对应组织下管理关联资产
-        org = Organization.objects.get(id=Organization.DEFAULT_ID)
-        orgs = [org]
+        orgs = []
         if len(org_name) > 0:
-            org = Organization.objects.filter(name=org_name).first()
-            if org:
-                orgs.append(org)
+            # 太平金科 org_name都是部门，不包含太平两个字
+            if not str(org_name).__contains__('太平'):
+                dept_name = '系统运行与信息安全管理部'
+                if str(org_name) == dept_name:
+                    if not use_office:
+                        # 系统运行与信息安全管理部-系统管理室
+                        org = Organization.objects.get(id=Organization.DEFAULT_ID)
+                        orgs.append(org)
+                    else:
+                        name = '系统运行与信息安全管理部-' + use_office
+                        orgs = Organization.objects.filter(name=name)
+                        if orgs.exists():
+                            orgs.append(orgs.first())
+                        else:
+                            print("堡垒机上不存在组织[{}]，asset_name: {}.".format(name, asset_name))
+                            org = Organization.objects.create(name=name)
+                            orgs.append(org)
+                            print("Success to create org[{}].".format(name))
+                else:
+                    # 系统运行与信息安全管理部-系统管理室
+                    org = Organization.objects.get(id=Organization.DEFAULT_ID)
+                    orgs.append(org)
             else:
-                print("堡垒机上不存在组织[{}]，asset_name: {}.".format(org_name, asset_name))
-                org = Organization.objects.create(name=org_name)
-                orgs.append(org)
-                print("Success to create org[{}].".format(org_name))
+                if use_office:
+                    if str(use_office) == '系统管理室':
+                        # 系统运行与信息安全管理部-系统管理室
+                        org = Organization.objects.get(id=Organization.DEFAULT_ID)
+                        orgs.append(org)
+                else:
+                    org = Organization.objects.get(id=Organization.DEFAULT_ID)
+                    orgs.append(org)
+
+                orgs = Organization.objects.filter(name=org_name)
+                if orgs.exists():
+                    orgs.append(orgs.first())
+                else:
+                    print("堡垒机上不存在组织[{}]，asset_name: {}.".format(org_name, asset_name))
+                    org = Organization.objects.create(name=org_name)
+                    orgs.append(org)
+                    print("Success to create org[{}].".format(org_name))
 
         try:
             print("Save or update host asset[{}].".format(asset_name))
