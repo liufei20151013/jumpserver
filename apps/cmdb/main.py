@@ -632,19 +632,18 @@ def save_host_asset(assets, asset_org_dict, isFullSync):
                     use_office = '系统管理室'
                     org = Organization.objects.get(id=Organization.DEFAULT_ID)
                     orgs.append(org)
-                    org_asset_comment_dict.update({org.id: use_office})
+                    org_asset_comment_dict[org.id] = use_office
                 else:
                     name = '系统运行与信息安全管理部-' + use_office
-                    orgs = Organization.objects.filter(name=name)
-                    if orgs.exists():
-                        org = orgs.first()
+                    org = Organization.objects.filter(name=name).first()
+                    if org:
                         orgs.append(org)
                         org_asset_comment_dict.update({org.id: use_office})
                     else:
                         print("堡垒机上不存在组织[{}]，asset_name: {}.".format(name, asset_name))
                         org = Organization.objects.create(name=name)
                         orgs.append(org)
-                        org_asset_comment_dict.update({org.id: use_office})
+                        org_asset_comment_dict[org.id] = use_office
                         print("Success to create org[{}].".format(name))
             else:
                 if use_office:
@@ -652,24 +651,23 @@ def save_host_asset(assets, asset_org_dict, isFullSync):
                         # 系统运行与信息安全管理部-系统管理室
                         org = Organization.objects.get(id=Organization.DEFAULT_ID)
                         orgs.append(org)
-                        org_asset_comment_dict.update({org.id: use_office})
+                        org_asset_comment_dict[org.id] = use_office
                 else:
                     use_office = '系统管理室'
                     org = Organization.objects.get(id=Organization.DEFAULT_ID)
                     orgs.append(org)
-                    org_asset_comment_dict.update({org.id: use_office})
+                    org_asset_comment_dict[org.id] = use_office
 
                 # 所属应用部门
-                orgs = Organization.objects.filter(name=org_name)
-                if orgs.exists():
-                    org = orgs.first()
+                org = Organization.objects.filter(name=org_name).first()
+                if org:
                     orgs.append(org)
-                    org_asset_comment_dict.update({org.id: use_office})
+                    org_asset_comment_dict[org.id] = use_office
                 else:
                     print("堡垒机上不存在组织[{}]，asset_name: {}.".format(org_name, asset_name))
                     org = Organization.objects.create(name=org_name)
                     orgs.append(org)
-                    org_asset_comment_dict.update({org.id: use_office})
+                    org_asset_comment_dict[org.id] = use_office
                     print("Success to create org[{}].".format(org_name))
 
         try:
