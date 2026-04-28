@@ -163,8 +163,7 @@ def relate_asset_to_account(assets, accounts, isFullSync):
                 if not username:
                     continue
                 if asset_category == 'host':
-                    if (org.name != '系统运行与信息安全管理部-网络管理室' and not org.name.__contains__('太平')
-                            and username in privileged_accounts):
+                    if not org.name.__contains__(asset.comment) and username in privileged_accounts:
                         continue
 
                 # 需要添加的账号
