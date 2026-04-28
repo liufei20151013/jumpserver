@@ -59,22 +59,23 @@ def process_data(isFullSync):
     print("查询中间件 Start.")
     objects = {
         "mid_bes": "Bes",
-        "mid_mq": "MQ"
-        # ,
-        # "weblogic_inst": "WebLogic应用实例"
+        "mid_mq": "MQ",
+        "weblogic_inst": "WebLogic应用实例"
     }
+    regions = ["1", "3", "4"]
     for bk_obj_id, bk_obj_name in objects.items():
-        print("查询 bk_obj_id: {}, bk_obj_name: {}".format(bk_obj_id, bk_obj_name))
-        result = search_other_asset(bk_token, bk_obj_id)
-        if result['code'] != 0:
-            print("查询 CMDB 中间件数据失败，code: {}, requestId: {}".format(result['code'], result['request_id']))
-            return
+        for region in regions:
+            print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}".format(bk_obj_id, bk_obj_name, region))
+            result = search_other_asset(bk_token, bk_obj_id, region)
+            if result['code'] != 0:
+                print("查询 CMDB 中间件数据失败，code: {}, requestId: {}".format(result['code'], result['request_id']))
+                return
 
-        middleware_data = result['data']['list']
-        print(
-            "查询 bk_obj_id: {}, bk_obj_name: {}，total: {} 条".format(bk_obj_id, bk_obj_name, len(middleware_data)))
+            middleware_data = result['data']['list']
+            print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}, total: {} 条"
+                  .format(bk_obj_id, bk_obj_name, region, len(middleware_data)))
 
-        save_middleware_asset(middleware_data, asset_org_dict, isFullSync)
+            save_middleware_asset(middleware_data, asset_org_dict, isFullSync, bk_obj_id)
     print("查询所有中间件 End.")
 
     print("查询网络设备 Start.")
@@ -83,7 +84,7 @@ def process_data(isFullSync):
     }
     for bk_obj_id, bk_obj_name in objects.items():
         print("查询 bk_obj_id: {}, bk_obj_name: {}".format(bk_obj_id, bk_obj_name))
-        result = search_other_asset(bk_token, bk_obj_id)
+        result = search_network_device_asset(bk_token, bk_obj_id)
         if result['code'] != 0:
             print("查询 CMDB 网络设备数据失败，code: {}, requestId: {}".format(result['code'], result['request_id']))
             return
@@ -114,16 +115,18 @@ def process_data(isFullSync):
         # "db_gaussdb": "GaussDB"
     }
     for bk_obj_id, bk_obj_name in objects.items():
-        print("查询 bk_obj_id: {}, bk_obj_name: {}".format(bk_obj_id, bk_obj_name))
-        result = search_other_asset(bk_token, bk_obj_id)
-        if result['code'] != 0:
-            print("查询 CMDB 数据库资产数据失败，code: {}, requestId: {}".format(result['code'], result['request_id']))
-            return
+        for region in regions:
+            print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}".format(bk_obj_id, bk_obj_name, region))
+            result = search_other_asset(bk_token, bk_obj_id, region)
+            if result['code'] != 0:
+                print(
+                    "查询 CMDB 数据库资产数据失败，code: {}, requestId: {}".format(result['code'], result['request_id']))
+                return
 
-        db_data = result['data']['list']
-        print("查询 bk_obj_id: {}, bk_obj_name: {}，total: {}条".format(bk_obj_id, bk_obj_name, len(db_data)))
+            db_data = result['data']['list']
+            print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}, total: {}条".format(bk_obj_id, bk_obj_name, region, len(db_data)))
 
-        save_db_asset(db_data, asset_org_dict, bk_obj_id, isFullSync)
+            save_db_asset(db_data, asset_org_dict, bk_obj_id, isFullSync)
     print("查询所有数据库资产、网络设备 End.")
 
 
@@ -153,7 +156,6 @@ def save_db_asset(assets, asset_org_dict, bk_obj_id, isFullSync):
     org = orgs.first()
     set_current_org(org)
 
-    regions = ["1", "3", "4"]
     for asset in assets:
         update_time = asset.get('last_time') or asset.get('create_time')
         if not isFullSync:
@@ -166,12 +168,9 @@ def save_db_asset(assets, asset_org_dict, bk_obj_id, isFullSync):
         ip_addr = asset.get('ip_addr', '')
         db_port = asset.get('port', '')
         org_name = asset.get('app_department', '')
-        region = asset.get('region', '0')
         # 未维护信息过滤掉
         if not ip_addr or not db_port or not org_name:
             print("There exist null parameter situations, skip.")
-            continue
-        if str(region) not in regions:
             continue
 
         # 在 Default 组织下管理所有资产，在归属部门 app_department 对应组织下管理关联资产
@@ -416,8 +415,7 @@ def save_network_device_asset(assets, asset_org_dict, isFullSync):
             raise e
 
 
-def save_middleware_asset(assets, asset_org_dict, isFullSync):
-    regions = ["1", "3", "4"]
+def save_middleware_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
     for asset in assets:
         update_time = asset.get('last_time') or asset.get('create_time')
         if not isFullSync:
@@ -430,11 +428,10 @@ def save_middleware_asset(assets, asset_org_dict, isFullSync):
         address = asset.get('control_addr', '')
         listen_port = asset.get('listen_port', '')
         org_name = asset.get('app_department', '')
-        region = asset.get('region', '0')
         if not address or not listen_port or not org_name:
             print("There exist null parameter situations, skip.")
             continue
-        if not str(address).__contains__('http') or str(region) not in regions:
+        if not str(address).__contains__('http'):
             continue
 
         # 在 Default 组织下管理所有资产，在归属部门 app_department 对应组织下管理关联资产
@@ -498,13 +495,17 @@ def save_middleware_asset(assets, asset_org_dict, isFullSync):
                                                      platform=platform,
                                                      org_id=org.id)
 
-                            asset_model = Web(asset_ptr_id=a.id, autofill='no')
+                            asset_model = get_web_asset_model(bk_obj_id, asset, a)
                             asset_model.__dict__.update(a.__dict__)
                             asset_model.save()
                             print("Success to create host asset[{}].".format(asset_name))
                     else:
                         a.address = address
                         a.save()
+
+                        asset_model = update_web_asset_model(bk_obj_id, asset, a)
+                        asset_model.__dict__.update(a.__dict__)
+                        asset_model.save()
 
                     key = f"{str(org.id)}_{a.name}"
                     asset_org_dict.update({key: a.id})
@@ -514,6 +515,86 @@ def save_middleware_asset(assets, asset_org_dict, isFullSync):
         except Exception as e:
             print("Failed to save middleware asset[{}], error:{}".format(asset_name, e))
             raise e
+
+
+def update_web_asset_model(bk_obj_id, asset, a):
+    asset_model = Web.objects.get(asset_ptr_id=a.id)
+
+    if bk_obj_id == 'mid_bes':
+        instance_type = asset.get('instance_type', '')
+        if instance_type:
+            # 3 集群版、4 单实例版
+            if instance_type == '3':
+                asset_model.autofill = 'yes'
+                asset_model.username_selector = 'id=j_username'
+                asset_model.password_selector = 'id=j_password'
+                asset_model.submit_selector = ''
+            else:
+                asset_model.autofill = 'yes'
+                asset_model.username_selector = 'id=j_username'
+                asset_model.password_selector = 'id=plainPassword'
+                asset_model.submit_selector = ''
+        else:
+            asset_model.autofill = 'no'
+    elif bk_obj_id == 'mid_mq':
+        asset_model.autofill = 'yes'
+        asset_model.username_selector = 'name=username'
+        asset_model.password_selector = 'name=password'
+        asset_model.submit_selector = 'xpath=//*[@id="login"]/form/table/tbody/tr[3]/td/input'
+    elif bk_obj_id == 'weblogic_inst':
+        asset_model.autofill = 'yes'
+        asset_model.username_selector = 'id=j_username'
+        asset_model.password_selector = 'id=j_password'
+        asset_model.submit_selector = 'xpath=//*[@id="loginData"]/div[4]/span/input'
+    else:
+        asset_model.autofill = 'no'
+
+    return asset_model
+
+
+def get_web_asset_model(bk_obj_id, asset, a):
+    if bk_obj_id == 'mid_bes':
+        instance_type = asset.get('instance_type', '')
+        if instance_type:
+            # 3 集群版、4 单实例版
+            if instance_type == '3':
+                asset_model = Web(
+                    asset_ptr_id=a.id,
+                    autofill='yes',
+                    username_selector='id=j_username',
+                    password_selector='id=j_password',
+                    submit_selector=''
+                )
+            else:
+                asset_model = Web(
+                    asset_ptr_id=a.id,
+                    autofill='yes',
+                    username_selector='id=j_username',
+                    password_selector='id=plainPassword',
+                    submit_selector=''
+                )
+        else:
+            asset_model = Web(asset_ptr_id=a.id, autofill='no')
+    elif bk_obj_id == 'mid_mq':
+        asset_model = Web(
+            asset_ptr_id=a.id,
+            autofill='yes',
+            username_selector='name=username',
+            password_selector='name=password',
+            submit_selector='xpath=//*[@id="login"]/form/table/tbody/tr[3]/td/input'
+        )
+    elif bk_obj_id == 'weblogic_inst':
+        asset_model = Web(
+            asset_ptr_id=a.id,
+            autofill='yes',
+            username_selector='id=j_username',
+            password_selector='id=j_password',
+            submit_selector='xpath=//*[@id="loginData"]/div[4]/span/input'
+        )
+    else:
+        asset_model = Web(asset_ptr_id=a.id, autofill='no')
+
+    return asset_model
 
 
 def save_host_asset(assets, asset_org_dict, isFullSync):
@@ -541,46 +622,54 @@ def save_host_asset(assets, asset_org_dict, isFullSync):
 
         # 在 Default 组织下管理所有资产，在归属部门 app_department 对应组织下管理关联资产
         orgs = []
+        org_asset_comment_dict = {}
         if len(org_name) > 0:
-            # 太平金科 org_name都是部门，不包含太平两个字
-            if not str(org_name).__contains__('太平'):
-                dept_name = '系统运行与信息安全管理部'
-                if str(org_name) == dept_name:
-                    if not use_office:
-                        # 系统运行与信息安全管理部-系统管理室
-                        org = Organization.objects.get(id=Organization.DEFAULT_ID)
-                        orgs.append(org)
-                    else:
-                        name = '系统运行与信息安全管理部-' + use_office
-                        orgs = Organization.objects.filter(name=name)
-                        if orgs.exists():
-                            orgs.append(orgs.first())
-                        else:
-                            print("堡垒机上不存在组织[{}]，asset_name: {}.".format(name, asset_name))
-                            org = Organization.objects.create(name=name)
-                            orgs.append(org)
-                            print("Success to create org[{}].".format(name))
-                else:
+            # 太平金科-系统运行与信息安全管理部 特殊处理
+            dept_name = '系统运行与信息安全管理部'
+            if str(org_name) == dept_name:
+                if not use_office:
                     # 系统运行与信息安全管理部-系统管理室
+                    use_office = '系统管理室'
                     org = Organization.objects.get(id=Organization.DEFAULT_ID)
                     orgs.append(org)
+                    org_asset_comment_dict.update({org.id: use_office})
+                else:
+                    name = '系统运行与信息安全管理部-' + use_office
+                    orgs = Organization.objects.filter(name=name)
+                    if orgs.exists():
+                        org = orgs.first()
+                        orgs.append(org)
+                        org_asset_comment_dict.update({org.id: use_office})
+                    else:
+                        print("堡垒机上不存在组织[{}]，asset_name: {}.".format(name, asset_name))
+                        org = Organization.objects.create(name=name)
+                        orgs.append(org)
+                        org_asset_comment_dict.update({org.id: use_office})
+                        print("Success to create org[{}].".format(name))
             else:
                 if use_office:
                     if str(use_office) == '系统管理室':
                         # 系统运行与信息安全管理部-系统管理室
                         org = Organization.objects.get(id=Organization.DEFAULT_ID)
                         orgs.append(org)
+                        org_asset_comment_dict.update({org.id: use_office})
                 else:
+                    use_office = '系统管理室'
                     org = Organization.objects.get(id=Organization.DEFAULT_ID)
                     orgs.append(org)
+                    org_asset_comment_dict.update({org.id: use_office})
 
+                # 所属应用部门
                 orgs = Organization.objects.filter(name=org_name)
                 if orgs.exists():
-                    orgs.append(orgs.first())
+                    org = orgs.first()
+                    orgs.append(org)
+                    org_asset_comment_dict.update({org.id: use_office})
                 else:
                     print("堡垒机上不存在组织[{}]，asset_name: {}.".format(org_name, asset_name))
                     org = Organization.objects.create(name=org_name)
                     orgs.append(org)
+                    org_asset_comment_dict.update({org.id: use_office})
                     print("Success to create org[{}].".format(org_name))
 
         try:
@@ -616,7 +705,8 @@ def save_host_asset(assets, asset_org_dict, isFullSync):
                     a = Asset.objects.create(name=asset_name,
                                              address=address,
                                              platform=platform,
-                                             org_id=org.id)
+                                             org_id=org.id,
+                                             comment=org_asset_comment_dict.get(org.id, ''))
 
                     asset_model = Host(asset_ptr_id=a.id)
                     asset_model.__dict__.update(a.__dict__)
@@ -642,7 +732,8 @@ def save_host_asset(assets, asset_org_dict, isFullSync):
                             a = Asset.objects.create(name=asset_name,
                                                      address=address,
                                                      platform=platform,
-                                                     org_id=org.id)
+                                                     org_id=org.id,
+                                                     comment=org_asset_comment_dict.get(org.id, ''))
 
                             asset_model = Host(asset_ptr_id=a.id)
                             asset_model.__dict__.update(a.__dict__)
@@ -650,6 +741,7 @@ def save_host_asset(assets, asset_org_dict, isFullSync):
                             print("Success to create host asset[{}].".format(asset_name))
                     else:
                         a.address = address
+                        a.comment = org_asset_comment_dict.get(org.id, '')
                         a.save()
 
                     key = f"{str(org.id)}_{a.name}"
@@ -695,7 +787,7 @@ def create_asset_node(assetnode_name, asset):
         if node:
             asset.nodes.set([node.id])
 
-def search_other_asset(bk_token, bk_obj_id):
+def search_other_asset(bk_token, bk_obj_id, region):
     limit = 500
     CMDB_HEADERS = {
         'Accept': 'application/json',
@@ -712,15 +804,76 @@ def search_other_asset(bk_token, bk_obj_id):
             "start": 0,
             "limit": limit
         },
-        "host_property_filter": {
-            "condition": "AND",
-            "rules": [
+        "condition": {
+            bk_obj_id: [
                 {
                     "field": "region",
-                    "operator": "in",
-                    "value": ["1", "3", "4"]
+                    "operator": "$eq",
+                    "value": region
                 }
             ]
+        }
+    }
+
+    print("url: {}".format(url))
+    print("data: {}".format(json.dumps(data)))
+
+    result = {
+        "result": True,
+        "code": 0,
+        "error": "",
+        "message": "",
+        "request_id": "",
+        "data": {
+            "total": 0,
+            "list": []
+        }
+    }
+
+    total_pages = -1
+    current_page = 1
+
+    while total_pages == -1 or current_page <= total_pages:
+        data["page"]["start"] = (current_page - 1) * limit
+        r = requests.post(url, headers=CMDB_HEADERS, json=data, timeout=10)
+        response = r.json()
+        code = response["code"]
+
+        if code != 0:
+            message = response["message"]
+            print("Search other asset failed. current_page: {}, Error: {}".format(current_page, message))
+            result["code"] = code
+            result["error"] = message
+            result["request_id"] = response["request_id"]
+            return result
+
+        res = response["data"]
+        total_pages = res["count"] // limit + (1 if res["count"] % limit != 0 else 0)
+
+        result["data"]["total"] = res["count"]
+        result["data"]["list"].extend(res["info"])
+        current_page += 1
+
+    # print("bk_obj_id: {}, search_RES: {}".format(bk_obj_id, json.dumps(result)))
+    return result
+
+
+def search_network_device_asset(bk_token, bk_obj_id):
+    limit = 500
+    CMDB_HEADERS = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+    }
+    url = "{CMDB_SERVER}/api/c/compapi/v2/cc/search_inst/".format(CMDB_SERVER=settings.CMDB_BK_PAAS_HOST)
+
+    data = {
+        "bk_app_code": settings.CMDB_BK_APP_CODE,
+        "bk_app_secret": settings.CMDB_BK_APP_SECRET,
+        "bk_token": bk_token,
+        "bk_obj_id": bk_obj_id,
+        "page": {
+            "start": 0,
+            "limit": limit
         }
     }
 
