@@ -247,17 +247,16 @@ class CeleryTaskViewSet(
 class CeleryTaskExecutionViewSet(CommonApiMixin, viewsets.ModelViewSet):
     serializer_class = CeleryTaskExecutionSerializer
     http_method_names = ('get', 'post', 'head', 'options',)
-    queryset = CeleryTaskExecution.objects.all()
     search_fields = ('id',)
 
     def get_queryset(self):
         task_id = self.request.query_params.get('task_id')
         if task_id:
             task = get_object_or_404(CeleryTask, id=task_id)
-            self.queryset = self.queryset.filter(name=task.name)
+            queryset = CeleryTaskExecution.objects.filter(name=task.name)
         if not self.request.user.is_superuser:
-            self.queryset = self.queryset.filter(creator=self.request.user)
-        return self.queryset
+            queryset = CeleryTaskExecution.objects.filter(creator=self.request.user)
+        return queryset
 
     def create(self, request, *args, **kwargs):
         form_id = self.request.query_params.get('from', None)
