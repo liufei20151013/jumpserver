@@ -525,24 +525,24 @@ def update_web_asset_model(bk_obj_id, asset, a):
         if instance_type:
             # 3 集群版、4 单实例版
             if instance_type == '3':
-                asset_model.autofill = 'yes'
+                asset_model.autofill = 'basic'
                 asset_model.username_selector = 'id=j_username'
                 asset_model.password_selector = 'id=j_password'
                 asset_model.submit_selector = ''
             else:
-                asset_model.autofill = 'yes'
+                asset_model.autofill = 'basic'
                 asset_model.username_selector = 'id=j_username'
                 asset_model.password_selector = 'id=plainPassword'
                 asset_model.submit_selector = ''
         else:
             asset_model.autofill = 'no'
     elif bk_obj_id == 'mid_mq':
-        asset_model.autofill = 'yes'
+        asset_model.autofill = 'basic'
         asset_model.username_selector = 'name=username'
         asset_model.password_selector = 'name=password'
         asset_model.submit_selector = 'xpath=//*[@id="login"]/form/table/tbody/tr[3]/td/input'
     elif bk_obj_id == 'weblogic_inst':
-        asset_model.autofill = 'yes'
+        asset_model.autofill = 'basic'
         asset_model.username_selector = 'id=j_username'
         asset_model.password_selector = 'id=j_password'
         asset_model.submit_selector = 'xpath=//*[@id="loginData"]/div[4]/span/input'
@@ -560,7 +560,7 @@ def get_web_asset_model(bk_obj_id, asset, a):
             if instance_type == '3':
                 asset_model = Web(
                     asset_ptr_id=a.id,
-                    autofill='yes',
+                    autofill='basic',
                     username_selector='id=j_username',
                     password_selector='id=j_password',
                     submit_selector=''
@@ -568,7 +568,7 @@ def get_web_asset_model(bk_obj_id, asset, a):
             else:
                 asset_model = Web(
                     asset_ptr_id=a.id,
-                    autofill='yes',
+                    autofill='basic',
                     username_selector='id=j_username',
                     password_selector='id=plainPassword',
                     submit_selector=''
@@ -578,7 +578,7 @@ def get_web_asset_model(bk_obj_id, asset, a):
     elif bk_obj_id == 'mid_mq':
         asset_model = Web(
             asset_ptr_id=a.id,
-            autofill='yes',
+            autofill='basic',
             username_selector='name=username',
             password_selector='name=password',
             submit_selector='xpath=//*[@id="login"]/form/table/tbody/tr[3]/td/input'
@@ -586,7 +586,7 @@ def get_web_asset_model(bk_obj_id, asset, a):
     elif bk_obj_id == 'weblogic_inst':
         asset_model = Web(
             asset_ptr_id=a.id,
-            autofill='yes',
+            autofill='basic',
             username_selector='id=j_username',
             password_selector='id=j_password',
             submit_selector='xpath=//*[@id="loginData"]/div[4]/span/input'
