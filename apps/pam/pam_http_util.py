@@ -65,3 +65,113 @@ MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCrQU480Ry/izMvw4/uZlW+HNBbLr6G
 
         result = response.json()
         return result
+
+def get_account():
+    limit = 10
+    base_param = {
+        "pageNum": "",
+        "pageSize": limit
+    }
+
+    result = {
+        "result": True,
+        "code": 0,
+        "error": "",
+        "message": "",
+        "data": {
+            "total": 0,
+            "list": []
+        }
+    }
+
+    url = '{PAM_SERVER}/openapi/v1/account/info/list'.format(PAM_SERVER='')
+    print("url: {}".format(url))
+
+    total_pages = -1
+    current_page = 1
+
+    while total_pages == -1 or current_page <= total_pages:
+        base_param["pageNum"] = current_page
+        print("base_param: {}".format(json.dumps(base_param)))
+
+        response = PamHttpUtil.post_with_param(
+            url=url,
+            param=base_param,
+            result_class=dict,
+            api_key=''
+        )
+        code = response["code"]
+
+        if code != '1000':
+            message = response["msg"]
+            print("Search account failed. current_page: {}, Error: {}".format(current_page, message))
+            result["code"] = code
+            result["error"] = message
+            print("search account result: {}".format(json.dumps(result)))
+
+        res = response["rows"]
+        total_pages = res["total"] // limit + (1 if res["total"] % limit != 0 else 0)
+
+        result["data"]["total"] = res["total"]
+        result["data"]["list"].extend(res["list"])
+        current_page += 1
+
+    print("search account result: {}".format(json.dumps(result)))
+
+
+def get_asset():
+    limit = 10
+    base_param = {
+        "pageNum": "",
+        "pageSize": limit,
+        "category": 'web'
+    }
+
+    result = {
+        "result": True,
+        "code": 0,
+        "error": "",
+        "message": "",
+        "data": {
+            "total": 0,
+            "list": []
+        }
+    }
+
+    url = '{PAM_SERVER}/openapi/v1/asset/info/list'.format(PAM_SERVER='')
+    print("url: {}".format(url))
+
+    total_pages = -1
+    current_page = 1
+
+    while total_pages == -1 or current_page <= total_pages:
+        base_param["pageNum"] = current_page
+        print("base_param: {}".format(json.dumps(base_param)))
+
+        response = PamHttpUtil.post_with_param(
+            url=url,
+            param=base_param,
+            result_class=dict,
+            api_key=''
+        )
+        code = response["code"]
+
+        if code != '1000':
+            message = response["msg"]
+            print("Search asset failed. current_page: {}, Error: {}".format(current_page, message))
+            result["code"] = code
+            result["error"] = message
+            print("search asset result: {}".format(json.dumps(result)))
+
+        res = response["rows"]
+        total_pages = res["total"] // limit + (1 if res["total"] % limit != 0 else 0)
+
+        result["data"]["total"] = res["total"]
+        result["data"]["list"].extend(res["list"])
+        current_page += 1
+
+    print("search asset result: {}".format(json.dumps(result)))
+
+if __name__ == '__main__':
+    # get_account()
+    get_asset()

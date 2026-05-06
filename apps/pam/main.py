@@ -2,6 +2,7 @@ import time
 import json
 from datetime import datetime, date, timedelta
 
+from croniter import croniter
 from django.utils import timezone
 
 from accounts.const import SecretType
@@ -31,10 +32,10 @@ def process_data(isFullSync):
     for category in category_arr:
         result = search_asset(category)
         if result['code'] != 0:
-            print("查询 PAM 上的资产数据失败，code: {}, error: {}".format(result['code'], result['error']))
+            print("查询 PAM 上的[{}]资产数据失败，code: {}, error: {}".format(category, result['code'], result['error']))
             return
         assets.extend(result['data']['list'])
-    print("获取 PAM 上的资产数据 End，total: {} 条.".format(len(assets)))
+    print("获取 PAM 上的[{}]资产数据 End，total: {} 条.".format(category, len(assets)))
 
     print("获取 PAM 上的数据 Start.")
     result = search_account()
@@ -60,9 +61,11 @@ def relate_asset_to_account(assets, accounts, isFullSync):
     pam_asset_account_dict = {}
 
     isSync = False
-    today_3am_timpstamp = get_timestamp(3)
+    cron_expr = settings.PAM_FULL_DATA_SYNC_CRONTAB
+    hour = croniter(cron_expr, datetime.now()).get_next(datetime).hour
+    today_sync_timpstamp = get_timestamp(hour)
     now_hour_timestamp = get_timestamp(datetime.now().hour)
-    if now_hour_timestamp > today_3am_timpstamp and isFullSync:
+    if now_hour_timestamp > today_sync_timpstamp and isFullSync:
         isSync = True
         isFullSync = False
 
@@ -76,6 +79,7 @@ def relate_asset_to_account(assets, accounts, isFullSync):
     if isFullSync:
         for asset in assets:
             asset_id = asset.get('id', '')
+            # todo 需要确认db、web资产的address是否是ipv4
             asset_address = asset.get('ipv4', '')
             asset_category = asset.get('category', '')
             if not asset_id or not asset_address or not asset_category:
@@ -95,7 +99,7 @@ def relate_asset_to_account(assets, accounts, isFullSync):
             pam_asset_account_dict.update({asset_id: account_arr})
     else:
         if isSync:
-            timestamp = today_3am_timpstamp
+            timestamp = today_sync_timpstamp
         else:
             # 只同步一个小时前新增的账号或者新校验的账号
             timestamp = int(time.time() * 1000) - 3600000
@@ -133,7 +137,7 @@ def relate_asset_to_account(assets, accounts, isFullSync):
     for org in orgs:
         set_current_org(org)
 
-        assets = Asset.objects.all()
+        assets = Asset.objects.exclude(name__istartswith='jms_')
         for asset in assets:
             if asset.category == 'host':
                 asset_category = 'host'
@@ -147,7 +151,7 @@ def relate_asset_to_account(assets, accounts, isFullSync):
             key = f"{str(asset.address)}_{asset_category}"
             asset_id = pam_asset_dict.get(key, '')
             if not asset_id:
-                print("Asset[{}-{}] not exist, skip.".format(asset_id, asset.address))
+                print("Asset[{}-{}] not exist, asset_category:{}, skip.".format(asset_id, asset_category, asset.address))
                 continue
 
             account_arr = pam_asset_account_dict.get(asset_id, [])
@@ -172,7 +176,7 @@ def relate_asset_to_account(assets, accounts, isFullSync):
                 try:
                     result = search_by_id(url, account['id'])
                     if result['code'] != '1000':
-                        print("获取 PAM 上的账号密码失败, account_id:{}, code: {}, error: {}.".format(account['id'], result['code'], result.get('msg', '')))
+                        print("获取 PAM 上的账号密码失败, account_id:{}, asset_category:{}, code: {}, error: {}.".format(account['id'], asset_category, result['code'], result.get('msg', '')))
                         continue
                     secret = result.get('rows', '')
 
@@ -195,7 +199,7 @@ def relate_asset_to_account(assets, accounts, isFullSync):
                                                        secret_type=SecretType.PASSWORD,
                                                        _secret=secret,
                                                        org_id=org.id)
-                                print("Success to create account[{}] for asset[{}].".format(su_from_username, asset.address))
+                                print("Success to create account[{}] for asset[{}], asset_category:{}.".format(su_from_username, asset.address, asset_category))
                             else:
                                 acc = accounts.first()
                             Account.objects.create(asset=asset,
@@ -214,7 +218,7 @@ def relate_asset_to_account(assets, accounts, isFullSync):
                                                    secret_type=SecretType.PASSWORD,
                                                    _secret=secret,
                                                    org_id=org.id)
-                        print("Success to create account[{}] for asset[{}].".format(username, asset.address))
+                        print("Success to create account[{}] for asset[{}], asset_category:{}.".format(username, asset.address, asset_category))
                     else:
                         if asset.category == 'host' and username == 'root':
                             if asset.platform.name == 'AIX':
@@ -239,13 +243,14 @@ def relate_asset_to_account(assets, accounts, isFullSync):
                                                 secret_type=SecretType.PASSWORD,
                                                 _secret=secret,
                                                 org_id=org.id)
-                        print("Success to update account[{}] for asset[{}].".format(username, asset.address))
+                        print("Success to update account[{}] for asset[{}], asset_category:{}.".format(username, asset.address, asset_category))
                 except Exception as e:
-                    print("Failed to save account[{}] for asset[{}], error:{}".format(username, asset.address, e))
+                    print("Failed to save account[{}] for asset[{}], asset_category:{}, error:{}".format(username, asset.address, asset_category, e))
 
             # 清理多余的账号
+            print("js_accounts size: {}, pam_accounts size: {}.".format(len(js_accounts), len(pam_accounts)))
             if len(js_accounts) > len(pam_accounts):
-                print("Remove extra accounts.")
+                print("Remove extra accounts of asset[{}], asset_category:{}.".format(asset.address, asset_category))
                 for ja in js_accounts:
                     if ja.username not in pam_accounts:
                         try:
