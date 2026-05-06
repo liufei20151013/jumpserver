@@ -1,4 +1,5 @@
 import uuid
+from email.policy import default
 
 import requests
 import json
@@ -22,12 +23,6 @@ def process_data(isFullSync):
         print('当前 CMDB 同步功能未开启, 不需要处理')
         return
 
-    bk_token = Login(username=settings.CMDB_USERNAME, password=settings.CMDB_PASSWORD).login()
-    print(f'bk_token: {bk_token}')
-    if not bk_token:
-        print("获取bk_token失败.")
-        return
-
     old_asset_org_dict = {}
     if isFullSync:
         print("获取堡垒机上原始资产数据 Start.")
@@ -43,9 +38,10 @@ def process_data(isFullSync):
         print("获取堡垒机上原始资产数据 End.")
 
     asset_org_dict = {}
+    user_org_dict = {}
 
     print("查询所有主机资产 Start.")
-    result = search_host_asset(bk_token)
+    result = search_host_asset()
     if result['code'] != 0:
         print("查询 CMDB 主机数据失败，code: {}, requestId: {}".format(result['code'], result['request_id']))
         return
@@ -53,7 +49,7 @@ def process_data(isFullSync):
     host_data = result['data']['list']
     print("查询 CMDB 主机数据成功，total: {} 条".format(len(host_data)))
 
-    save_host_asset(host_data, asset_org_dict, isFullSync)
+    save_host_asset(host_data, asset_org_dict, user_org_dict, isFullSync)
     print("查询所有主机资产 End.")
 
     print("查询中间件 Start.")
@@ -66,7 +62,7 @@ def process_data(isFullSync):
     for bk_obj_id, bk_obj_name in objects.items():
         for region in regions:
             print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}".format(bk_obj_id, bk_obj_name, region))
-            result = search_other_asset(bk_token, bk_obj_id, region)
+            result = search_other_asset(bk_obj_id, region)
             if result['code'] != 0:
                 print("查询 CMDB 中间件数据失败，code: {}, requestId: {}".format(result['code'], result['request_id']))
                 return
@@ -84,7 +80,7 @@ def process_data(isFullSync):
     }
     for bk_obj_id, bk_obj_name in objects.items():
         print("查询 bk_obj_id: {}, bk_obj_name: {}".format(bk_obj_id, bk_obj_name))
-        result = search_network_device_asset(bk_token, bk_obj_id)
+        result = search_network_device_asset(bk_obj_id)
         if result['code'] != 0:
             print("查询 CMDB 网络设备数据失败，code: {}, requestId: {}".format(result['code'], result['request_id']))
             return
@@ -117,7 +113,7 @@ def process_data(isFullSync):
     for bk_obj_id, bk_obj_name in objects.items():
         for region in regions:
             print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}".format(bk_obj_id, bk_obj_name, region))
-            result = search_other_asset(bk_token, bk_obj_id, region)
+            result = search_other_asset(bk_obj_id, region)
             if result['code'] != 0:
                 print(
                     "查询 CMDB 数据库资产数据失败，code: {}, requestId: {}".format(result['code'], result['request_id']))
@@ -597,7 +593,7 @@ def get_web_asset_model(bk_obj_id, asset, a):
     return asset_model
 
 
-def save_host_asset(assets, asset_org_dict, isFullSync):
+def save_host_asset(assets, asset_org_dict, user_org_dict, isFullSync):
     for asset in assets:
         update_time = asset.get('last_time') or asset.get('create_time')
         if not isFullSync:
@@ -610,10 +606,10 @@ def save_host_asset(assets, asset_org_dict, isFullSync):
         address = asset.get('bk_host_innerip', '')
         bk_os_type = asset.get('bk_os_type', '')
         org_name = asset.get('app_department', '')
-        use_office = asset.get('UseOffice', '')
-        if not address or not bk_os_type or not org_name:
-            print("There exist null parameter situations, skip.")
-            continue
+        # 运维人员组织架构  获取的是[1290]  根据id查询用户归属组织名称
+        user_org_id = asset.get('user_org', '')
+        default_user_org_name = '系统管理室'
+        user_org_name = search_user_org_name(user_org_id, user_org_dict, default_user_org_name)
 
         if asset_name:
             asset_name = asset_name + '_' + address
@@ -627,47 +623,45 @@ def save_host_asset(assets, asset_org_dict, isFullSync):
             # 太平金科-系统运行与信息安全管理部 特殊处理
             dept_name = '系统运行与信息安全管理部'
             if str(org_name) == dept_name:
-                if not use_office:
+                if not user_org_name:
                     # 系统运行与信息安全管理部-系统管理室
-                    use_office = '系统管理室'
                     org = Organization.objects.get(id=Organization.DEFAULT_ID)
                     orgs.append(org)
-                    org_asset_comment_dict[org.id] = use_office
+                    org_asset_comment_dict[org.id] = default_user_org_name
                 else:
-                    name = '系统运行与信息安全管理部-' + use_office
+                    name = '系统运行与信息安全管理部-' + user_org_name
                     org = Organization.objects.filter(name=name).first()
                     if org:
                         orgs.append(org)
-                        org_asset_comment_dict.update({org.id: use_office})
+                        org_asset_comment_dict.update({org.id: user_org_name})
                     else:
                         print("堡垒机上不存在组织[{}]，asset_name: {}.".format(name, asset_name))
                         org = Organization.objects.create(name=name)
                         orgs.append(org)
-                        org_asset_comment_dict[org.id] = use_office
+                        org_asset_comment_dict[org.id] = user_org_name
                         print("Success to create org[{}].".format(name))
             else:
-                if use_office:
-                    if str(use_office) == '系统管理室':
+                if user_org_name:
+                    if str(user_org_name) == default_user_org_name:
                         # 系统运行与信息安全管理部-系统管理室
                         org = Organization.objects.get(id=Organization.DEFAULT_ID)
                         orgs.append(org)
-                        org_asset_comment_dict[org.id] = use_office
+                        org_asset_comment_dict[org.id] = user_org_name
                 else:
-                    use_office = '系统管理室'
                     org = Organization.objects.get(id=Organization.DEFAULT_ID)
                     orgs.append(org)
-                    org_asset_comment_dict[org.id] = use_office
+                    org_asset_comment_dict[org.id] = default_user_org_name
 
                 # 所属应用部门
                 org = Organization.objects.filter(name=org_name).first()
                 if org:
                     orgs.append(org)
-                    org_asset_comment_dict[org.id] = use_office
+                    org_asset_comment_dict[org.id] = user_org_name
                 else:
                     print("堡垒机上不存在组织[{}]，asset_name: {}.".format(org_name, asset_name))
                     org = Organization.objects.create(name=org_name)
                     orgs.append(org)
-                    org_asset_comment_dict[org.id] = use_office
+                    org_asset_comment_dict[org.id] = user_org_name
                     print("Success to create org[{}].".format(org_name))
 
         try:
@@ -785,7 +779,13 @@ def create_asset_node(assetnode_name, asset):
         if node:
             asset.nodes.set([node.id])
 
-def search_other_asset(bk_token, bk_obj_id, region):
+def search_other_asset(bk_obj_id, region):
+    bk_token = Login(username=settings.CMDB_USERNAME, password=settings.CMDB_PASSWORD).login()
+    print(f'bk_token: {bk_token}')
+    if not bk_token:
+        print("获取bk_token失败.")
+        return
+
     limit = 500
     CMDB_HEADERS = {
         'Accept': 'application/json',
@@ -856,7 +856,13 @@ def search_other_asset(bk_token, bk_obj_id, region):
     return result
 
 
-def search_network_device_asset(bk_token, bk_obj_id):
+def search_network_device_asset(bk_obj_id):
+    bk_token = Login(username=settings.CMDB_USERNAME, password=settings.CMDB_PASSWORD).login()
+    print(f'bk_token: {bk_token}')
+    if not bk_token:
+        print("获取bk_token失败.")
+        return
+
     limit = 500
     CMDB_HEADERS = {
         'Accept': 'application/json',
@@ -918,7 +924,13 @@ def search_network_device_asset(bk_token, bk_obj_id):
     return result
 
 
-def search_host_asset(bk_token):
+def search_host_asset():
+    bk_token = Login(username=settings.CMDB_USERNAME, password=settings.CMDB_PASSWORD).login()
+    print(f'bk_token: {bk_token}')
+    if not bk_token:
+        print("获取bk_token失败.")
+        return
+
     limit = 500
     CMDB_HEADERS = {
         'Accept': 'application/json',
@@ -988,6 +1000,63 @@ def search_host_asset(bk_token):
 
     # print("search_host_asset_RES: {}".format(json.dumps(result)))
     return result
+
+
+def search_user_org_name(id, user_org_dict, default_user_org_name):
+    if not id:
+        return default_user_org_name
+
+    user_org_name = user_org_dict.get(id, '')
+    if user_org_name:
+        return user_org_name
+
+    bk_token = Login(username=settings.CMDB_USERNAME, password=settings.CMDB_PASSWORD).login()
+    print(f'bk_token: {bk_token}')
+    if not bk_token:
+        print("获取bk_token失败.")
+        return
+
+    CMDB_HEADERS = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+    }
+    url = "{CMDB_SERVER}/api/c/compapi/v2/usermanage/retrieve_department/".format(CMDB_SERVER=settings.CMDB_BK_PAAS_HOST)
+
+    data = {
+        "bk_app_code": settings.CMDB_BK_APP_CODE,
+        "bk_app_secret": settings.CMDB_BK_APP_SECRET,
+        "bk_token": bk_token,
+        "id": id,
+        "fields": "name,id"
+    }
+
+    print("url: {}".format(url))
+    print("data: {}".format(json.dumps(data)))
+
+    result = {
+        "result": True,
+        "code": 0,
+        "error": "",
+        "message": "",
+        "request_id": ""
+    }
+
+    r = requests.post(url, headers=CMDB_HEADERS, json=data, timeout=10)
+    response = r.json()
+    code = response["code"]
+
+    if code != 0:
+        message = response["message"]
+        print("Search user org name failed. , Error: {}".format(message))
+        result["code"] = code
+        result["error"] = message
+        result["request_id"] = response["request_id"]
+        print(result)
+        return default_user_org_name
+
+    res = response["data"]["name"]
+    user_org_dict.update({id: res})
+    return res
 
 
 def compare_time(time_str: str) -> bool:
