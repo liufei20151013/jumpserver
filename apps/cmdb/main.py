@@ -1003,12 +1003,15 @@ def search_host_asset():
 
 
 def search_user_org_name(id, user_org_dict, default_user_org_name):
+    # 如果 id 是列表，就取第一个元素
+    if isinstance(id, list):
+        # 列表为空也返回默认值
+        if not id:
+            return default_user_org_name
+        id = id[0]
+
     if not id:
         return default_user_org_name
-
-    user_org_name = user_org_dict.get(id, '')
-    if user_org_name:
-        return user_org_name
 
     bk_token = Login(username=settings.CMDB_USERNAME, password=settings.CMDB_PASSWORD).login()
     print(f'bk_token: {bk_token}')
