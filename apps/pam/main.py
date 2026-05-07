@@ -151,7 +151,7 @@ def relate_asset_to_account(assets, accounts, isFullSync):
             key = f"{str(asset.address)}_{asset_category}"
             asset_id = pam_asset_dict.get(key, '')
             if not asset_id:
-                print("Asset[{}-{}] not exist, asset_category:{}, skip.".format(asset_id, asset_category, asset.address))
+                print("Asset[{}-{}] not exist, asset_category:{}, skip.".format(asset_id, asset.address, asset_category))
                 continue
 
             account_arr = pam_asset_account_dict.get(asset_id, [])
