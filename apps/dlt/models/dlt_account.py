@@ -10,10 +10,10 @@ __all__ = ['DltAccount']
 class DltAccount(LabeledMixin, models.Model):
     id = models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')
     cn = models.CharField(max_length=32, verbose_name=_('Name'))
-    uid = models.CharField(max_length=32, verbose_name=_('UID'))
-    org = models.CharField(max_length=32, verbose_name=_('Organization'))
+    uid = models.CharField(max_length=128, verbose_name=_('UID'))
+    org = models.CharField(max_length=128, verbose_name=_('Organization'))
     org_full_name = models.CharField(max_length=128, verbose_name=_('Organization Name'))
-    email = models.CharField(max_length=32, verbose_name=_('Email'))
+    email = models.CharField(max_length=128, verbose_name=_('Email'))
     mobile = models.CharField(max_length=32, verbose_name=_('Mobile'))
     status = models.CharField(max_length=2, default='0', verbose_name=_('Status'))
     action_type = models.CharField(max_length=10, verbose_name=_('Action Type'))
