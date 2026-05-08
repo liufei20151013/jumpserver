@@ -5,7 +5,9 @@ from django.utils import timezone
 from dlt.models import DltAccount
 from orgs.models import Organization
 from django.conf import settings
-from rbac.models import Role
+
+from orgs.utils import set_to_root_org
+from rbac.models import Role, RoleBinding
 from users.models import User
 
 
@@ -32,7 +34,7 @@ def process_data(isFullSync):
                 # 需要用户org在堡垒机对应组织的备注里填入org信息   组织 comment ->  用户 org
                 org_list = Organization.objects.filter(comment__contains=org)
                 if not org_list.exists():
-                    print('堡垒机组织未关联用户org: {}'.format(org))
+                    print('堡垒机组织未关联用户org: {}，user:{}'.format(org, account.cn))
                     continue
                 organization = org_list.first()
 
@@ -64,9 +66,11 @@ def process_data(isFullSync):
                         user.date_updated = timezone.now()
                         user.save(update_fields=["email", "name", "is_active", "date_updated"])
                     else:
-                        if organization.id != Organization.DEFAULT_ID:
-                            DEFAULT_ORG = Organization.objects.get(id=Organization.DEFAULT_ID)
-                            DEFAULT_ORG.members.remove(user)
+                        if str(organization.id) != Organization.DEFAULT_ID:
+                            # 从默认组织移除该用户
+                            set_to_root_org()
+                            default_org = Organization.objects.get(id=Organization.DEFAULT_ID)
+                            RoleBinding.objects.root_all().filter(user=user, org=default_org).delete()
 
                     # 更新用户：如果用户更换了组织，是否需要把之前绑定的组织移除掉user.orgs.clear()，再绑定新组织？不建议，原组织绑定了一些授权，最好是手动移除，防止影响用户授权等数据
                     org_role = Role.objects.get(name='OrgUser', scope='org')
