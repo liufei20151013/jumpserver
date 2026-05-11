@@ -79,7 +79,6 @@ def relate_asset_to_account(assets, accounts, isFullSync):
     if isFullSync:
         for asset in assets:
             asset_id = asset.get('id', '')
-            # todo 需要确认db、web资产的address是否是ipv4
             asset_address = asset.get('ipv4', '')
             asset_category = asset.get('category', '')
             if not asset_id or not asset_address or not asset_category:
@@ -149,6 +148,9 @@ def relate_asset_to_account(assets, accounts, isFullSync):
                 continue
 
             key = f"{str(asset.address)}_{asset_category}"
+            if asset.comment.__contains__('pc_server'):
+                address = 'https://' + asset.comment.split('-')[1].strip()
+                key = f"{str(address)}_{asset_category}"
             asset_id = pam_asset_dict.get(key, '')
             if not asset_id:
                 print("Asset[{}-{}] not exist, asset_category:{}, skip.".format(asset_id, asset.address, asset_category))
