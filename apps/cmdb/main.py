@@ -1,8 +1,11 @@
+import re
 import uuid
-from email.policy import default
+from urllib.parse import urlparse
 
 import requests
 import json
+
+from docutils.nodes import comment
 
 from orgs.utils import set_current_org
 
@@ -51,6 +54,24 @@ def process_data(isFullSync):
 
     save_host_asset(host_data, asset_org_dict, user_org_dict, isFullSync)
     print("查询所有主机资产 End.")
+
+    print("查询PC机 Start.")
+    objects = {
+        "pc_server": "PC机"
+    }
+    for bk_obj_id, bk_obj_name in objects.items():
+        print("查询 bk_obj_id: {}, bk_obj_name: {}".format(bk_obj_id, bk_obj_name))
+        result = search_pc_host_asset(bk_obj_id)
+        if result['code'] != 0:
+            print("查询 CMDB PC机数据失败，code: {}, requestId: {}".format(result['code'], result['request_id']))
+            return
+
+        pc_host_data = result['data']['list']
+        print(
+            "查询 bk_obj_id: {}, bk_obj_name: {}，total: {} 条".format(bk_obj_id, bk_obj_name, len(pc_host_data)))
+
+        save_pc_host_asset(pc_host_data, asset_org_dict, isFullSync, bk_obj_id)
+    print("查询所有PC机 End.")
 
     print("查询中间件 Start.")
     objects = {
@@ -465,7 +486,7 @@ def save_middleware_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
                                              platform=platform,
                                              org_id=org.id)
 
-                    asset_model = Web(asset_ptr_id=a.id, autofill='no')
+                    asset_model = get_web_asset_model(bk_obj_id, asset, a)
                     asset_model.__dict__.update(a.__dict__)
                     asset_model.save()
 
@@ -480,7 +501,6 @@ def save_middleware_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
                     # 更新资产信息
                     # 如果平台不同，先删再加
                     if a.platform_id != platform.id:
-                        print(a.type)
                         p = Platform.objects.get(id=a.platform_id)
                         if p.type != platform.type:
                             Asset.objects.get(id=a.id).delete()
@@ -494,7 +514,7 @@ def save_middleware_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
                             asset_model = get_web_asset_model(bk_obj_id, asset, a)
                             asset_model.__dict__.update(a.__dict__)
                             asset_model.save()
-                            print("Success to create host asset[{}].".format(asset_name))
+                            print("Success to create middleware asset[{}].".format(asset_name))
                     else:
                         a.address = address
                         a.save()
@@ -542,6 +562,46 @@ def update_web_asset_model(bk_obj_id, asset, a):
         asset_model.username_selector = 'id=j_username'
         asset_model.password_selector = 'id=j_password'
         asset_model.submit_selector = 'xpath=//*[@id="loginData"]/div[4]/span/input'
+    elif bk_obj_id in ['IBM', '百信', '宝德', '超聚变', '广电五舟', '宝德', '华鲲振宇', '神州鲲泰', '天宫']:
+        asset_model.autofill = 'basic'
+        asset_model.username_selector = 'id=account'
+        asset_model.password_selector = 'id=loginPwd'
+        asset_model.submit_selector = ''
+    elif bk_obj_id in ['安擎', '百信恒山', '鼎甲', '华为泰山', '清华同方', '神州云科', '四川虹信', '长江计算']:
+        asset_model.autofill = 'basic'
+        asset_model.username_selector = 'id=login_name'
+        asset_model.password_selector = 'id=login_pwd'
+        asset_model.submit_selector = ''
+    elif bk_obj_id in ['联想']:
+        asset_model.autofill = 'basic'
+        asset_model.username_selector = 'id=login_username'
+        asset_model.password_selector = 'id=login_password'
+        asset_model.submit_selector = ''
+    elif bk_obj_id in ['华为']:
+        asset_model.autofill = 'basic'
+        asset_model.username_selector = 'id=iptUserName'
+        asset_model.password_selector = 'id=iptPassword'
+        asset_model.submit_selector = ''
+    elif bk_obj_id in ['曙光', '长城', '中科可控', '中科曙光', '中兴', '神州云科', '四川虹信']:
+        asset_model.autofill = 'basic'
+        asset_model.username_selector = 'id=userid'
+        asset_model.password_selector = 'id=password'
+        asset_model.submit_selector = ''
+    elif bk_obj_id in ['新华三']:
+        asset_model.autofill = 'basic'
+        asset_model.username_selector = 'id=username'
+        asset_model.password_selector = 'id=password'
+        asset_model.submit_selector = ''
+    elif bk_obj_id in ['惠普', '浪潮', '浪潮商用', '紫光']:
+        asset_model.autofill = 'basic'
+        asset_model.username_selector = 'name=username'
+        asset_model.password_selector = 'name=password'
+        asset_model.submit_selector = ''
+    elif bk_obj_id in ['超微']:
+        asset_model.autofill = 'basic'
+        asset_model.username_selector = 'name=name'
+        asset_model.password_selector = 'name=pwd'
+        asset_model.submit_selector = ''
     else:
         asset_model.autofill = 'no'
 
@@ -587,10 +647,203 @@ def get_web_asset_model(bk_obj_id, asset, a):
             password_selector='id=j_password',
             submit_selector='xpath=//*[@id="loginData"]/div[4]/span/input'
         )
+    elif bk_obj_id in ['IBM', '百信', '宝德', '超聚变', '广电五舟', '宝德', '华鲲振宇', '神州鲲泰', '天宫']:
+        asset_model = Web(
+            asset_ptr_id=a.id,
+            autofill='basic',
+            username_selector='id=account',
+            password_selector='id=loginPwd',
+            submit_selector=''
+        )
+    elif bk_obj_id in ['安擎', '百信恒山', '鼎甲', '华为泰山', '清华同方', '神州云科', '四川虹信', '长江计算']:
+        asset_model = Web(
+            asset_ptr_id=a.id,
+            autofill='basic',
+            username_selector='id=login_name',
+            password_selector='id=login_pwd',
+            submit_selector=''
+        )
+    elif bk_obj_id in ['联想']:
+        asset_model = Web(
+            asset_ptr_id=a.id,
+            autofill='basic',
+            username_selector='id=login_username',
+            password_selector='id=login_password',
+            submit_selector=''
+        )
+    elif bk_obj_id in ['华为']:
+        asset_model = Web(
+            asset_ptr_id=a.id,
+            autofill='basic',
+            username_selector='id=iptUserName',
+            password_selector='id=iptPassword',
+            submit_selector=''
+        )
+    elif bk_obj_id in ['曙光', '长城', '中科可控', '中科曙光', '中兴', '神州云科', '四川虹信']:
+        asset_model = Web(
+            asset_ptr_id=a.id,
+            autofill='basic',
+            username_selector='id=userid',
+            password_selector='id=password',
+            submit_selector=''
+        )
+    elif bk_obj_id in ['新华三']:
+        asset_model = Web(
+            asset_ptr_id=a.id,
+            autofill='basic',
+            username_selector='id=username',
+            password_selector='id=password',
+            submit_selector=''
+        )
+    elif bk_obj_id in ['惠普', '浪潮', '浪潮商用', '紫光']:
+        asset_model = Web(
+            asset_ptr_id=a.id,
+            autofill='basic',
+            username_selector='name=username',
+            password_selector='name=password',
+            submit_selector=''
+        )
+    elif bk_obj_id in ['超微']:
+        asset_model = Web(
+            asset_ptr_id=a.id,
+            autofill='basic',
+            username_selector='name=name',
+            password_selector='name=pwd',
+            submit_selector=''
+        )
     else:
         asset_model = Web(asset_ptr_id=a.id, autofill='no')
 
     return asset_model
+
+
+# 所有PC机归属系统管理室
+def save_pc_host_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
+    org = Organization.objects.get(id=Organization.DEFAULT_ID)
+    set_current_org(org)
+
+    for asset in assets:
+        update_time = asset.get('last_time') or asset.get('create_time')
+        if not isFullSync:
+            if not compare_time(update_time):
+                continue
+
+        asset_name = asset.get('bk_inst_name', '')
+        sys_name = asset.get('sys_name', '')
+        ip_address = asset.get('ip_address', '')
+        haddr_ip_address = asset.get('haddr_ip_address', '')
+        # app_department = asset.get('app_department', '')   # 应用部门
+        manufacturer = asset.get('manufacturer', '')   # 厂商
+        # 未维护信息过滤掉
+        if not asset_name or not ip_address or not haddr_ip_address:
+            print("There exist null parameter situations, skip.")
+            continue
+
+        full_assetnode_name = "/" + org.name
+        if sys_name:
+            full_assetnode_name = full_assetnode_name + "/" + sys_name
+
+        try:
+            print("Save or update pc host asset[{}].".format(asset_name))
+            platform = Platform.objects.filter(name='Website').first()
+            asset_protocol = ["http/443"]
+            if str(haddr_ip_address).__contains__('http'):
+                haddr_ip_address = extract_ip_from_url(haddr_ip_address)
+
+            if manufacturer in ['IBM', '百信']:
+                address = 'https://' + haddr_ip_address + '/UI/Static/#/login'
+            elif manufacturer in ['安擎', '百信恒山', '宝德', '超聚变', '鼎甲', '广电五舟', '华鲲振宇', '华为泰山', '清华同方',
+                                  '神州鲲泰', '神州云科', '曙光', '四川虹信', '天宫', '长城', '长江计算', '中科可控', '中科曙光',
+                                  '中兴', '紫光']:
+                address = 'https://' + haddr_ip_address + '/#/login'
+            elif manufacturer in ['新华三']:
+                address = 'https://' + haddr_ip_address + '/user/login'
+            else:
+                # ['超微', '华为', '惠普', '浪潮', '浪潮商用', '联想', '英伟达']
+                address = 'https://' + haddr_ip_address + '/'
+                # 其它  ['ZDNS', '戴尔']
+
+            comment = bk_obj_id + '-' + haddr_ip_address
+
+            # 用户确认全平台主机名唯一
+            assetList = Asset.objects.filter(name=asset_name)
+            if not assetList.exists():
+                a = Asset.objects.create(name=asset_name,
+                                         address=address,
+                                         platform=platform,
+                                         comment=comment,
+                                         org_id=org.id)
+
+                asset_model = get_web_asset_model(manufacturer, asset, a)
+                asset_model.__dict__.update(a.__dict__)
+                asset_model.save()
+
+                key = f"{str(org.id)}_{a.name}"
+                asset_org_dict.update({key: a.id})
+                create_asset_node(full_assetnode_name, a)
+                relate_protocols(asset_protocol, a)
+                print("Success to create pc host asset[{}].".format(asset_name))
+                continue
+
+            for a in assetList:
+                # 更新资产信息
+                # 如果平台不同，先删再加
+                if a.platform_id != platform.id:
+                    p = Platform.objects.get(id=a.platform_id)
+                    if p.type != platform.type:
+                        Asset.objects.get(id=a.id).delete()
+                        print("Incompatible platform: old-[{}], new-[{}]; Delete pc host asset[{}], create it."
+                              .format(p.name, platform.name, asset_name))
+
+                        a = Asset.objects.create(name=asset_name,
+                                                 address=address,
+                                                 platform=platform,
+                                                 comment=comment,
+                                                 org_id=org.id)
+
+                        asset_model = get_web_asset_model(manufacturer, asset, a)
+                        asset_model.__dict__.update(a.__dict__)
+                        asset_model.save()
+                        print("Success to create pc host asset[{}].".format(asset_name))
+                else:
+                    a.address = address
+                    a.comment = comment
+                    a.save()
+
+                    asset_model = update_web_asset_model(manufacturer, asset, a)
+                    asset_model.__dict__.update(a.__dict__)
+                    asset_model.save()
+
+                    key = f"{str(org.id)}_{a.name}"
+                    asset_org_dict.update({key: a.id})
+                    create_asset_node(full_assetnode_name, a)
+                    relate_protocols(asset_protocol, a)
+                    print("Success to update pc host asset[{}].".format(asset_name))
+        except Exception as e:
+            print("Failed to save pc host asset[{}], error:{}".format(asset_name, e))
+            raise e
+
+
+def extract_ip_from_url(haddr_ip_address):
+    """
+    从各种格式的URL中提取纯IP地址
+    支持：http://ip、http://ip/、https://ip/path、ip:port等格式
+    """
+    # 1. 解析URL，拆分协议、域名/IP、路径等部分
+    parsed_url = urlparse(haddr_ip_address)
+
+    # 2. 获取网络位置部分（就是IP/域名，自动去掉协议、路径、末尾斜杠）
+    netloc = parsed_url.netloc
+
+    # 3. 处理特殊情况：如果URL没有协议（如10.10.11.1），urlparse会识别到path中
+    if not netloc:
+        netloc = parsed_url.path.split('/')[0]  # 截取/前面的部分
+
+    # 4. 正则匹配纯IP（支持IPv4，去掉端口号如10.10.11.1:8080）
+    ip_pattern = r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'
+    match = re.search(ip_pattern, netloc)
+
+    return match.group(1) if match else None
 
 
 def save_host_asset(assets, asset_org_dict, user_org_dict, isFullSync):
@@ -921,6 +1174,73 @@ def search_network_device_asset(bk_obj_id):
         current_page += 1
 
     # print("bk_obj_id: {}, search_RES: {}".format(bk_obj_id, json.dumps(result)))
+    return result
+
+
+def search_pc_host_asset(bk_obj_id):
+    bk_token = Login(username=settings.CMDB_USERNAME, password=settings.CMDB_PASSWORD).login()
+    print(f'bk_token: {bk_token}')
+    if not bk_token:
+        print("获取bk_token失败.")
+        return
+
+    limit = 500
+    CMDB_HEADERS = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+    }
+    url = "{CMDB_SERVER}/api/c/compapi/v2/cc/search_inst/".format(CMDB_SERVER=settings.CMDB_BK_PAAS_HOST)
+
+    data = {
+        "bk_app_code": settings.CMDB_BK_APP_CODE,
+        "bk_app_secret": settings.CMDB_BK_APP_SECRET,
+        "bk_token": bk_token,
+        "bk_obj_id": bk_obj_id,
+        "page": {
+            "start": 0,
+            "limit": limit
+        }
+    }
+
+    print("url: {}".format(url))
+    print("data: {}".format(json.dumps(data)))
+
+    result = {
+        "result": True,
+        "code": 0,
+        "error": "",
+        "message": "",
+        "request_id": "",
+        "data": {
+            "total": 0,
+            "list": []
+        }
+    }
+
+    total_pages = -1
+    current_page = 1
+
+    while total_pages == -1 or current_page <= total_pages:
+        data["page"]["start"] = (current_page - 1) * limit
+        r = requests.post(url, headers=CMDB_HEADERS, json=data, timeout=10)
+        response = r.json()
+        code = response["code"]
+
+        if code != 0:
+            message = response["message"]
+            print("Search other asset failed. current_page: {}, Error: {}".format(current_page, message))
+            result["code"] = code
+            result["error"] = message
+            result["request_id"] = response["request_id"]
+            return result
+
+        res = response["data"]
+        total_pages = res["count"] // limit + (1 if res["count"] % limit != 0 else 0)
+
+        result["data"]["total"] = res["count"]
+        result["data"]["list"].extend(res["info"])
+        current_page += 1
+
     return result
 
 
