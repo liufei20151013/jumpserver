@@ -79,6 +79,8 @@ def process_data(isFullSync):
         "mid_mq": "MQ",
         "weblogic_inst": "WebLogic应用实例"
     }
+
+    # 2 开发测试
     regions = ["1", "3", "4"]
     for bk_obj_id, bk_obj_name in objects.items():
         for region in regions:
@@ -876,11 +878,18 @@ def save_host_asset(assets, asset_org_dict, user_org_dict, isFullSync):
             # 太平金科-系统运行与信息安全管理部 特殊处理
             dept_name = '系统运行与信息安全管理部'
             if str(org_name) == dept_name:
+                # 应用科室
+                app_office = asset.get('app_office', '')
+
                 if not user_org_name:
                     # 系统运行与信息安全管理部-系统管理室
                     org = Organization.objects.get(id=Organization.DEFAULT_ID)
                     orgs.append(org)
                     org_asset_comment_dict[org.id] = default_user_org_name
+
+                    # 在应用科室归属组织下创建资产
+                    relate_app_office_org(app_office, dept_name, orgs, org_asset_comment_dict, default_user_org_name,
+                                          asset_name)
                 else:
                     name = '系统运行与信息安全管理部-' + user_org_name
                     org = Organization.objects.filter(name=name).first()
@@ -893,6 +902,10 @@ def save_host_asset(assets, asset_org_dict, user_org_dict, isFullSync):
                         orgs.append(org)
                         org_asset_comment_dict[org.id] = user_org_name
                         print("Success to create org[{}].".format(name))
+
+                    # 在应用科室归属组织下创建资产
+                    relate_app_office_org(app_office, dept_name, orgs, org_asset_comment_dict, user_org_name,
+                                          asset_name)
             else:
                 if user_org_name:
                     if str(user_org_name) == default_user_org_name:
@@ -997,6 +1010,22 @@ def save_host_asset(assets, asset_org_dict, user_org_dict, isFullSync):
         except Exception as e:
             print("Failed to save host asset[{}], error:{}".format(asset_name, e))
             raise e
+
+
+def relate_app_office_org(app_office, dept_name, orgs, org_asset_comment_dict, user_org_name, asset_name):
+    if app_office:
+        # 应用科室所属组织
+        app_office_org_name = dept_name + '-' + app_office
+        org = Organization.objects.filter(name=app_office_org_name).first()
+        if org:
+            orgs.append(org)
+            org_asset_comment_dict.update({org.id: user_org_name})
+        else:
+            print("堡垒机上不存在组织[{}]，asset_name: {}.".format(app_office_org_name, asset_name))
+            org = Organization.objects.create(name=app_office_org_name)
+            orgs.append(org)
+            org_asset_comment_dict[org.id] = user_org_name
+            print("Success to create org[{}].".format(app_office_org_name))
 
 
 def relate_protocols(string, asset):
@@ -1258,6 +1287,7 @@ def search_host_asset():
     }
     url = "{CMDB_SERVER}/api/c/compapi/v2/cc/list_hosts_without_biz/".format(CMDB_SERVER=settings.CMDB_BK_PAAS_HOST)
 
+    # 2 开发测试
     data = {
         "bk_app_code": settings.CMDB_BK_APP_CODE,
         "bk_app_secret": settings.CMDB_BK_APP_SECRET,
