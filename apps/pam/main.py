@@ -160,7 +160,7 @@ def relate_asset_to_account(assets, accounts, isFullSync):
             account_arr = pam_asset_account_dict.get(asset_id, [])
             if len(account_arr) == 0:
                 continue
-            print("pam account_arr size: {}.".format(len(account_arr)))
+            print("pam account_arr: {}.".format(json.dumps(account_arr)))
 
            # 查询堡垒机资产下有哪些账号
            #  js_accounts = Account.objects.filter(asset_id=asset.id)
