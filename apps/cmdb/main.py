@@ -732,12 +732,11 @@ def save_pc_host_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
 
         asset_name = asset.get('bk_inst_name', '')
         sys_name = asset.get('sys_name', '')
-        ip_address = asset.get('ip_address', '')
         haddr_ip_address = asset.get('haddr_ip_address', '')
         # app_department = asset.get('app_department', '')   # 应用部门
         manufacturer = asset.get('manufacturer', '')   # 厂商
         # 未维护信息过滤掉
-        if not asset_name or not ip_address or not haddr_ip_address:
+        if not asset_name or not manufacturer or not haddr_ip_address:
             print("There exist null parameter situations, skip.")
             continue
 
