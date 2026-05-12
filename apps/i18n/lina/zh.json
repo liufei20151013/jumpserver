@@ -27,6 +27,7 @@
     "AccountDeleteConfirmMsg": "删除账号，是否继续？",
     "AccountDeleted": "账号删除",
     "AccountDiscover": "账号发现",
+    "SyncAccount": "同步账号",
     "AccountDiscoverDetail": "账号发现详情",
     "AccountDiscoverTask": "账号发现",
     "AccountDiscoverTaskCreate": "创建发现帐户任务",

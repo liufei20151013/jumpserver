@@ -27,6 +27,7 @@
     "AccountDeleteConfirmMsg": "Delete account, continue?",
     "AccountDeleted": "Account deleted",
     "AccountDiscover": "Discover accounts",
+    "SyncAccount": "Sync Accounts",
     "AccountDiscoverDetail": "Discover account details",
     "AccountDiscoverTaskCreate": "Create discover accounts task",
     "AccountDiscoverTaskUpdate": "Update the discover accounts task",

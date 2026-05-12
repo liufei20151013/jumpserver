@@ -1,9 +1,4 @@
-import time
 import json
-from datetime import datetime, date, timedelta
-
-from croniter import croniter
-from django.utils import timezone
 
 from accounts.const import SecretType
 from orgs.utils import set_current_org
@@ -20,180 +15,104 @@ from pam.pam_http_util import PamHttpUtil
 logger = get_logger(__name__)
 
 
-def process_data(isFullSync):
+def process_data(js_asset):
     enabled = settings.PAM_ENABLED
     if not enabled:
         print('当前 PAM 同步功能未开启, 不需要处理')
         return
 
-    print("获取 PAM 上的资产数据 Start.")
-    category_arr = ["host", "db", "web"]
-    assets = []
-    for category in category_arr:
-        result = search_asset(category)
-        if result['code'] != 0:
-            print("查询 PAM 上的[{}]资产数据失败，code: {}, error: {}".format(category, result['code'], result['error']))
-            return
-        assets.extend(result['data']['list'])
-    print("获取 PAM 上的[{}]资产数据 End，total: {} 条.".format(category, len(assets)))
+    if js_asset.category == 'host':
+        asset_category = 'host'
+    elif js_asset.category == 'database':
+        asset_category = 'db'
+    elif js_asset.category == 'web':
+        asset_category = 'web'
+    else:
+        return
 
-    print("获取 PAM 上的数据 Start.")
-    result = search_account()
+    print("获取 PAM 上的资产数据 Start.")
+    js_asset_address = js_asset.address
+    if asset_category == 'web' and js_asset.comment.__contains__('pc_server'):
+        js_asset_address = 'https://' + js_asset.comment.split('-')[1].strip()
+
+    result = search_asset(asset_category, js_asset_address)
     if result['code'] != 0:
-        print("查询 PAM 上的账号数据失败，code: {}, error: {}".format(result['code'], result['error']))
+        print("查询 PAM 上的资产数据失败，code: {}, error: {}".format(asset_category, result['code'], result['error']))
+        return
+    pam_assets = result['data']['list']
+    print("获取 PAM 上的[{}]资产数据 End，total: {} 条.".format(asset_category, len(pam_assets)))
+
+    pam_asset_id = ''
+    for pam_asset in pam_assets:
+        pam_asset_address = pam_asset.get('ipv4', '')
+        if pam_asset_address == js_asset_address:
+            pam_asset_id = pam_asset.get('id', '')
+            break
+
+    if not pam_asset_id:
+        print("PAM 上不存在资产[{}]的数据.".format(js_asset.name))
+        return
+
+    print("获取 PAM 上资产[{}]的数据 Start.".format(js_asset.name))
+    result = search_account(pam_asset_id)
+    if result['code'] != 0:
+        print("查询 PAM 上资产[{}]的账号数据失败，code: {}, error: {}".format(js_asset.name, result['code'], result['error']))
         return
     accounts = result['data']['list']
-    print("获取 PAM 上的账号数据 End，total: {} 条.".format(len(accounts)))
+    print("获取 PAM 上资产[{}]的账号数据 End，total: {} 条.".format(js_asset.name, len(accounts)))
+    if not accounts:
+        return
+    print("pam accounts: {}.".format(json.dumps(accounts)))
 
-    print("关联 PAM 上的账号数据 Start.")
-    relate_asset_to_account(assets, accounts, isFullSync)
-    print("关联 PAM 上的账号数据 End.")
-
-
-def get_timestamp(hour):
-    today = datetime.combine(date.today(), datetime.min.time().replace(hour=hour))
-    timestamp_ms = int(today.timestamp() * 1000)
-    return timestamp_ms
+    print("关联 PAM 上资产[{}]的账号数据 Start.".format(js_asset.name))
+    relate_asset_to_account(js_asset, accounts, asset_category)
+    print("关联 PAM 上资产[{}]的账号数据 End.".format(js_asset.name))
 
 
-def relate_asset_to_account(assets, accounts, isFullSync):
-    pam_asset_dict = {}
-    pam_asset_account_dict = {}
-
-    isSync = False
-    cron_expr = settings.PAM_FULL_DATA_SYNC_CRONTAB
-    hour = croniter(cron_expr, datetime.now()).get_next(datetime).hour
-    today_sync_timpstamp = get_timestamp(hour)
-    now_hour_timestamp = get_timestamp(datetime.now().hour)
-    if now_hour_timestamp > today_sync_timpstamp and isFullSync:
-        isSync = True
-        isFullSync = False
-
-    # 针对新增的机器
-    # date_created = (timezone.now() - timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S.%f")
-    # new_assets = Asset.objects.filter(date_created__gte=date_created)
-    # if new_assets.exists():
-    #     isSync = False
-    #     isFullSync = True
-
-    if isFullSync:
-        for asset in assets:
-            asset_id = asset.get('id', '')
-            asset_address = asset.get('ipv4', '')
-            asset_category = asset.get('category', '')
-            if not asset_id or not asset_address or not asset_category:
-                continue
-            key = f"{str(asset_address)}_{asset_category}"
-            pam_asset_dict.update({key: asset_id})
-
-        for account in accounts:
-            verify_status = account.get('verifyStatus', '')
-            asset_id = account.get('assetId', '')
-            # 校验状态 0: 未校验(未知) 1:进行中 2:校验无效 3:校验未通过 4:校验通过
-            if not verify_status or not asset_id:
-                continue
-
-            account_arr = pam_asset_account_dict.get(asset_id, [])
-            account_arr.append(account)
-            pam_asset_account_dict.update({asset_id: account_arr})
-    else:
-        if isSync:
-            timestamp = today_sync_timpstamp
-        else:
-            # 只同步一个小时前新增的账号或者新校验的账号
-            timestamp = int(time.time() * 1000) - 3600000
-        for account in accounts:
-            verify_status = account.get('verifyStatus', '')
-            asset_id = account.get('assetId', '')
-            if not verify_status or not asset_id:
-                continue
-
-            save_time = account.get('verifyTime') or account.get('createTime')
-            if save_time > timestamp:
-                account_arr = pam_asset_account_dict.get(asset_id, [])
-                account_arr.append(account)
-                pam_asset_account_dict.update({asset_id: account_arr})
-        if len(pam_asset_account_dict) == 0:
-            return
-
-        for asset in assets:
-            asset_id = asset.get('id', '')
-            asset_address = asset.get('ipv4', '')
-            asset_category = asset.get('category', '')
-            if not asset_id or not asset_address or not asset_category:
-                continue
-            account_arr = pam_asset_account_dict.get(asset_id, [])
-            if len(account_arr) == 0:
-                continue
-
-            key = f"{str(asset_address)}_{asset_category}"
-            pam_asset_dict.update({key: asset_id})
-
+def relate_asset_to_account(js_asset, pam_accounts, asset_category):
     pam_account_secret_dict = {}
     privileged_accounts = ['root', 'loginuser', 'cyuser']
-
     url = '{PAM_SERVER}/openapi/v1/account/info/getPwd'.format(PAM_SERVER=settings.PAM_SERVER)
+
     orgs = Organization.objects.exclude(id=Organization.SYSTEM_ID)
     for org in orgs:
         set_current_org(org)
 
-        assets = Asset.objects.exclude(name__istartswith='jms_')
+        assets = Asset.objects.filter(name=js_asset.name)
         for asset in assets:
-            if asset.category == 'host':
-                asset_category = 'host'
-            elif asset.category == 'database':
-                asset_category = 'db'
-            elif asset.category == 'web':
-                asset_category = 'web'
-            else:
-                continue
-
-            key = f"{str(asset.address)}_{asset_category}"
-            if asset.comment.__contains__('pc_server'):
-                address = 'https://' + asset.comment.split('-')[1].strip()
-                key = f"{str(address)}_{asset_category}"
-            asset_id = pam_asset_dict.get(key, '')
-            if not asset_id:
-                print("Asset[{}-{}] not exist, asset_category:{}, skip.".format(asset_id, asset.address, asset_category))
-                continue
-
-            account_arr = pam_asset_account_dict.get(asset_id, [])
-            if len(account_arr) == 0:
-                continue
-            print("pam account_arr: {}.".format(json.dumps(account_arr)))
-
-           # 查询堡垒机资产下有哪些账号
-           #  js_accounts = Account.objects.filter(asset_id=asset.id)
-
-            # pam_accounts = []
-            for account in account_arr:
-                username = account.get('assetAccount', '')
+            for pam_account in pam_accounts:
+                username = pam_account.get('assetAccount', '')
                 if not username:
                     continue
                 if asset_category == 'host':
                     if not org.name.__contains__(asset.comment) and username in privileged_accounts:
                         continue
 
-                # 需要添加的账号
-                # pam_accounts.append(username)
-
                 try:
                     # 多组织存在相同资产、账号，可减少接口调用查询时间
                     account_key = f"{str(asset.address)}_{str(username)}_{asset_category}"
                     secret = pam_account_secret_dict.get(account_key, '')
                     if not secret:
-                        result = search_by_id(url, account['id'])
+                        result = search_by_id(url, pam_account['id'])
                         if result['code'] != '1000':
-                            print("获取 PAM 上的账号密码失败, account_id:{}, asset_category:{}, code: {}, error: {}.".format(account['id'], asset_category, result['code'], result.get('msg', '')))
+                            print("获取 PAM 上的账号密码失败, account_id:{}, asset_category:{}, code: {}, error: {}."
+                                  .format(pam_account['id'], asset_category, result['code'], result.get('msg', '')))
                             continue
                         secret = result.get('rows', '')
                         pam_account_secret_dict.update({account_key: secret})
 
+                    username = pam_account.get('assetAccount', '')
+                    if not username:
+                        continue
+                    if asset_category == 'host':
+                        if not org.name.__contains__(asset.comment) and username in privileged_accounts:
+                            continue
+
                     name = asset.address + "_" + username
-                    privileged = True if account.get('accountType', '') == '0' else False
+                    privileged = True if pam_account.get('accountType', '') == '0' else False
                     account_list = Account.objects.filter(asset=asset, username=username)
                     if not account_list.exists():
-                        if asset.category == 'host' and username == 'root':
+                        if asset_category == 'host' and username == 'root':
                             if asset.platform.name == 'AIX':
                                 su_from_username = 'cyuser'
                             else:
@@ -256,27 +175,14 @@ def relate_asset_to_account(assets, accounts, isFullSync):
                 except Exception as e:
                     print("Failed to save account[{}] for asset[{}], asset_category:{}, error:{}".format(username, asset.address, asset_category, e))
 
-            # 清理多余的账号  如果接口调用失败，存在误删账号的情况！！！建议手动删除多余账号。
-            # print("js_accounts size: {}, pam_accounts size: {}.".format(len(js_accounts), len(pam_accounts)))
-            # if len(js_accounts) > len(pam_accounts):
-            #     print("Remove extra accounts of asset[{}], asset_category:{}.".format(asset.address, asset_category))
-            #     for ja in js_accounts:
-            #         if ja.username not in pam_accounts:
-            #             try:
-            #                 print("Remove account[{}].".format(ja.username))
-            #                 Account.objects.get(id=ja.id).delete()
-            #                 print("Success to remove account[{}].".format(ja.username))
-            #             except:
-            #                 print("Failed to remove account[{}].".format(ja.username))
-            #                 continue
 
-
-def search_asset(category):
+def search_asset(category, keyword):
     limit = 10000
     base_param = {
         "pageNum": "",
         "pageSize": limit,
-        "category": category
+        "category": category,
+        "keyword": keyword
     }
 
     result = {
@@ -325,11 +231,12 @@ def search_asset(category):
     # print("search asset result: {}".format(json.dumps(result)))
     return result
 
-def search_account():
-    limit = 10000
+def search_account(pam_asset_id):
+    limit = 10
     base_param = {
         "pageNum": "",
-        "pageSize": limit
+        "pageSize": limit,
+        "assetId": pam_asset_id
     }
 
     result = {

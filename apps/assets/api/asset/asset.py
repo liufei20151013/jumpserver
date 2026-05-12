@@ -7,8 +7,10 @@ from django.utils.translation import gettext as _
 from django_filters import rest_framework as drf_filters
 from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK
+from rest_framework.views import APIView
 
 from accounts.serializers import AccountSerializer
 from accounts.tasks import push_accounts_to_assets_task, verify_accounts_connectivity_task
@@ -22,6 +24,7 @@ from common.drf.filters import BaseFilterSet, AttrRulesFilterBackend
 from common.utils import get_logger, is_uuid
 from orgs.mixins import generics
 from orgs.mixins.api import OrgBulkModelViewSet
+from pam.sync import process_data
 from ...const import GATEWAY_NAME
 from ...notifications import BulkUpdatePlatformSkipAssetUserMsg
 
@@ -29,6 +32,7 @@ logger = get_logger(__file__)
 __all__ = [
     "AssetViewSet", "AssetTaskCreateApi",
     "AssetsTaskCreateApi", 'AssetFilterSet',
+    "AssetSyncAccountApi"
 ]
 
 
@@ -312,3 +316,23 @@ class AssetsTaskCreateApi(AssetsTaskMixin, generics.CreateAPIView):
         has = self.request.user.has_perm(perm_required)
         if not has:
             self.permission_denied(request)
+
+
+class AssetSyncAccountApi(APIView):
+    http_method_names = ['get']
+    permission_classes = [AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        # 从 URL 中获取 pk
+        pk = kwargs.get('pk')
+        if not pk:
+            return Response({"status": "error", "msg": "pk is required"}, status=400)
+
+        try:
+            asset = Asset.objects.get(id=pk)
+            process_data(asset)
+            return Response({"status": "success", "msg": "Sync completed"})
+        except Asset.DoesNotExist:
+            return Response({"status": "error", "msg": "Asset not found"}, status=404)
+        except Exception as e:
+            return Response({"status": "error", "msg": str(e)}, status=500)

@@ -39,6 +39,7 @@ urlpatterns = [
          name='asset-perm-user-group-list'),
     path('assets/<uuid:pk>/perm-user-groups/<uuid:perm_user_group_id>/permissions/',
          api.AssetPermUserGroupPermissionsListApi.as_view(), name='asset-perm-user-group-permission-list'),
+    path('assets/<uuid:pk>/sync-account/', api.AssetSyncAccountApi.as_view(), name='asset-sync-account'),
 
     path('nodes/category/tree/', api.CategoryTreeApi.as_view(), name='asset-category-tree'),
     path('nodes/children/tree/', api.NodeChildrenAsTreeApi.as_view(), name='node-children-tree'),
