@@ -80,8 +80,8 @@ def process_data(isFullSync):
         "weblogic_inst": "WebLogic应用实例"
     }
 
-    # 2 开发测试
-    regions = ["1", "3", "4"]
+    # 2 开发测试  6 待更新
+    regions = ["1", "3", "4", "5", "7"]
     for bk_obj_id, bk_obj_name in objects.items():
         for region in regions:
             print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}".format(bk_obj_id, bk_obj_name, region))
@@ -1302,7 +1302,7 @@ def search_host_asset():
                 {
                     "field": "region",
                     "operator": "in",
-                    "value": ["1", "3", "4"]
+                    "value": ["1", "3", "4", "5", "7"]
                 }
             ]
         }
