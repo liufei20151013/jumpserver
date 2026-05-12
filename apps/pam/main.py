@@ -161,9 +161,9 @@ def relate_asset_to_account(assets, accounts, isFullSync):
                 continue
 
            # 查询堡垒机资产下有哪些账号
-            js_accounts = Account.objects.filter(asset_id=asset.id)
+           #  js_accounts = Account.objects.filter(asset_id=asset.id)
 
-            pam_accounts = []
+            # pam_accounts = []
             for account in account_arr:
                 username = account.get('assetAccount', '')
                 if not username:
@@ -173,7 +173,7 @@ def relate_asset_to_account(assets, accounts, isFullSync):
                         continue
 
                 # 需要添加的账号
-                pam_accounts.append(username)
+                # pam_accounts.append(username)
 
                 try:
                     result = search_by_id(url, account['id'])
@@ -250,18 +250,18 @@ def relate_asset_to_account(assets, accounts, isFullSync):
                     print("Failed to save account[{}] for asset[{}], asset_category:{}, error:{}".format(username, asset.address, asset_category, e))
 
             # 清理多余的账号
-            print("js_accounts size: {}, pam_accounts size: {}.".format(len(js_accounts), len(pam_accounts)))
-            if len(js_accounts) > len(pam_accounts):
-                print("Remove extra accounts of asset[{}], asset_category:{}.".format(asset.address, asset_category))
-                for ja in js_accounts:
-                    if ja.username not in pam_accounts:
-                        try:
-                            print("Remove account[{}].".format(ja.username))
-                            Account.objects.get(id=ja.id).delete()
-                            print("Success to remove account[{}].".format(ja.username))
-                        except:
-                            print("Failed to remove account[{}].".format(ja.username))
-                            continue
+            # print("js_accounts size: {}, pam_accounts size: {}.".format(len(js_accounts), len(pam_accounts)))
+            # if len(js_accounts) > len(pam_accounts):
+            #     print("Remove extra accounts of asset[{}], asset_category:{}.".format(asset.address, asset_category))
+            #     for ja in js_accounts:
+            #         if ja.username not in pam_accounts:
+            #             try:
+            #                 print("Remove account[{}].".format(ja.username))
+            #                 Account.objects.get(id=ja.id).delete()
+            #                 print("Success to remove account[{}].".format(ja.username))
+            #             except:
+            #                 print("Failed to remove account[{}].".format(ja.username))
+            #                 continue
 
 
 def search_asset(category):
