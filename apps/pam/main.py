@@ -129,6 +129,7 @@ def relate_asset_to_account(assets, accounts, isFullSync):
             key = f"{str(asset_address)}_{asset_category}"
             pam_asset_dict.update({key: asset_id})
 
+    pam_account_secret_dict = {}
     privileged_accounts = ['root', 'loginuser', 'cyuser']
 
     url = '{PAM_SERVER}/openapi/v1/account/info/getPwd'.format(PAM_SERVER=settings.PAM_SERVER)
@@ -159,6 +160,7 @@ def relate_asset_to_account(assets, accounts, isFullSync):
             account_arr = pam_asset_account_dict.get(asset_id, [])
             if len(account_arr) == 0:
                 continue
+            print("pam account_arr size: {}.".format(len(account_arr)))
 
            # 查询堡垒机资产下有哪些账号
            #  js_accounts = Account.objects.filter(asset_id=asset.id)
@@ -176,11 +178,16 @@ def relate_asset_to_account(assets, accounts, isFullSync):
                 # pam_accounts.append(username)
 
                 try:
-                    result = search_by_id(url, account['id'])
-                    if result['code'] != '1000':
-                        print("获取 PAM 上的账号密码失败, account_id:{}, asset_category:{}, code: {}, error: {}.".format(account['id'], asset_category, result['code'], result.get('msg', '')))
-                        continue
-                    secret = result.get('rows', '')
+                    # 多组织存在相同资产、账号，可减少接口调用查询时间
+                    account_key = f"{str(asset.address)}_{str(username)}_{asset_category}"
+                    secret = pam_account_secret_dict.get(account_key, '')
+                    if not secret:
+                        result = search_by_id(url, account['id'])
+                        if result['code'] != '1000':
+                            print("获取 PAM 上的账号密码失败, account_id:{}, asset_category:{}, code: {}, error: {}.".format(account['id'], asset_category, result['code'], result.get('msg', '')))
+                            continue
+                        secret = result.get('rows', '')
+                        pam_account_secret_dict.update({account_key: secret})
 
                     name = asset.address + "_" + username
                     privileged = True if account.get('accountType', '') == '0' else False
@@ -249,7 +256,7 @@ def relate_asset_to_account(assets, accounts, isFullSync):
                 except Exception as e:
                     print("Failed to save account[{}] for asset[{}], asset_category:{}, error:{}".format(username, asset.address, asset_category, e))
 
-            # 清理多余的账号
+            # 清理多余的账号  如果接口调用失败，存在误删账号的情况！！！建议手动删除多余账号。
             # print("js_accounts size: {}, pam_accounts size: {}.".format(len(js_accounts), len(pam_accounts)))
             # if len(js_accounts) > len(pam_accounts):
             #     print("Remove extra accounts of asset[{}], asset_category:{}.".format(asset.address, asset_category))
