@@ -152,6 +152,10 @@ def relate_asset_to_account(assets, accounts, isFullSync):
             if asset.comment.__contains__('pc_server'):
                 address = 'https://' + asset.comment.split('-')[1].strip()
                 key = f"{str(address)}_{asset_category}"
+            elif asset.comment.__contains__('storage_oss') or asset.comment.__contains__('fc_storage') or asset.comment.__contains__('network_storage'):
+                address = asset.comment.split('-')[1].strip()
+                key = f"{str(address)}_{asset_category}"
+
             asset_id = pam_asset_dict.get(key, '')
             if not asset_id:
                 print("Asset[{}-{}] not exist, asset_category:{}, skip.".format(asset_id, asset.address, asset_category))

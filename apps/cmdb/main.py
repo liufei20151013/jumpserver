@@ -574,6 +574,9 @@ def save_storage_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
         if not asset_name or not manufacturer or not storage_cls:
             print("There exist null parameter situations, skip.")
             continue
+        if not str(storage_cls).__contains__('http'):
+            print("The storage cls does not include http(s), skip.")
+            continue
 
         full_assetnode_name = "/" + org.name
         if sys_name:
@@ -583,8 +586,6 @@ def save_storage_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
             print("Save or update storage device asset[{}], bk_obj_id: {}.".format(asset_name, bk_obj_id))
             platform = Platform.objects.filter(name='Website').first()
             asset_protocol = ["http/443"]
-            if not str(storage_cls).__contains__('http'):
-                continue
 
             if bk_obj_id == 'storage_oss' and manufacturer in ['EMC']:
                 address = storage_cls + '/#/dashboard'
