@@ -61,7 +61,7 @@ def process_data(isFullSync):
     }
     for bk_obj_id, bk_obj_name in objects.items():
         print("查询 bk_obj_id: {}, bk_obj_name: {}".format(bk_obj_id, bk_obj_name))
-        result = search_pc_host_asset(bk_obj_id)
+        result = search_other_asset_no_region(bk_obj_id)
         if result['code'] != 0:
             print("查询 CMDB PC机数据失败，code: {}, requestId: {}".format(result['code'], result['request_id']))
             return
@@ -103,7 +103,7 @@ def process_data(isFullSync):
     }
     for bk_obj_id, bk_obj_name in objects.items():
         print("查询 bk_obj_id: {}, bk_obj_name: {}".format(bk_obj_id, bk_obj_name))
-        result = search_network_device_asset(bk_obj_id)
+        result = search_other_asset_no_region(bk_obj_id)
         if result['code'] != 0:
             print("查询 CMDB 网络设备数据失败，code: {}, requestId: {}".format(result['code'], result['request_id']))
             return
@@ -113,6 +113,26 @@ def process_data(isFullSync):
 
         save_network_device_asset(network_device_data, asset_org_dict, isFullSync)
     print("查询所有网络设备 End.")
+
+    print("查询存储设备 Start.")
+    objects = {
+        "storage_oss": "对象存储",
+        "fc_storage": "SAN存储",
+        "network_storage": "NAS存储"
+    }
+    for bk_obj_id, bk_obj_name in objects.items():
+        print("查询 bk_obj_id: {}, bk_obj_name: {}".format(bk_obj_id, bk_obj_name))
+        result = search_other_asset_no_region(bk_obj_id)
+        if result['code'] != 0:
+            print("查询 CMDB 存储设备数据失败，code: {}, requestId: {}".format(result['code'], result['request_id']))
+            return
+
+        storage_device_data = result['data']['list']
+        print(
+            "查询 bk_obj_id: {}, bk_obj_name: {}，total: {} 条".format(bk_obj_id, bk_obj_name, len(storage_device_data)))
+
+        save_storage_device_asset(storage_device_data, asset_org_dict, isFullSync)
+    print("查询所有存储设备 End.")
 
     print("查询所有数据库资产 Start.")
     objects = {
@@ -488,7 +508,7 @@ def save_middleware_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
                                              platform=platform,
                                              org_id=org.id)
 
-                    asset_model = get_web_asset_model(bk_obj_id, asset, a)
+                    asset_model = get_web_asset_model(bk_obj_id, '', asset, a)
                     asset_model.__dict__.update(a.__dict__)
                     asset_model.save()
 
@@ -513,7 +533,7 @@ def save_middleware_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
                                                      platform=platform,
                                                      org_id=org.id)
 
-                            asset_model = get_web_asset_model(bk_obj_id, asset, a)
+                            asset_model = get_web_asset_model(bk_obj_id,  '', asset, a)
                             asset_model.__dict__.update(a.__dict__)
                             asset_model.save()
                             print("Success to create middleware asset[{}].".format(asset_name))
@@ -521,7 +541,7 @@ def save_middleware_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
                         a.address = address
                         a.save()
 
-                        asset_model = update_web_asset_model(bk_obj_id, asset, a)
+                        asset_model = update_web_asset_model(bk_obj_id, '', asset, a)
                         asset_model.__dict__.update(a.__dict__)
                         asset_model.save()
 
@@ -535,7 +555,116 @@ def save_middleware_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
             raise e
 
 
-def update_web_asset_model(bk_obj_id, asset, a):
+# 所有存储设备归属系统管理室
+def save_storage_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
+    org = Organization.objects.get(id=Organization.DEFAULT_ID)
+    set_current_org(org)
+
+    for asset in assets:
+        update_time = asset.get('last_time') or asset.get('create_time')
+        if not isFullSync:
+            if not compare_time(update_time):
+                continue
+
+        asset_name = asset.get('bk_inst_name', '')
+        sys_name = asset.get('sys_name', '')
+        storage_cls = asset.get('storage_cls', '')
+        manufacturer = asset.get('manufacturer', '')   # 厂商
+        # 未维护信息过滤掉
+        if not asset_name or not manufacturer or not storage_cls:
+            print("There exist null parameter situations, skip.")
+            continue
+
+        full_assetnode_name = "/" + org.name
+        if sys_name:
+            full_assetnode_name = full_assetnode_name + "/" + sys_name
+
+        try:
+            print("Save or update storage device asset[{}], bk_obj_id: {}.".format(asset_name, bk_obj_id))
+            platform = Platform.objects.filter(name='Website').first()
+            asset_protocol = ["http/443"]
+            if not str(storage_cls).__contains__('http'):
+                continue
+
+            if bk_obj_id == 'storage_oss' and manufacturer in ['EMC']:
+                address = storage_cls + '/#/dashboard'
+            elif bk_obj_id == 'storage_oss' and manufacturer in ['XSKY']:
+                address = storage_cls + '/login?redirect=dashboard'
+            elif bk_obj_id == 'storage_oss' and manufacturer in ['华为', '浪潮']:
+                address = storage_cls + '/#/login'
+            elif bk_obj_id == 'fc_storage' and manufacturer in ['EMC']:
+                address = storage_cls + '/cas/login'
+            elif bk_obj_id == 'fc_storage' and manufacturer in ['H3C', '华为']:
+                address = storage_cls + '/login'
+            elif bk_obj_id == 'network_storage' and manufacturer in ['NetApp']:
+                address = storage_cls + '/sysmgr/v4'
+            elif bk_obj_id == 'network_storage' and manufacturer in ['华为']:
+                address = storage_cls + '/deviceManager/devicemanager/feature/login/login.html'
+            else:
+                address = storage_cls + '/'
+
+            comment = bk_obj_id + '-' + storage_cls
+
+            # 用户确认全平台主机名唯一
+            assetList = Asset.objects.filter(name=asset_name)
+            if not assetList.exists():
+                a = Asset.objects.create(name=asset_name,
+                                         address=address,
+                                         platform=platform,
+                                         comment=comment,
+                                         org_id=org.id)
+
+                asset_model = get_web_asset_model(bk_obj_id, manufacturer, asset, a)
+                asset_model.__dict__.update(a.__dict__)
+                asset_model.save()
+
+                key = f"{str(org.id)}_{a.name}"
+                asset_org_dict.update({key: a.id})
+                create_asset_node(full_assetnode_name, a)
+                relate_protocols(asset_protocol, a)
+                print("Success to create pc host asset[{}].".format(asset_name))
+                continue
+
+            for a in assetList:
+                # 更新资产信息
+                # 如果平台不同，先删再加
+                if a.platform_id != platform.id:
+                    p = Platform.objects.get(id=a.platform_id)
+                    if p.type != platform.type:
+                        Asset.objects.get(id=a.id).delete()
+                        print("Incompatible platform: old-[{}], new-[{}]; Delete pc host asset[{}], create it."
+                              .format(p.name, platform.name, asset_name))
+
+                        a = Asset.objects.create(name=asset_name,
+                                                 address=address,
+                                                 platform=platform,
+                                                 comment=comment,
+                                                 org_id=org.id)
+
+                        asset_model = get_web_asset_model(bk_obj_id, manufacturer, asset, a)
+                        asset_model.__dict__.update(a.__dict__)
+                        asset_model.save()
+                        print("Success to create pc host asset[{}].".format(asset_name))
+                else:
+                    a.address = address
+                    a.comment = comment
+                    a.save()
+
+                    asset_model = update_web_asset_model(bk_obj_id, manufacturer, asset, a)
+                    asset_model.__dict__.update(a.__dict__)
+                    asset_model.save()
+
+                    key = f"{str(org.id)}_{a.name}"
+                    asset_org_dict.update({key: a.id})
+                    create_asset_node(full_assetnode_name, a)
+                    relate_protocols(asset_protocol, a)
+                    print("Success to update pc host asset[{}].".format(asset_name))
+        except Exception as e:
+            print("Failed to save pc host asset[{}], error:{}".format(asset_name, e))
+            raise e
+
+
+def update_web_asset_model(bk_obj_id, manufacturer, asset, a):
     asset_model = Web.objects.get(asset_ptr_id=a.id)
 
     if bk_obj_id == 'mid_bes':
@@ -558,51 +687,103 @@ def update_web_asset_model(bk_obj_id, asset, a):
         asset_model.autofill = 'basic'
         asset_model.username_selector = 'name=username'
         asset_model.password_selector = 'name=password'
-        asset_model.submit_selector = 'xpath=//*[@id="login"]/form/table/tbody/tr[3]/td/input'
+        asset_model.submit_selector = ''
+        # asset_model.submit_selector = 'xpath=//*[@id="login"]/form/table/tbody/tr[3]/td/input'
     elif bk_obj_id == 'weblogic_inst':
         asset_model.autofill = 'basic'
         asset_model.username_selector = 'id=j_username'
         asset_model.password_selector = 'id=j_password'
-        asset_model.submit_selector = 'xpath=//*[@id="loginData"]/div[4]/span/input'
-    elif bk_obj_id in ['IBM', '百信', '宝德', '超聚变', '广电五舟', '宝德', '华鲲振宇', '神州鲲泰', '天宫']:
+        asset_model.submit_selector = ''
+        # asset_model.submit_selector = 'xpath=//*[@id="loginData"]/div[4]/span/input'
+    elif bk_obj_id == 'pc_server' and manufacturer in ['IBM', '百信', '宝德', '超聚变', '广电五舟', '宝德', '华鲲振宇', '神州鲲泰', '天宫']:
         asset_model.autofill = 'basic'
         asset_model.username_selector = 'id=account'
         asset_model.password_selector = 'id=loginPwd'
         asset_model.submit_selector = ''
-    elif bk_obj_id in ['安擎', '百信恒山', '鼎甲', '华为泰山', '清华同方', '神州云科', '四川虹信', '长江计算']:
+    elif bk_obj_id == 'pc_server' and manufacturer in ['安擎', '百信恒山', '鼎甲', '华为泰山', '清华同方', '神州云科', '四川虹信', '长江计算']:
         asset_model.autofill = 'basic'
         asset_model.username_selector = 'id=login_name'
         asset_model.password_selector = 'id=login_pwd'
         asset_model.submit_selector = ''
-    elif bk_obj_id in ['联想']:
+    elif bk_obj_id == 'pc_server' and manufacturer in ['联想']:
         asset_model.autofill = 'basic'
         asset_model.username_selector = 'id=login_username'
         asset_model.password_selector = 'id=login_password'
         asset_model.submit_selector = ''
-    elif bk_obj_id in ['华为']:
+    elif bk_obj_id == 'pc_server' and manufacturer in ['华为']:
         asset_model.autofill = 'basic'
         asset_model.username_selector = 'id=iptUserName'
         asset_model.password_selector = 'id=iptPassword'
         asset_model.submit_selector = ''
-    elif bk_obj_id in ['曙光', '长城', '中科可控', '中科曙光', '中兴', '神州云科', '四川虹信']:
+    elif bk_obj_id == 'pc_server' and manufacturer in ['曙光', '长城', '中科可控', '中科曙光', '中兴', '神州云科', '四川虹信']:
         asset_model.autofill = 'basic'
         asset_model.username_selector = 'id=userid'
         asset_model.password_selector = 'id=password'
         asset_model.submit_selector = ''
-    elif bk_obj_id in ['新华三']:
+    elif bk_obj_id == 'pc_server' and manufacturer in ['新华三']:
         asset_model.autofill = 'basic'
         asset_model.username_selector = 'id=username'
         asset_model.password_selector = 'id=password'
         asset_model.submit_selector = ''
-    elif bk_obj_id in ['惠普', '浪潮', '浪潮商用', '紫光']:
+    elif bk_obj_id == 'pc_server' and manufacturer in ['惠普', '浪潮', '浪潮商用', '紫光']:
         asset_model.autofill = 'basic'
         asset_model.username_selector = 'name=username'
         asset_model.password_selector = 'name=password'
         asset_model.submit_selector = ''
-    elif bk_obj_id in ['超微']:
+    elif bk_obj_id == 'pc_server' and manufacturer in ['超微']:
         asset_model.autofill = 'basic'
         asset_model.username_selector = 'name=name'
         asset_model.password_selector = 'name=pwd'
+        asset_model.submit_selector = ''
+    elif bk_obj_id == 'storage_oss' and manufacturer in ['EMC']:
+        asset_model.autofill = 'basic'
+        asset_model.username_selector = 'id=user'
+        asset_model.password_selector = 'id=password'
+        asset_model.submit_selector = ''
+    elif bk_obj_id == 'storage_oss' and manufacturer in ['XSKY']:
+        asset_model.autofill = 'basic'
+        asset_model.username_selector = 'name=name'
+        asset_model.password_selector = 'name=password'
+        asset_model.submit_selector = ''
+    elif bk_obj_id == 'storage_oss' and manufacturer in ['华为']:
+        asset_model.autofill = 'basic'
+        asset_model.username_selector = 'id=login_loginPanel_username_input'
+        asset_model.password_selector = 'id=login_loginPanel_password_input'
+        asset_model.submit_selector = ''
+    elif bk_obj_id == 'storage_oss' and manufacturer in ['浪潮']:
+        asset_model.autofill = 'basic'
+        asset_model.username_selector = 'id=user'
+        asset_model.password_selector = 'xpath=/html/body/div[1]/div/div/div[3]/div[2]/div[2]/form/input[2]'
+        asset_model.submit_selector = ''
+    elif bk_obj_id == 'fc_storage' and manufacturer in ['EMC', 'IBM', '浪潮']:
+        asset_model.autofill = 'basic'
+        asset_model.username_selector = 'id=user'
+        asset_model.password_selector = 'id=password'
+        asset_model.submit_selector = ''
+    elif bk_obj_id == 'fc_storage' and manufacturer in ['华为']:
+        asset_model.autofill = 'basic'
+        asset_model.username_selector = 'id=login_loginPanel_username_input'
+        asset_model.password_selector = 'id=login_loginPanel_password_input'
+        asset_model.submit_selector = ''
+    elif bk_obj_id == 'fc_storage' and manufacturer in ['H3C']:
+        asset_model.autofill = 'basic'
+        asset_model.username_selector = 'xpath=//*[@id="content"]/div/div[2]/div[2]/div/div/div/div[3]/div/form/div[1]/div[1]/div/div/input'
+        asset_model.password_selector = 'xpath=//*[@id="content"]/div/div[2]/div[2]/div/div/div/div[3]/div/form/div[1]/div[2]/div/div/input'
+        asset_model.submit_selector = ''
+    elif bk_obj_id == 'network_storage' and manufacturer in ['NetApp']:
+        asset_model.autofill = 'basic'
+        asset_model.username_selector = 'name=name'
+        asset_model.password_selector = 'name=password'
+        asset_model.submit_selector = ''
+    elif bk_obj_id == 'network_storage' and manufacturer in ['华为']:
+        asset_model.autofill = 'basic'
+        asset_model.username_selector = 'id=userName'
+        asset_model.password_selector = 'id=passWord'
+        asset_model.submit_selector = ''
+    elif bk_obj_id == 'network_storage' and manufacturer in ['浪潮']:
+        asset_model.autofill = 'basic'
+        asset_model.username_selector = 'id=user'
+        asset_model.password_selector = 'id=password'
         asset_model.submit_selector = ''
     else:
         asset_model.autofill = 'no'
@@ -610,7 +791,7 @@ def update_web_asset_model(bk_obj_id, asset, a):
     return asset_model
 
 
-def get_web_asset_model(bk_obj_id, asset, a):
+def get_web_asset_model(bk_obj_id, manufacturer, asset, a):
     if bk_obj_id == 'mid_bes':
         instance_type = asset.get('instance_type', '')
         if instance_type:
@@ -639,17 +820,19 @@ def get_web_asset_model(bk_obj_id, asset, a):
             autofill='basic',
             username_selector='name=username',
             password_selector='name=password',
-            submit_selector='xpath=//*[@id="login"]/form/table/tbody/tr[3]/td/input'
+            submit_selector=''
         )
+            # submit_selector='xpath=//*[@id="login"]/form/table/tbody/tr[3]/td/input'
     elif bk_obj_id == 'weblogic_inst':
         asset_model = Web(
             asset_ptr_id=a.id,
             autofill='basic',
             username_selector='id=j_username',
             password_selector='id=j_password',
-            submit_selector='xpath=//*[@id="loginData"]/div[4]/span/input'
+            submit_selector=''
         )
-    elif bk_obj_id in ['IBM', '百信', '宝德', '超聚变', '广电五舟', '宝德', '华鲲振宇', '神州鲲泰', '天宫']:
+            # submit_selector='xpath=//*[@id="loginData"]/div[4]/span/input'
+    elif bk_obj_id == 'pc_server' and manufacturer in ['IBM', '百信', '宝德', '超聚变', '广电五舟', '宝德', '华鲲振宇', '神州鲲泰', '天宫']:
         asset_model = Web(
             asset_ptr_id=a.id,
             autofill='basic',
@@ -657,7 +840,7 @@ def get_web_asset_model(bk_obj_id, asset, a):
             password_selector='id=loginPwd',
             submit_selector=''
         )
-    elif bk_obj_id in ['安擎', '百信恒山', '鼎甲', '华为泰山', '清华同方', '神州云科', '四川虹信', '长江计算']:
+    elif bk_obj_id == 'pc_server' and manufacturer in ['安擎', '百信恒山', '鼎甲', '华为泰山', '清华同方', '神州云科', '四川虹信', '长江计算']:
         asset_model = Web(
             asset_ptr_id=a.id,
             autofill='basic',
@@ -665,7 +848,7 @@ def get_web_asset_model(bk_obj_id, asset, a):
             password_selector='id=login_pwd',
             submit_selector=''
         )
-    elif bk_obj_id in ['联想']:
+    elif bk_obj_id == 'pc_server' and manufacturer in ['联想']:
         asset_model = Web(
             asset_ptr_id=a.id,
             autofill='basic',
@@ -673,7 +856,7 @@ def get_web_asset_model(bk_obj_id, asset, a):
             password_selector='id=login_password',
             submit_selector=''
         )
-    elif bk_obj_id in ['华为']:
+    elif bk_obj_id == 'pc_server' and manufacturer in ['华为']:
         asset_model = Web(
             asset_ptr_id=a.id,
             autofill='basic',
@@ -681,7 +864,7 @@ def get_web_asset_model(bk_obj_id, asset, a):
             password_selector='id=iptPassword',
             submit_selector=''
         )
-    elif bk_obj_id in ['曙光', '长城', '中科可控', '中科曙光', '中兴', '神州云科', '四川虹信']:
+    elif bk_obj_id == 'pc_server' and manufacturer in ['曙光', '长城', '中科可控', '中科曙光', '中兴', '神州云科', '四川虹信']:
         asset_model = Web(
             asset_ptr_id=a.id,
             autofill='basic',
@@ -689,7 +872,7 @@ def get_web_asset_model(bk_obj_id, asset, a):
             password_selector='id=password',
             submit_selector=''
         )
-    elif bk_obj_id in ['新华三']:
+    elif bk_obj_id == 'pc_server' and manufacturer in ['新华三']:
         asset_model = Web(
             asset_ptr_id=a.id,
             autofill='basic',
@@ -697,7 +880,7 @@ def get_web_asset_model(bk_obj_id, asset, a):
             password_selector='id=password',
             submit_selector=''
         )
-    elif bk_obj_id in ['惠普', '浪潮', '浪潮商用', '紫光']:
+    elif bk_obj_id == 'pc_server' and manufacturer in ['惠普', '浪潮', '浪潮商用', '紫光']:
         asset_model = Web(
             asset_ptr_id=a.id,
             autofill='basic',
@@ -705,12 +888,92 @@ def get_web_asset_model(bk_obj_id, asset, a):
             password_selector='name=password',
             submit_selector=''
         )
-    elif bk_obj_id in ['超微']:
+    elif bk_obj_id == 'pc_server' and manufacturer in ['超微']:
         asset_model = Web(
             asset_ptr_id=a.id,
             autofill='basic',
             username_selector='name=name',
             password_selector='name=pwd',
+            submit_selector=''
+        )
+    elif bk_obj_id == 'storage_oss' and manufacturer in ['EMC']:
+        asset_model = Web(
+            asset_ptr_id=a.id,
+            autofill='basic',
+            username_selector='id=user',
+            password_selector='id=password',
+            submit_selector=''
+        )
+    elif bk_obj_id == 'storage_oss' and manufacturer in ['XSKY']:
+        asset_model = Web(
+            asset_ptr_id=a.id,
+            autofill='basic',
+            username_selector='name=name',
+            password_selector='name=password',
+            submit_selector=''
+        )
+    elif bk_obj_id == 'storage_oss' and manufacturer in ['华为']:
+        asset_model = Web(
+            asset_ptr_id=a.id,
+            autofill='basic',
+            username_selector='id=login_loginPanel_username_input',
+            password_selector='id=login_loginPanel_password_input',
+            submit_selector=''
+        )
+    elif bk_obj_id == 'storage_oss' and manufacturer in ['浪潮']:
+        asset_model = Web(
+            asset_ptr_id=a.id,
+            autofill='basic',
+            username_selector='id=user',
+            password_selector='xpath=/html/body/div[1]/div/div/div[3]/div[2]/div[2]/form/input[2]',
+            submit_selector=''
+        )
+    elif bk_obj_id == 'fc_storage' and manufacturer in ['EMC', 'IBM', '浪潮']:
+        asset_model = Web(
+            asset_ptr_id=a.id,
+            autofill='basic',
+            username_selector='id=user',
+            password_selector='id=password',
+            submit_selector=''
+        )
+    elif bk_obj_id == 'fc_storage' and manufacturer in ['华为']:
+        asset_model = Web(
+            asset_ptr_id=a.id,
+            autofill='basic',
+            username_selector='id=login_loginPanel_username_input',
+            password_selector='id=login_loginPanel_password_input',
+            submit_selector=''
+        )
+    elif bk_obj_id == 'fc_storage' and manufacturer in ['H3C']:
+        asset_model = Web(
+            asset_ptr_id=a.id,
+            autofill='basic',
+            username_selector='xpath=//*[@id="content"]/div/div[2]/div[2]/div/div/div/div[3]/div/form/div[1]/div[1]/div/div/input',
+            password_selector='xpath=//*[@id="content"]/div/div[2]/div[2]/div/div/div/div[3]/div/form/div[1]/div[2]/div/div/input',
+            submit_selector=''
+        )
+    elif bk_obj_id == 'network_storage' and manufacturer in ['NetApp']:
+        asset_model = Web(
+            asset_ptr_id=a.id,
+            autofill='basic',
+            username_selector='name=name',
+            password_selector='name=password',
+            submit_selector=''
+        )
+    elif bk_obj_id == 'network_storage' and manufacturer in ['华为']:
+        asset_model = Web(
+            asset_ptr_id=a.id,
+            autofill='basic',
+            username_selector='id=userName',
+            password_selector='id=passWord',
+            submit_selector=''
+        )
+    elif bk_obj_id == 'network_storage' and manufacturer in ['浪潮']:
+        asset_model = Web(
+            asset_ptr_id=a.id,
+            autofill='basic',
+            username_selector='id=user',
+            password_selector='id=password',
             submit_selector=''
         )
     else:
@@ -775,7 +1038,7 @@ def save_pc_host_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
                                          comment=comment,
                                          org_id=org.id)
 
-                asset_model = get_web_asset_model(manufacturer, asset, a)
+                asset_model = get_web_asset_model(bk_obj_id, manufacturer, asset, a)
                 asset_model.__dict__.update(a.__dict__)
                 asset_model.save()
 
@@ -802,7 +1065,7 @@ def save_pc_host_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
                                                  comment=comment,
                                                  org_id=org.id)
 
-                        asset_model = get_web_asset_model(manufacturer, asset, a)
+                        asset_model = get_web_asset_model(bk_obj_id, manufacturer, asset, a)
                         asset_model.__dict__.update(a.__dict__)
                         asset_model.save()
                         print("Success to create pc host asset[{}].".format(asset_name))
@@ -811,7 +1074,7 @@ def save_pc_host_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
                     a.comment = comment
                     a.save()
 
-                    asset_model = update_web_asset_model(manufacturer, asset, a)
+                    asset_model = update_web_asset_model(bk_obj_id, manufacturer, asset, a)
                     asset_model.__dict__.update(a.__dict__)
                     asset_model.save()
 
@@ -1137,7 +1400,7 @@ def search_other_asset(bk_obj_id, region):
     return result
 
 
-def search_network_device_asset(bk_obj_id):
+def search_other_asset_no_region(bk_obj_id):
     bk_token = Login(username=settings.CMDB_USERNAME, password=settings.CMDB_PASSWORD).login()
     print(f'bk_token: {bk_token}')
     if not bk_token:
@@ -1202,73 +1465,6 @@ def search_network_device_asset(bk_obj_id):
         current_page += 1
 
     # print("bk_obj_id: {}, search_RES: {}".format(bk_obj_id, json.dumps(result)))
-    return result
-
-
-def search_pc_host_asset(bk_obj_id):
-    bk_token = Login(username=settings.CMDB_USERNAME, password=settings.CMDB_PASSWORD).login()
-    print(f'bk_token: {bk_token}')
-    if not bk_token:
-        print("获取bk_token失败.")
-        return
-
-    limit = 500
-    CMDB_HEADERS = {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-    }
-    url = "{CMDB_SERVER}/api/c/compapi/v2/cc/search_inst/".format(CMDB_SERVER=settings.CMDB_BK_PAAS_HOST)
-
-    data = {
-        "bk_app_code": settings.CMDB_BK_APP_CODE,
-        "bk_app_secret": settings.CMDB_BK_APP_SECRET,
-        "bk_token": bk_token,
-        "bk_obj_id": bk_obj_id,
-        "page": {
-            "start": 0,
-            "limit": limit
-        }
-    }
-
-    print("url: {}".format(url))
-    print("data: {}".format(json.dumps(data)))
-
-    result = {
-        "result": True,
-        "code": 0,
-        "error": "",
-        "message": "",
-        "request_id": "",
-        "data": {
-            "total": 0,
-            "list": []
-        }
-    }
-
-    total_pages = -1
-    current_page = 1
-
-    while total_pages == -1 or current_page <= total_pages:
-        data["page"]["start"] = (current_page - 1) * limit
-        r = requests.post(url, headers=CMDB_HEADERS, json=data, timeout=10)
-        response = r.json()
-        code = response["code"]
-
-        if code != 0:
-            message = response["message"]
-            print("Search other asset failed. current_page: {}, Error: {}".format(current_page, message))
-            result["code"] = code
-            result["error"] = message
-            result["request_id"] = response["request_id"]
-            return result
-
-        res = response["data"]
-        total_pages = res["count"] // limit + (1 if res["count"] % limit != 0 else 0)
-
-        result["data"]["total"] = res["count"]
-        result["data"]["list"].extend(res["info"])
-        current_page += 1
-
     return result
 
 
