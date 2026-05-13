@@ -1004,9 +1004,13 @@ def save_pc_host_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
         haddr_ip_address = asset.get('haddr_ip_address', '')
         # app_department = asset.get('app_department', '')   # 应用部门
         manufacturer = asset.get('manufacturer', '')   # 厂商
+        status = asset.get('status', '') # 配置状态
         # 未维护信息过滤掉
         if not asset_name or not manufacturer or not haddr_ip_address:
             print("There exist null parameter situations, skip.")
+            continue
+        # 运行、运行(不买保)
+        if not str(status).__contains__('运行'):
             continue
 
         full_assetnode_name = "/" + org.name
