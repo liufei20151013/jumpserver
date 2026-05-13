@@ -1605,7 +1605,7 @@ def search_user_org_name(id, user_org_dict, default_user_org_name):
 
     if code != 0:
         message = response["message"]
-        print("Search user org name failed. , Error: {}".format(message))
+        print("Search user org name failed.Error: {}".format(message))
         result["code"] = code
         result["error"] = message
         result["request_id"] = response["request_id"]
@@ -1626,10 +1626,11 @@ def compare_time(time_str: str) -> bool:
         dt = datetime.fromisoformat(time_str)
         timestamp_a = dt.timestamp()
 
-        # 2. 以该时间为基准，计算cron上一次执行时间 → 时间戳B
+        # 2. 以该时间为基准，计算cron上上一次执行时间 → 时间戳B
         cron_expr = settings.CMDB_INCREMENTAL_DATA_SYNC_CRONTAB
         now = datetime.now()
         cron = croniter.croniter(cron_expr, now)
+        cron.get_prev(datetime)
         last_exec_dt = cron.get_prev(datetime)
         timestamp_b = last_exec_dt.timestamp()
 

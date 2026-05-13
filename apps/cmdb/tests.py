@@ -74,16 +74,16 @@ class TestTaskCase(TestCase):
         asset_org_dict = {}
         host_data = [
             {
-                'sys_number': 'TK-001',
-                'sys_name': '运维系统',
-                'bk_host_name': '主机01',
-                'bk_host_innerip': '10.1.10.11',
+                'sys_number': '',
+                'sys_name': '',
+                'bk_host_name': 'tpsql001',
+                'bk_host_innerip': '10.28.211.211',
                 'bk_os_type': '1',
                 'app_department': '应用部门',
                 'bk_os_name': '7',
                 'UseOffice': '系统管理室',
                 "create_time": "2026-04-16T10:28:41.178+08:00",
-                "last_time": "2026-04-16T10:30:41.178+08:00"
+                "last_time": "2026-05-13T17:46:41.178+08:00"
             },{
                 'sys_number': 'TK-001',
                 'sys_name': '运维系统',
@@ -110,8 +110,8 @@ class TestTaskCase(TestCase):
                 'bk_os_name': '6.7'
             }
         ]
-
-        save_host_asset(host_data, asset_org_dict, False)
+        user_org_dict = {}
+        save_host_asset(host_data, asset_org_dict, user_org_dict, False)
 
         # bk_obj_id = 'db_redis'
         # db_data = [
