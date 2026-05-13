@@ -67,8 +67,7 @@ def process_data(isFullSync):
             return
 
         pc_host_data = result['data']['list']
-        print(
-            "查询 bk_obj_id: {}, bk_obj_name: {}，total: {} 条".format(bk_obj_id, bk_obj_name, len(pc_host_data)))
+        print("查询 bk_obj_id: {}, bk_obj_name: {}，total: {} 条".format(bk_obj_id, bk_obj_name, len(pc_host_data)))
 
         save_pc_host_asset(pc_host_data, asset_org_dict, isFullSync, bk_obj_id)
     print("查询所有PC机 End.")
@@ -120,18 +119,21 @@ def process_data(isFullSync):
         "fc_storage": "SAN存储",
         "network_storage": "NAS存储"
     }
+    # 3 开发测试  1 待更新
+    storage_regions = ["2", "4", "5", "6"]
     for bk_obj_id, bk_obj_name in objects.items():
-        print("查询 bk_obj_id: {}, bk_obj_name: {}".format(bk_obj_id, bk_obj_name))
-        result = search_other_asset_no_region(bk_obj_id)
-        if result['code'] != 0:
-            print("查询 CMDB 存储设备数据失败，code: {}, requestId: {}".format(result['code'], result['request_id']))
-            return
+        for storage_region in storage_regions:
+            print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}".format(bk_obj_id, bk_obj_name, storage_region))
+            result = search_other_asset(bk_obj_id, storage_region)
+            if result['code'] != 0:
+                print("查询 CMDB 存储设备数据失败，code: {}, requestId: {}".format(result['code'], result['request_id']))
+                return
 
-        storage_device_data = result['data']['list']
-        print(
-            "查询 bk_obj_id: {}, bk_obj_name: {}，total: {} 条".format(bk_obj_id, bk_obj_name, len(storage_device_data)))
+            storage_device_data = result['data']['list']
+            print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}, total: {} 条"
+                  .format(bk_obj_id, bk_obj_name, storage_region, len(storage_device_data)))
 
-        save_storage_device_asset(storage_device_data, asset_org_dict, isFullSync)
+            save_storage_device_asset(storage_device_data, asset_org_dict, isFullSync)
     print("查询所有存储设备 End.")
 
     print("查询所有数据库资产 Start.")
