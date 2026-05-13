@@ -572,12 +572,15 @@ def save_storage_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
         sys_name = asset.get('sys_name', '')
         storage_cls = asset.get('storage_cls', '')
         manufacturer = asset.get('manufacturer', '')   # 厂商
+        status = asset.get('status', '') # 配置项状态
         # 未维护信息过滤掉
-        if not asset_name or not manufacturer or not storage_cls:
+        if not asset_name or not manufacturer or not storage_cls or not status:
             print("There exist null parameter situations, skip.")
             continue
         if not str(storage_cls).__contains__('http'):
             print("The storage cls does not include http(s), skip.")
+            continue
+        if not status == '运行':
             continue
 
         full_assetnode_name = "/" + org.name
@@ -835,7 +838,7 @@ def get_web_asset_model(bk_obj_id, manufacturer, asset, a):
             submit_selector=''
         )
             # submit_selector='xpath=//*[@id="loginData"]/div[4]/span/input'
-    elif bk_obj_id == 'pc_server' and manufacturer in ['IBM', '百信', '宝德', '超聚变', '广电五舟', '宝德', '华鲲振宇', '神州鲲泰', '天宫']:
+    elif bk_obj_id == 'pc_server' and manufacturer in ['IBM', '百信', '宝德', '超聚变', '广电五舟', '华鲲振宇', '神州鲲泰', '天宫']:
         asset_model = Web(
             asset_ptr_id=a.id,
             autofill='basic',
@@ -851,7 +854,7 @@ def get_web_asset_model(bk_obj_id, manufacturer, asset, a):
             password_selector='id=login_pwd',
             submit_selector=''
         )
-    elif bk_obj_id == 'pc_server' and manufacturer in ['联想']:
+    elif bk_obj_id == 'pc_server' and manufacturer in ['联想', '英伟达']:
         asset_model = Web(
             asset_ptr_id=a.id,
             autofill='basic',
