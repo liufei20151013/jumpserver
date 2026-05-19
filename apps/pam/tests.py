@@ -16,7 +16,9 @@ from datetime import datetime
 from assets.models import Asset
 from jumpserver import settings
 from pam.main import get_timestamp
-from pam.sync import relate_asset_to_account
+from pam.main import relate_asset_to_account
+from orgs.models import Organization
+from orgs.utils import set_current_org
 
 class TestTaskCase(TestCase):
     def test(self):
@@ -113,10 +115,20 @@ class TestTaskCase(TestCase):
         # relate_asset_to_account(assets, accounts, isFullSync)
 
     def test2(self):
-        js_asset = Asset.objects.get(id='c499f81d-9cbb-4b91-9a23-fa2773b9d34d')
-        pam_accounts = [
-            {'id': '1', 'assetAccount': 'root', 'accountType': '0'},
-            {'id': '2', 'assetAccount': 'appuser', 'accountType': '0'}
-        ]
-        asset_category = 'host'
-        relate_asset_to_account(js_asset, pam_accounts, asset_category)
+        # js_asset = Asset.objects.get(id='c499f81d-9cbb-4b91-9a23-fa2773b9d34d')
+        # pam_accounts = [
+        #     {'id': '1', 'assetAccount': 'root', 'accountType': '0'},
+        #     {'id': '2', 'assetAccount': 'appuser', 'accountType': '0'}
+        # ]
+        # asset_category = 'host'
+        # relate_asset_to_account(js_asset, pam_accounts, asset_category)
+        orgs = Organization.objects.exclude(id=Organization.SYSTEM_ID)
+
+        for org in orgs:
+            print(f"\n===== 开始处理组织：{org.name} =====")
+            set_current_org(org)
+            assets = Asset.objects.all().values(
+                'id', 'address', 'category', 'comment'
+            )
+            for asset in assets:
+                print(asset)

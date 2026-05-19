@@ -14,7 +14,7 @@ class OpenApiSignUtil:
     def fill_sign(param: Dict[str, Any], private_key_str: str) -> None:
         """生成签名并填充到param的apiSign字段"""
         sign = OpenApiSignUtil.generate_sign(param, private_key_str)
-        print("apiSign: {}".format(sign))
+        # print("apiSign: {}".format(sign))
         param["apiSign"] = sign
 
     @staticmethod

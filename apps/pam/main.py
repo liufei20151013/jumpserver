@@ -21,42 +21,39 @@ logger = get_logger(__name__)
 
 
 def process_data(isFullSync):
-    enabled = settings.PAM_ENABLED
-    if not enabled:
-        print('当前 PAM 同步功能未开启, 不需要处理')
+    if not settings.PAM_ENABLED:
+        print('PAM 同步功能未开启')
         return
 
-    print("获取 PAM 上的资产数据 Start.")
-    category_arr = ["host", "db", "web"]
+    print("===== 开始获取 PAM 资产数据 =====")
     assets = []
-    for category in category_arr:
-        result = search_asset(category)
-        if result['code'] != 0:
-            print("查询 PAM 上的[{}]资产数据失败，code: {}, error: {}".format(category, result['code'], result['error']))
+    for category in ["host", "db", "web"]:
+        res = search_asset(category)
+        if res['code'] != 0:
+            print(f"获取[{category}]资产失败: {res['error']}")
             return
-        assets.extend(result['data']['list'])
-    print("获取 PAM 上的[{}]资产数据 End，total: {} 条.".format(category, len(assets)))
+        assets.extend(res['data']['list'])
+        print(f"[{category}] 资产获取完成，累计：{len(assets)}")
 
-    print("获取 PAM 上的数据 Start.")
-    result = search_account()
-    if result['code'] != 0:
-        print("查询 PAM 上的账号数据失败，code: {}, error: {}".format(result['code'], result['error']))
+    print("===== 开始获取 PAM 账号数据 =====")
+    res = search_account()
+    if res['code'] != 0:
+        print(f"获取账号失败: {res['error']}")
         return
-    accounts = result['data']['list']
-    print("获取 PAM 上的账号数据 End，total: {} 条.".format(len(accounts)))
+    accounts = res['data']['list']
+    print(f"账号获取完成，总数：{len(accounts)}")
 
-    print("关联 PAM 上的账号数据 Start.")
+    print("===== 开始关联同步 =====")
     relate_asset_to_account(assets, accounts, isFullSync)
-    print("关联 PAM 上的账号数据 End.")
+    print("===== PAM 同步全部完成 =====")
 
 
 def get_timestamp(hour):
     today = datetime.combine(date.today(), datetime.min.time().replace(hour=hour))
-    timestamp_ms = int(today.timestamp() * 1000)
-    return timestamp_ms
+    return int(today.timestamp() * 1000)
 
 
-def relate_asset_to_account(assets, accounts, isFullSync):
+def relate_asset_to_account(pam_assets, pam_accounts, isFullSync):
     pam_asset_dict = {}
     pam_asset_account_dict = {}
 
@@ -77,7 +74,7 @@ def relate_asset_to_account(assets, accounts, isFullSync):
     #     isFullSync = True
 
     if isFullSync:
-        for asset in assets:
+        for asset in pam_assets:
             asset_id = asset.get('id', '')
             asset_address = asset.get('ipv4', '')
             asset_category = asset.get('category', '')
@@ -86,7 +83,7 @@ def relate_asset_to_account(assets, accounts, isFullSync):
             key = f"{str(asset_address)}_{asset_category}"
             pam_asset_dict.update({key: asset_id})
 
-        for account in accounts:
+        for account in pam_accounts:
             verify_status = account.get('verifyStatus', '')
             asset_id = account.get('assetId', '')
             # 校验状态 0: 未校验(未知) 1:进行中 2:校验无效 3:校验未通过 4:校验通过
@@ -102,7 +99,7 @@ def relate_asset_to_account(assets, accounts, isFullSync):
         else:
             # 只同步一个小时前新增的账号或者新校验的账号
             timestamp = int(time.time() * 1000) - 3600000
-        for account in accounts:
+        for account in pam_accounts:
             verify_status = account.get('verifyStatus', '')
             asset_id = account.get('assetId', '')
             if not verify_status or not asset_id:
@@ -116,7 +113,7 @@ def relate_asset_to_account(assets, accounts, isFullSync):
         if len(pam_asset_account_dict) == 0:
             return
 
-        for asset in assets:
+        for asset in pam_assets:
             asset_id = asset.get('id', '')
             asset_address = asset.get('ipv4', '')
             asset_category = asset.get('category', '')
@@ -130,8 +127,6 @@ def relate_asset_to_account(assets, accounts, isFullSync):
             pam_asset_dict.update({key: asset_id})
 
     pam_account_secret_dict = {}
-    privileged_accounts = ['root', 'loginuser', 'cyuser']
-
     url = '{PAM_SERVER}/openapi/v1/account/info/getPwd'.format(PAM_SERVER=settings.PAM_SERVER)
     orgs = Organization.objects.exclude(id=Organization.SYSTEM_ID)
     for org in orgs:
@@ -148,13 +143,13 @@ def relate_asset_to_account(assets, accounts, isFullSync):
             else:
                 continue
 
-            key = f"{str(asset.address)}_{asset_category}"
-            if asset.comment.__contains__('pc_server'):
-                address = 'https://' + asset.comment.split('-')[1].strip()
-                key = f"{str(address)}_{asset_category}"
-            elif asset.comment.__contains__('storage_oss') or asset.comment.__contains__('fc_storage') or asset.comment.__contains__('network_storage'):
-                address = asset.comment.split('-')[1].strip()
-                key = f"{str(address)}_{asset_category}"
+            address = asset.address
+            comment = asset.comment
+            if 'pc_server' in comment:
+                address = 'https://' + comment.split('-')[1].strip()
+            elif any(k in comment for k in ['storage_oss', 'fc_storage', 'network_storage']):
+                address = comment.split('-')[1].strip()
+            key = f"{address}_{asset_category}"
 
             asset_id = pam_asset_dict.get(key, '')
             if not asset_id:
@@ -175,7 +170,7 @@ def relate_asset_to_account(assets, accounts, isFullSync):
                 if not username:
                     continue
                 if asset_category == 'host':
-                    if not org.name.__contains__(asset.comment) and username in privileged_accounts:
+                    if not org.name.__contains__(asset.comment) and username in ['root', 'loginuser', 'cyuser']:
                         continue
 
                 # 需要添加的账号
@@ -198,10 +193,7 @@ def relate_asset_to_account(assets, accounts, isFullSync):
                     account_list = Account.objects.filter(asset=asset, username=username)
                     if not account_list.exists():
                         if asset.category == 'host' and username == 'root':
-                            if asset.platform.name == 'AIX':
-                                su_from_username = 'cyuser'
-                            else:
-                                su_from_username = 'loginuser'
+                            su_from_username = 'cyuser' if asset.platform.name == 'AIX' else 'loginuser'
                             accounts = Account.objects.filter(asset=asset, username=su_from_username)
                             if not accounts.exists():
                                 su_from_name = asset.address + '_' + su_from_username
@@ -234,10 +226,7 @@ def relate_asset_to_account(assets, accounts, isFullSync):
                         print("Success to create account[{}] for asset[{}], asset_category:{}.".format(username, asset.address, asset_category))
                     else:
                         if asset.category == 'host' and username == 'root':
-                            if asset.platform.name == 'AIX':
-                                su_from_username = 'cyuser'
-                            else:
-                                su_from_username = 'loginuser'
+                            su_from_username = 'cyuser' if asset.platform.name == 'AIX' else 'loginuser'
                             accounts = Account.objects.filter(asset=asset, username=su_from_username)
                             if accounts.exists():
                                 account_list.update(asset=asset,
