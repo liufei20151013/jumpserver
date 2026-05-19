@@ -18,7 +18,7 @@ logger = get_logger(__name__)
 def process_data(js_asset):
     enabled = settings.PAM_ENABLED
     if not enabled:
-        print('当前 PAM 同步功能未开启, 不需要处理')
+        logger.info('当前 PAM 同步功能未开启, 不需要处理')
         return
 
     if js_asset.category == 'host':
@@ -30,17 +30,17 @@ def process_data(js_asset):
     else:
         return
 
-    print("获取 PAM 上的资产数据 Start.")
+    logger.info("获取 PAM 上的资产数据 Start.")
     js_asset_address = js_asset.address
     if asset_category == 'web' and js_asset.comment.__contains__('pc_server'):
         js_asset_address = 'https://' + js_asset.comment.split('-')[1].strip()
 
     result = search_asset(asset_category, js_asset_address)
     if result['code'] != 0:
-        print("查询 PAM 上的资产数据失败，code: {}, error: {}".format(asset_category, result['code'], result['error']))
+        logger.error("查询 PAM 上的资产数据失败，code: {}, error: {}".format(asset_category, result['code'], result['error']))
         return
     pam_assets = result['data']['list']
-    print("获取 PAM 上的[{}]资产数据 End，total: {} 条.".format(asset_category, len(pam_assets)))
+    logger.info("获取 PAM 上的[{}]资产数据 End，total: {} 条.".format(asset_category, len(pam_assets)))
 
     pam_asset_id = ''
     for pam_asset in pam_assets:
@@ -50,23 +50,23 @@ def process_data(js_asset):
             break
 
     if not pam_asset_id:
-        print("PAM 上不存在资产[{}]的数据.".format(js_asset.name))
+        logger.error("PAM 上不存在资产[{}]的数据.".format(js_asset.name))
         return
 
-    print("获取 PAM 上资产[{}]的数据 Start.".format(js_asset.name))
+    logger.info("获取 PAM 上资产[{}]的数据 Start.".format(js_asset.name))
     result = search_account(pam_asset_id)
     if result['code'] != 0:
-        print("查询 PAM 上资产[{}]的账号数据失败，code: {}, error: {}".format(js_asset.name, result['code'], result['error']))
+        logger.error("查询 PAM 上资产[{}]的账号数据失败，code: {}, error: {}".format(js_asset.name, result['code'], result['error']))
         return
     accounts = result['data']['list']
-    print("获取 PAM 上资产[{}]的账号数据 End，total: {} 条.".format(js_asset.name, len(accounts)))
+    logger.info("获取 PAM 上资产[{}]的账号数据 End，total: {} 条.".format(js_asset.name, len(accounts)))
     if not accounts:
         return
-    print("pam accounts: {}.".format(json.dumps(accounts)))
+    logger.info("pam accounts: {}.".format(json.dumps(accounts)))
 
-    print("关联 PAM 上资产[{}]的账号数据 Start.".format(js_asset.name))
+    logger.info("关联 PAM 上资产[{}]的账号数据 Start.".format(js_asset.name))
     relate_asset_to_account(js_asset, accounts, asset_category)
-    print("关联 PAM 上资产[{}]的账号数据 End.".format(js_asset.name))
+    logger.info("关联 PAM 上资产[{}]的账号数据 End.".format(js_asset.name))
 
 
 def relate_asset_to_account(js_asset, pam_accounts, asset_category):
@@ -95,7 +95,7 @@ def relate_asset_to_account(js_asset, pam_accounts, asset_category):
                     if not secret:
                         result = search_by_id(url, pam_account['id'])
                         if result['code'] != '1000':
-                            print("获取 PAM 上的账号密码失败, account_id:{}, asset_category:{}, code: {}, error: {}."
+                            logger.error("获取 PAM 上的账号密码失败, account_id:{}, asset_category:{}, code: {}, error: {}."
                                   .format(pam_account['id'], asset_category, result['code'], result.get('msg', '')))
                             continue
                         secret = result.get('rows', '')
@@ -127,7 +127,7 @@ def relate_asset_to_account(js_asset, pam_accounts, asset_category):
                                                        secret_type=SecretType.PASSWORD,
                                                        _secret=secret,
                                                        org_id=org.id)
-                                print("Success to create account[{}] for asset[{}], asset_category:{}.".format(su_from_username, asset.address, asset_category))
+                                logger.info("Success to create account[{}] for asset[{}], asset_category:{}.".format(su_from_username, asset.address, asset_category))
                             else:
                                 acc = accounts.first()
                             Account.objects.create(asset=asset,
@@ -146,7 +146,7 @@ def relate_asset_to_account(js_asset, pam_accounts, asset_category):
                                                    secret_type=SecretType.PASSWORD,
                                                    _secret=secret,
                                                    org_id=org.id)
-                        print("Success to create account[{}] for asset[{}], asset_category:{}.".format(username, asset.address, asset_category))
+                        logger.info("Success to create account[{}] for asset[{}], asset_category:{}.".format(username, asset.address, asset_category))
                     else:
                         if asset.category == 'host' and username == 'root':
                             if asset.platform.name == 'AIX':
@@ -171,9 +171,9 @@ def relate_asset_to_account(js_asset, pam_accounts, asset_category):
                                                 secret_type=SecretType.PASSWORD,
                                                 _secret=secret,
                                                 org_id=org.id)
-                        print("Success to update account[{}] for asset[{}], asset_category:{}.".format(username, asset.address, asset_category))
+                        logger.info("Success to update account[{}] for asset[{}], asset_category:{}.".format(username, asset.address, asset_category))
                 except Exception as e:
-                    print("Failed to save account[{}] for asset[{}], asset_category:{}, error:{}".format(username, asset.address, asset_category, e))
+                    logger.error("Failed to save account[{}] for asset[{}], asset_category:{}, error:{}".format(username, asset.address, asset_category, e))
 
 
 def search_asset(category, keyword):
@@ -197,14 +197,14 @@ def search_asset(category, keyword):
     }
 
     url = '{PAM_SERVER}/openapi/v1/asset/info/list'.format(PAM_SERVER=settings.PAM_SERVER)
-    print("url: {}".format(url))
+    logger.info("url: {}".format(url))
 
     total_pages = -1
     current_page = 1
 
     while total_pages == -1 or current_page <= total_pages:
         base_param["pageNum"] = current_page
-        print("base_param: {}".format(json.dumps(base_param)))
+        logger.info("base_param: {}".format(json.dumps(base_param)))
 
         response = PamHttpUtil.post_with_param(
             url=url,
@@ -216,7 +216,7 @@ def search_asset(category, keyword):
 
         if code != '1000':
             message = response["msg"]
-            print("Search asset failed. current_page: {}, Error: {}".format(current_page, message))
+            logger.info("Search asset failed. current_page: {}, Error: {}".format(current_page, message))
             result["code"] = code
             result["error"] = message
             return result
@@ -228,7 +228,7 @@ def search_asset(category, keyword):
         result["data"]["list"].extend(res["list"])
         current_page += 1
 
-    # print("search asset result: {}".format(json.dumps(result)))
+    # logger.info("search asset result: {}".format(json.dumps(result)))
     return result
 
 def search_account(pam_asset_id):
@@ -251,14 +251,14 @@ def search_account(pam_asset_id):
     }
 
     url = '{PAM_SERVER}/openapi/v1/account/info/list'.format(PAM_SERVER=settings.PAM_SERVER)
-    print("url: {}".format(url))
+    logger.info("url: {}".format(url))
 
     total_pages = -1
     current_page = 1
 
     while total_pages == -1 or current_page <= total_pages:
         base_param["pageNum"] = current_page
-        print("base_param: {}".format(json.dumps(base_param)))
+        logger.info("base_param: {}".format(json.dumps(base_param)))
 
         response = PamHttpUtil.post_with_param(
             url=url,
@@ -270,7 +270,7 @@ def search_account(pam_asset_id):
 
         if code != '1000':
             message = response["msg"]
-            print("Search account failed. current_page: {}, Error: {}".format(current_page, message))
+            logger.error("Search account failed. current_page: {}, Error: {}".format(current_page, message))
             result["code"] = code
             result["error"] = message
             return result
@@ -282,15 +282,15 @@ def search_account(pam_asset_id):
         result["data"]["list"].extend(res["list"])
         current_page += 1
 
-    # print("search account result: {}".format(json.dumps(result)))
+    # logger.info("search account result: {}".format(json.dumps(result)))
     return result
 
 def search_by_id(url, id):
     base_param = {
         "id": id
     }
-    print("url: {}".format(url))
-    print("base_param: {}".format(json.dumps(base_param)))
+    logger.info("url: {}".format(url))
+    logger.info("base_param: {}".format(json.dumps(base_param)))
 
     result = PamHttpUtil.post_with_param(
         url=url,
@@ -298,5 +298,5 @@ def search_by_id(url, id):
         result_class=dict,
         api_key=settings.PAM_API_KEY
     )
-    # print("search result: {}".format(json.dumps(result)))
+    # logger.info("search result: {}".format(json.dumps(result)))
     return result
