@@ -96,22 +96,23 @@ def process_data(isFullSync):
             save_middleware_asset(middleware_data, asset_org_dict, isFullSync, bk_obj_id)
     print("查询所有中间件 End.")
 
-    print("查询网络设备 Start.")
+    print("查询网络安全设备 Start.")
     objects = {
-        "network_device": "网络设备"
+        "network_device": "网络设备",
+        "security_device": "网络设备"
     }
     for bk_obj_id, bk_obj_name in objects.items():
         print("查询 bk_obj_id: {}, bk_obj_name: {}".format(bk_obj_id, bk_obj_name))
         result = search_other_asset_no_region(bk_obj_id)
         if result['code'] != 0:
-            print("查询 CMDB 网络设备数据失败，code: {}, requestId: {}".format(result['code'], result['request_id']))
+            print("查询 CMDB {}数据失败，code: {}, requestId: {}".format(bk_obj_name, result['code'], result['request_id']))
             return
 
         network_device_data = result['data']['list']
         print("查询 bk_obj_id: {}, bk_obj_name: {}，total: {} 条".format(bk_obj_id, bk_obj_name, len(network_device_data)))
 
-        save_network_device_asset(network_device_data, asset_org_dict, isFullSync)
-    print("查询所有网络设备 End.")
+        save_network_device_asset(network_device_data, asset_org_dict, isFullSync, bk_obj_id)
+    print("查询所有网络安全设备 End.")
 
     print("查询存储设备 Start.")
     objects = {
@@ -363,7 +364,7 @@ def str_to_int(str_num):
 
 # 专业公司的网络设备资产不在CMDB管理，所有网络设备资产归属 系统运行与信息安全管理部-网络管理室 管理
 # 所有的网络设备都同步到太平金科的系统运行与信息安全管理部-网络管理室组织下
-def save_network_device_asset(assets, asset_org_dict, isFullSync):
+def save_network_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
     network_dept = '系统运行与信息安全管理部-网络管理室'
     orgs = Organization.objects.filter(name=network_dept)
     if not orgs.exists():
@@ -380,8 +381,8 @@ def save_network_device_asset(assets, asset_org_dict, isFullSync):
                 continue
 
         asset_name = asset.get('bk_inst_name', '')
-        address = asset.get('ip_address', '')
-        manufacturer = asset.get('manufacturer', '')
+        address = asset.get('ip_address', '') if bk_obj_id == 'network_device' else asset.get('manage_ip', '')
+        manufacturer = asset.get('manufacturer', 'brand')
         # 未维护信息过滤掉
         if not asset_name or not address or not manufacturer:
             print("There exist null parameter situations, skip.")
@@ -390,9 +391,9 @@ def save_network_device_asset(assets, asset_org_dict, isFullSync):
         try:
             print("Save or update network device asset[{}].".format(asset_name))
             asset_protocol = ["ssh/22", "telnet/23"]
-            if manufacturer == 'h3c':
+            if manufacturer in ['h3c', '华三']:
                 platform = Platform.objects.filter(name='H3C').first()
-            elif manufacturer == 'huawei':
+            elif manufacturer in ['huawei', '华为']:
                 platform = Platform.objects.filter(name='Huawei').first()
             elif manufacturer == 'cisco':
                 platform = Platform.objects.filter(name='Cisco').first()
@@ -1335,7 +1336,6 @@ def create_asset_node(assetnode_name, asset):
 
 def search_other_asset(bk_obj_id, region):
     bk_token = Login(username=settings.CMDB_USERNAME, password=settings.CMDB_PASSWORD).login()
-    print(f'bk_token: {bk_token}')
     if not bk_token:
         print("获取bk_token失败.")
         return
@@ -1412,7 +1412,6 @@ def search_other_asset(bk_obj_id, region):
 
 def search_other_asset_no_region(bk_obj_id):
     bk_token = Login(username=settings.CMDB_USERNAME, password=settings.CMDB_PASSWORD).login()
-    print(f'bk_token: {bk_token}')
     if not bk_token:
         print("获取bk_token失败.")
         return
@@ -1480,7 +1479,6 @@ def search_other_asset_no_region(bk_obj_id):
 
 def search_host_asset():
     bk_token = Login(username=settings.CMDB_USERNAME, password=settings.CMDB_PASSWORD).login()
-    print(f'bk_token: {bk_token}')
     if not bk_token:
         print("获取bk_token失败.")
         return
@@ -1569,7 +1567,6 @@ def search_user_org_name(id, user_org_dict, default_user_org_name):
         return default_user_org_name
 
     bk_token = Login(username=settings.CMDB_USERNAME, password=settings.CMDB_PASSWORD).login()
-    print(f'bk_token: {bk_token}')
     if not bk_token:
         print("获取bk_token失败.")
         return
