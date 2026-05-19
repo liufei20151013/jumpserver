@@ -132,7 +132,7 @@ def relate_asset_to_account(pam_assets, pam_accounts, isFullSync):
     for org in orgs:
         set_current_org(org)
 
-        assets = Asset.objects.exclude(name__istartswith='jms_')
+        assets = Asset.objects.all()
         for asset in assets:
             if asset.category == 'host':
                 asset_category = 'host'
