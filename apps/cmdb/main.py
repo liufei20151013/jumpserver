@@ -134,7 +134,7 @@ def process_data(isFullSync):
             print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}, total: {} 条"
                   .format(bk_obj_id, bk_obj_name, storage_region, len(storage_device_data)))
 
-            save_storage_device_asset(storage_device_data, asset_org_dict, isFullSync)
+            save_storage_device_asset(storage_device_data, asset_org_dict, isFullSync, bk_obj_id)
     print("查询所有存储设备 End.")
 
     print("查询所有数据库资产 Start.")

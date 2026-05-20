@@ -45,6 +45,7 @@ def process_data(js_asset):
     pam_asset_id = ''
     for pam_asset in pam_assets:
         pam_asset_address = pam_asset.get('ipv4', '')
+        # web地址不匹配的暂不考虑
         if pam_asset_address == js_asset_address:
             pam_asset_id = pam_asset.get('id', '')
             break
