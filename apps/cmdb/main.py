@@ -99,7 +99,7 @@ def process_data(isFullSync):
     print("查询网络安全设备 Start.")
     objects = {
         "network_device": "网络设备",
-        "security_device": "网络设备"
+        "security_device": "安全设备"
     }
     for bk_obj_id, bk_obj_name in objects.items():
         print("查询 bk_obj_id: {}, bk_obj_name: {}".format(bk_obj_id, bk_obj_name))
@@ -113,6 +113,28 @@ def process_data(isFullSync):
 
         save_network_device_asset(network_device_data, asset_org_dict, isFullSync, bk_obj_id)
     print("查询所有网络安全设备 End.")
+
+    print("查询负载均衡 Start.")
+    objects = {
+        "load_balance": "负载均衡"
+    }
+    load_balance_regions = ["1", "4", "5", "6"]
+    for bk_obj_id, bk_obj_name in objects.items():
+        for load_balance_region in load_balance_regions:
+            print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}"
+                  .format(bk_obj_id, bk_obj_name, load_balance_region))
+            result = search_other_asset(bk_obj_id)
+            if result['code'] != 0:
+                print("查询 CMDB {}数据失败，code: {}, requestId: {}".format(bk_obj_name, result['code'],
+                                                                            result['request_id']))
+                return
+
+            load_balance_data = result['data']['list']
+            print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}, total: {} 条"
+                  .format(bk_obj_id, bk_obj_name, load_balance_region, len(load_balance_data)))
+
+            save_load_balance_asset(load_balance_data, asset_org_dict, isFullSync, bk_obj_id)
+    print("查询所有负载均衡 End.")
 
     print("查询存储设备 Start.")
     objects = {
@@ -362,6 +384,99 @@ def str_to_int(str_num):
         print("输入的字符串无法转换为整数")
         return 0
 
+
+# 所有的网络设备都同步到太平金科的系统运行与信息安全管理部-网络管理室组织下
+def save_load_balance_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
+    network_dept = '系统运行与信息安全管理部-网络管理室'
+    org = Organization.objects.filter(name=network_dept).first()
+    set_current_org(org)
+
+    assetnode_name = '/' + org.name
+    for asset in assets:
+        update_time = asset.get('last_time') or asset.get('create_time')
+        if not isFullSync:
+            if not compare_time(update_time):
+                continue
+
+        # 设备名称
+        asset_name = asset.get('device_name', '')
+        address = asset.get('ip_address', '')
+        manufacturer = asset.get('manufacturer', '')
+        # 配置项状态
+        status = asset.get('status', '')
+        # 未维护信息过滤掉
+        if not asset_name or not address or not manufacturer or not status:
+            print("There exist null parameter situations, skip.")
+            continue
+
+        # 运行、运行(不买保)
+        if not status in ["1", "6"]:
+            continue
+
+        asset_name = asset_name + '-' + address
+        objects = {'22': asset_name}
+        if manufacturer == 'sangfor':
+            objects['22345'] = asset_name + '_22345'
+
+        for port, asset_name in objects.items():
+            try:
+                print("Save or update load balance asset[{}].".format(asset_name))
+                asset_protocol = [f"ssh/{port}", "telnet/23"]
+                platform = Platform.objects.filter(name='Global').first()
+
+                # 用户确认全平台主机名唯一
+                assetList = Asset.objects.filter(name=asset_name)
+                if not assetList.exists():
+                    a = Asset.objects.create(name=asset_name,
+                                             address=address,
+                                             platform=platform,
+                                             org_id=org.id)
+
+                    asset_model = Device(asset_ptr_id=a.id)
+                    asset_model.__dict__.update(a.__dict__)
+                    asset_model.save()
+
+                    key = f"{str(org.id)}_{a.name}"
+                    asset_org_dict.update({key: a.id})
+                    create_asset_node(assetnode_name, a)
+                    relate_protocols(asset_protocol, a)
+                    print("Success to create load balance asset[{}].".format(asset_name))
+                    continue
+
+                for a in assetList:
+                    # 更新资产信息
+                    # 如果平台不同，先删再加
+                    if a.platform_id != platform.id:
+                        print(a.type)
+                        p = Platform.objects.get(id=a.platform_id)
+                        if p.type != platform.type:
+                            Asset.objects.get(id=a.id).delete()
+                            print("Incompatible platform: old-[{}], new-[{}]; Delete network device asset[{}], "
+                                  "create it.".format(p.name,platform.name, asset_name))
+
+                            a = Asset.objects.create(name=asset_name,
+                                                     address=address,
+                                                     platform=platform,
+                                                     org_id=org.id)
+
+                            asset_model = Device(asset_ptr_id=a.id)
+                            asset_model.__dict__.update(a.__dict__)
+                            asset_model.save()
+                            print("Success to create load balance asset[{}].".format(asset_name))
+                    else:
+                        a.address = address
+                        a.save()
+
+                    key = f"{str(org.id)}_{a.name}"
+                    asset_org_dict.update({key: a.id})
+                    create_asset_node(assetnode_name, a)
+                    relate_protocols(asset_protocol, a)
+                    print("Success to update load balance asset[{}].".format(asset_name))
+            except Exception as e:
+                print("Failed to save load balance asset[{}], error:{}".format(asset_name, e))
+                raise e
+
+
 # 专业公司的网络设备资产不在CMDB管理，所有网络设备资产归属 系统运行与信息安全管理部-网络管理室 管理
 # 所有的网络设备都同步到太平金科的系统运行与信息安全管理部-网络管理室组织下
 def save_network_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
@@ -380,13 +495,27 @@ def save_network_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
             if not compare_time(update_time):
                 continue
 
-        asset_name = asset.get('bk_inst_name', '')
+        # 设备名称
+        asset_name = asset.get('device_name', '') if bk_obj_id == 'network_device' else asset.get('host_name', '')
         address = asset.get('ip_address', '') if bk_obj_id == 'network_device' else asset.get('manage_ip', '')
         manufacturer = asset.get('manufacturer', 'brand')
+        # 配置项状态
+        status = asset.get('status', '')
         # 未维护信息过滤掉
-        if not asset_name or not address or not manufacturer:
+        if not asset_name or not address or not manufacturer or not status:
             print("There exist null parameter situations, skip.")
             continue
+
+        # 运行、运行(不买保)
+        if bk_obj_id == 'network_device':
+            if not status in ["1", "2"]:
+                continue
+        else:
+            # security_device
+            if not status in ["1", "6"]:
+                continue
+
+        asset_name = asset_name + '-' + address
 
         try:
             print("Save or update network device asset[{}].".format(asset_name))
@@ -581,7 +710,8 @@ def save_storage_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
         if not str(storage_cls).__contains__('http'):
             print("The storage cls does not include http(s), skip.")
             continue
-        if not status == '运行':
+        # 运行、运行(不买保)
+        if not status in ["1", "6"]:
             continue
 
         full_assetnode_name = "/" + org.name
@@ -1007,11 +1137,11 @@ def save_pc_host_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
         manufacturer = asset.get('manufacturer', '')   # 厂商
         status = asset.get('status', '') # 配置状态
         # 未维护信息过滤掉
-        if not asset_name or not manufacturer or not haddr_ip_address:
+        if not asset_name or not manufacturer or not haddr_ip_address or not status:
             print("There exist null parameter situations, skip.")
             continue
         # 运行、运行(不买保)
-        if not str(status).__contains__('运行'):
+        if not status in ["1", "6"]:
             continue
 
         full_assetnode_name = "/" + org.name
