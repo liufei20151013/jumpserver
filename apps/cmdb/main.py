@@ -702,13 +702,14 @@ def save_storage_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
             if not compare_time(update_time):
                 continue
 
-        asset_name = asset.get('bk_inst_name', '')
+        # 用途
+        usage = asset.get('usage', '')
         sys_name = asset.get('sys_name', '')
         storage_cls = asset.get('storage_cls', '')
         manufacturer = asset.get('manufacturer', '')   # 厂商
         status = asset.get('status', '') # 配置项状态
         # 未维护信息过滤掉
-        if not asset_name or not manufacturer or not storage_cls or not status:
+        if not usage or not manufacturer or not storage_cls or not status:
             print("There exist null parameter situations, skip.")
             continue
         if not str(storage_cls).__contains__('http'):
@@ -718,6 +719,7 @@ def save_storage_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
         if not status in ["1", "6"]:
             continue
 
+        asset_name = usage + "_" + storage_cls
         full_assetnode_name = "/" + org.name
         if sys_name:
             full_assetnode_name = full_assetnode_name + "/" + sys_name
