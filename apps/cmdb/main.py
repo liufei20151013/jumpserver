@@ -5,8 +5,6 @@ from urllib.parse import urlparse
 import requests
 import json
 
-from docutils.nodes import comment
-
 from orgs.utils import set_current_org
 
 from orgs.models import Organization
@@ -123,7 +121,7 @@ def process_data(isFullSync):
         for load_balance_region in load_balance_regions:
             print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}"
                   .format(bk_obj_id, bk_obj_name, load_balance_region))
-            result = search_other_asset(bk_obj_id)
+            result = search_other_asset(bk_obj_id, load_balance_region)
             if result['code'] != 0:
                 print("查询 CMDB {}数据失败，code: {}, requestId: {}".format(bk_obj_name, result['code'],
                                                                             result['request_id']))
