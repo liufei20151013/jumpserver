@@ -402,8 +402,10 @@ def save_load_balance_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
         manufacturer = asset.get('manufacturer', '')
         # 配置项状态
         status = asset.get('status', '')
+        # ssh 端口
+        ssh_port = asset.get('ssh_port', '')
         # 未维护信息过滤掉
-        if not asset_name or not address or not manufacturer or not status:
+        if not asset_name or not address or not manufacturer or not status or not ssh_port:
             print("There exist null parameter situations, skip.")
             continue
 
@@ -411,12 +413,16 @@ def save_load_balance_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
         if not status in ["1", "6"]:
             continue
 
-        asset_name = asset_name + '-' + address
-        objects = {'22': asset_name}
-        if manufacturer == 'sangfor':
-            objects['22345'] = asset_name + '_22345'
+        port_list = ssh_port.split(';')
+        valid_ports = []
+        for port in port_list:
+            # 去除两端空白 + 判断是否为空
+            port_stripped = port.strip()
+            if port_stripped:
+                valid_ports.append(port_stripped)
 
-        for port, asset_name in objects.items():
+        for port in valid_ports:
+            asset_name = asset_name + '-' + port
             try:
                 print("Save or update load balance asset[{}].".format(asset_name))
                 asset_protocol = [f"ssh/{port}", "telnet/23"]
