@@ -445,37 +445,61 @@ def save_load_balance_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
                     create_asset_node(assetnode_name, a)
                     relate_protocols(asset_protocol, a)
                     print("Success to create load balance asset[{}].".format(asset_name))
-                    continue
+                else:
+                    for a in assetList:
+                        # 更新资产信息
+                        # 如果平台不同，先删再加
+                        if a.platform_id != platform.id:
+                            print(a.type)
+                            p = Platform.objects.get(id=a.platform_id)
+                            if p.type != platform.type:
+                                Asset.objects.get(id=a.id).delete()
+                                print("Incompatible platform: old-[{}], new-[{}]; Delete network device asset[{}], "
+                                      "create it.".format(p.name,platform.name, asset_name))
 
-                for a in assetList:
-                    # 更新资产信息
-                    # 如果平台不同，先删再加
-                    if a.platform_id != platform.id:
-                        print(a.type)
-                        p = Platform.objects.get(id=a.platform_id)
-                        if p.type != platform.type:
-                            Asset.objects.get(id=a.id).delete()
-                            print("Incompatible platform: old-[{}], new-[{}]; Delete network device asset[{}], "
-                                  "create it.".format(p.name,platform.name, asset_name))
+                                a = Asset.objects.create(name=asset_name,
+                                                         address=address,
+                                                         platform=platform,
+                                                         org_id=org.id)
 
-                            a = Asset.objects.create(name=asset_name,
-                                                     address=address,
-                                                     platform=platform,
-                                                     org_id=org.id)
+                                asset_model = Device(asset_ptr_id=a.id)
+                                asset_model.__dict__.update(a.__dict__)
+                                asset_model.save()
+                                print("Success to create load balance asset[{}].".format(asset_name))
+                        else:
+                            a.address = address
+                            a.save()
 
-                            asset_model = Device(asset_ptr_id=a.id)
-                            asset_model.__dict__.update(a.__dict__)
-                            asset_model.save()
-                            print("Success to create load balance asset[{}].".format(asset_name))
-                    else:
-                        a.address = address
-                        a.save()
+                        key = f"{str(org.id)}_{a.name}"
+                        asset_org_dict.update({key: a.id})
+                        create_asset_node(assetnode_name, a)
+                        relate_protocols(asset_protocol, a)
+                        print("Success to update load balance asset[{}].".format(asset_name))
 
-                    key = f"{str(org.id)}_{a.name}"
-                    asset_org_dict.update({key: a.id})
-                    create_asset_node(assetnode_name, a)
-                    relate_protocols(asset_protocol, a)
-                    print("Success to update load balance asset[{}].".format(asset_name))
+                # 添加 web 控制台地址，不对接3A，无账号代填，全部手动输入
+                address = asset.get('web_mgr', '')
+                if not address:
+                    # 用户确认全平台主机名唯一
+                    assetList = Asset.objects.filter(name=address)
+                    if not assetList.exists():
+                        print("create network device web asset[{}], bk_obj_id: {}.".format(address, bk_obj_id))
+                        platform = Platform.objects.filter(name='Website').first()
+                        asset_protocol = ["http/443"]
+
+                        a = Asset.objects.create(name=address,
+                                                 address=address,
+                                                 platform=platform,
+                                                 org_id=org.id)
+
+                        asset_model = Web(asset_ptr_id=a.id, autofill='no')
+                        asset_model.__dict__.update(a.__dict__)
+                        asset_model.save()
+
+                        key = f"{str(org.id)}_{a.name}"
+                        asset_org_dict.update({key: a.id})
+                        create_asset_node(assetnode_name, a)
+                        relate_protocols(asset_protocol, a)
+                        print("Success to create network device web asset[{}].".format(address))
             except Exception as e:
                 print("Failed to save load balance asset[{}], error:{}".format(asset_name, e))
                 raise e
@@ -553,38 +577,61 @@ def save_network_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
                 create_asset_node(assetnode_name, a)
                 relate_protocols(asset_protocol, a)
                 print("Success to create network device asset[{}].".format(asset_name))
-                continue
+            else:
+                for a in assetList:
+                    # 更新资产信息
+                    # 如果平台不同，先删再加
+                    if a.platform_id != platform.id:
+                        print(a.type)
+                        p = Platform.objects.get(id=a.platform_id)
+                        if p.type != platform.type:
+                            Asset.objects.get(id=a.id).delete()
+                            print("Incompatible platform: old-[{}], new-[{}]; Delete network device asset[{}], create it."
+                                  .format(p.name, platform.name, asset_name))
 
-            for a in assetList:
-                # 更新资产信息
-                # 如果平台不同，先删再加
-                if a.platform_id != platform.id:
-                    print(a.type)
-                    p = Platform.objects.get(id=a.platform_id)
-                    if p.type != platform.type:
-                        Asset.objects.get(id=a.id).delete()
-                        print("Incompatible platform: old-[{}], new-[{}]; Delete network device asset[{}], create it.".format(p.name,
-                                                                                                               platform.name,
-                                                                                                               asset_name))
+                            a = Asset.objects.create(name=asset_name,
+                                                     address=address,
+                                                     platform=platform,
+                                                     org_id=org.id)
 
-                        a = Asset.objects.create(name=asset_name,
-                                                 address=address,
-                                                 platform=platform,
-                                                 org_id=org.id)
+                            asset_model = Device(asset_ptr_id=a.id)
+                            asset_model.__dict__.update(a.__dict__)
+                            asset_model.save()
+                            print("Success to create network device asset[{}].".format(asset_name))
+                    else:
+                        a.address = address
+                        a.save()
 
-                        asset_model = Device(asset_ptr_id=a.id)
-                        asset_model.__dict__.update(a.__dict__)
-                        asset_model.save()
-                        print("Success to create network device asset[{}].".format(asset_name))
-                else:
-                    a.address = address
-                    a.save()
+                    key = f"{str(org.id)}_{a.name}"
+                    asset_org_dict.update({key: a.id})
+                    create_asset_node(assetnode_name, a)
+                    relate_protocols(asset_protocol, a)
+                    print("Success to update network device asset[{}].".format(asset_name))
 
-                key = f"{str(org.id)}_{a.name}"
-                asset_org_dict.update({key: a.id})
-                create_asset_node(assetnode_name, a)
-                relate_protocols(asset_protocol, a)
-                print("Success to update network device asset[{}].".format(asset_name))
+            # 添加 web 控制台地址，不对接3A，无账号代填，全部手动输入
+            address = asset.get('web_mgr', '')
+            if not address:
+                # 用户确认全平台主机名唯一
+                assetList = Asset.objects.filter(name=address)
+                if not assetList.exists():
+                    print("create network device web asset[{}], bk_obj_id: {}.".format(address, bk_obj_id))
+                    platform = Platform.objects.filter(name='Website').first()
+                    asset_protocol = ["http/443"]
+
+                    a = Asset.objects.create(name=address,
+                                             address=address,
+                                             platform=platform,
+                                             org_id=org.id)
+
+                    asset_model = Web(asset_ptr_id=a.id, autofill='no')
+                    asset_model.__dict__.update(a.__dict__)
+                    asset_model.save()
+
+                    key = f"{str(org.id)}_{a.name}"
+                    asset_org_dict.update({key: a.id})
+                    create_asset_node(assetnode_name, a)
+                    relate_protocols(asset_protocol, a)
+                    print("Success to create network device web asset[{}].".format(address))
         except Exception as e:
             print("Failed to save network device asset[{}], error:{}".format(asset_name, e))
             raise e
@@ -765,7 +812,7 @@ def save_storage_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
                 asset_org_dict.update({key: a.id})
                 create_asset_node(full_assetnode_name, a)
                 relate_protocols(asset_protocol, a)
-                print("Success to create pc host asset[{}].".format(asset_name))
+                print("Success to create storage device asset[{}].".format(asset_name))
                 continue
 
             for a in assetList:
@@ -775,7 +822,7 @@ def save_storage_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
                     p = Platform.objects.get(id=a.platform_id)
                     if p.type != platform.type:
                         Asset.objects.get(id=a.id).delete()
-                        print("Incompatible platform: old-[{}], new-[{}]; Delete pc host asset[{}], create it."
+                        print("Incompatible platform: old-[{}], new-[{}]; Delete storage device asset[{}], create it."
                               .format(p.name, platform.name, asset_name))
 
                         a = Asset.objects.create(name=asset_name,
@@ -787,7 +834,7 @@ def save_storage_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
                         asset_model = get_web_asset_model(bk_obj_id, manufacturer, asset, a)
                         asset_model.__dict__.update(a.__dict__)
                         asset_model.save()
-                        print("Success to create pc host asset[{}].".format(asset_name))
+                        print("Success to create storage device asset[{}].".format(asset_name))
                 else:
                     a.address = address
                     a.comment = comment
@@ -801,9 +848,9 @@ def save_storage_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
                     asset_org_dict.update({key: a.id})
                     create_asset_node(full_assetnode_name, a)
                     relate_protocols(asset_protocol, a)
-                    print("Success to update pc host asset[{}].".format(asset_name))
+                    print("Success to update storage device asset[{}].".format(asset_name))
         except Exception as e:
-            print("Failed to save pc host asset[{}], error:{}".format(asset_name, e))
+            print("Failed to save storage device asset[{}], error:{}".format(asset_name, e))
             raise e
 
 
