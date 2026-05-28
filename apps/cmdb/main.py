@@ -478,7 +478,7 @@ def save_load_balance_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
 
                 # 添加 web 控制台地址，不对接3A，无账号代填，全部手动输入
                 address = asset.get('web_mgr', '')
-                if not address:
+                if address:
                     # 用户确认全平台主机名唯一
                     assetList = Asset.objects.filter(name=address)
                     if not assetList.exists():
@@ -610,7 +610,7 @@ def save_network_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
 
             # 添加 web 控制台地址，不对接3A，无账号代填，全部手动输入
             address = asset.get('web_mgr', '')
-            if not address:
+            if address:
                 # 用户确认全平台主机名唯一
                 assetList = Asset.objects.filter(name=address)
                 if not assetList.exists():
