@@ -410,7 +410,7 @@ def save_load_balance_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
             continue
 
         # 运行、运行(不买保)
-        if not status in ["1", "6"]:
+        if not status in ["1", "5", "6"]:
             continue
 
         port_list = ssh_port.split(';')
@@ -536,11 +536,11 @@ def save_network_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
 
         # 运行、运行(不买保)
         if bk_obj_id == 'network_device':
-            if not status in ["1", "2"]:
+            if not status in ["1", "2", "6"]:
                 continue
         else:
             # security_device
-            if not status in ["1", "6"]:
+            if not status in ["1", "5", "6"]:
                 continue
 
         asset_name = asset_name + '-' + address
@@ -763,7 +763,7 @@ def save_storage_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
             print("The storage cls does not include http(s), skip.")
             continue
         # 运行、运行(不买保)
-        if not status in ["1", "6"]:
+        if not status in ["1", "5", "6"]:
             continue
 
         asset_name = usage + "_" + storage_cls
@@ -1194,7 +1194,7 @@ def save_pc_host_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
             print("There exist null parameter situations, skip.")
             continue
         # 运行、运行(不买保)
-        if not status in ["1", "6"]:
+        if not status in ["1", "5", "6"]:
             continue
 
         full_assetnode_name = "/" + org.name
