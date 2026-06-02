@@ -78,20 +78,19 @@ def process_data(isFullSync):
     }
 
     # 2 开发测试  6 待更新
-    regions = ["1", "3", "4", "5", "7"]
+    region = '2'
     for bk_obj_id, bk_obj_name in objects.items():
-        for region in regions:
-            print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}".format(bk_obj_id, bk_obj_name, region))
-            result = search_other_asset(bk_obj_id, region)
-            if result['code'] != 0:
-                print("查询 CMDB 中间件数据失败，code: {}, requestId: {}".format(result['code'], result['request_id']))
-                return
+        print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}".format(bk_obj_id, bk_obj_name, region))
+        result = search_other_asset(bk_obj_id, region)
+        if result['code'] != 0:
+            print("查询 CMDB 中间件数据失败，code: {}, requestId: {}".format(result['code'], result['request_id']))
+            return
 
-            middleware_data = result['data']['list']
-            print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}, total: {} 条"
-                  .format(bk_obj_id, bk_obj_name, region, len(middleware_data)))
+        middleware_data = result['data']['list']
+        print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}, total: {} 条"
+              .format(bk_obj_id, bk_obj_name, region, len(middleware_data)))
 
-            save_middleware_asset(middleware_data, asset_org_dict, isFullSync, bk_obj_id)
+        save_middleware_asset(middleware_data, asset_org_dict, isFullSync, bk_obj_id)
     print("查询所有中间件 End.")
 
     # print("查询网络安全设备 Start.")
@@ -116,7 +115,9 @@ def process_data(isFullSync):
     objects = {
         "load_balance": "负载均衡"
     }
-    load_balance_regions = ["1", "4", "5", "6"]
+
+    # 开发 2  测试 3
+    load_balance_regions = ["2", "3"]
     for bk_obj_id, bk_obj_name in objects.items():
         for load_balance_region in load_balance_regions:
             print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}"
@@ -141,7 +142,7 @@ def process_data(isFullSync):
         "network_storage": "NAS存储"
     }
     # 3 开发测试  1 待更新
-    storage_regions = ["2", "4", "5", "6"]
+    storage_regions = ["3"]
     for bk_obj_id, bk_obj_name in objects.items():
         for storage_region in storage_regions:
             print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}".format(bk_obj_id, bk_obj_name, storage_region))
@@ -177,18 +178,17 @@ def process_data(isFullSync):
         # "db_gaussdb": "GaussDB"
     }
     for bk_obj_id, bk_obj_name in objects.items():
-        for region in regions:
-            print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}".format(bk_obj_id, bk_obj_name, region))
-            result = search_other_asset(bk_obj_id, region)
-            if result['code'] != 0:
-                print(
-                    "查询 CMDB 数据库资产数据失败，code: {}, requestId: {}".format(result['code'], result['request_id']))
-                return
+        print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}".format(bk_obj_id, bk_obj_name, region))
+        result = search_other_asset(bk_obj_id, region)
+        if result['code'] != 0:
+            print(
+                "查询 CMDB 数据库资产数据失败，code: {}, requestId: {}".format(result['code'], result['request_id']))
+            return
 
-            db_data = result['data']['list']
-            print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}, total: {}条".format(bk_obj_id, bk_obj_name, region, len(db_data)))
+        db_data = result['data']['list']
+        print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}, total: {}条".format(bk_obj_id, bk_obj_name, region, len(db_data)))
 
-            save_db_asset(db_data, asset_org_dict, bk_obj_id, isFullSync)
+        save_db_asset(db_data, asset_org_dict, bk_obj_id, isFullSync)
     print("查询所有数据库资产、网络设备 End.")
 
 
@@ -1689,7 +1689,7 @@ def search_host_asset():
                 {
                     "field": "region",
                     "operator": "in",
-                    "value": ["1", "3", "4", "5", "7"]
+                    "value": ["2"]
                 }
             ]
         }
