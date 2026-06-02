@@ -145,10 +145,10 @@ def relate_asset_to_account(pam_assets, pam_accounts, isFullSync):
 
             address = asset.address
             comment = asset.comment
-            if 'pc_server' in comment:
-                address = comment.split('-')[1].strip()
-                # address = 'https://' + comment.split('-')[1].strip()
-            elif any(k in comment for k in ['storage_oss', 'fc_storage', 'network_storage']):
+            # if 'pc_server' in comment:
+            #     address = comment.split('-')[1].strip()
+            # el
+            if any(k in comment for k in ['storage_oss', 'fc_storage', 'network_storage']):
                 address = comment.split('-')[1].strip()
             key = f"{address}_{asset_category}"
 

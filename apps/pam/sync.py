@@ -32,9 +32,8 @@ def process_data(js_asset):
 
     logger.info("获取 PAM 上的资产数据 Start.")
     js_asset_address = js_asset.address
-    if asset_category == 'web' and js_asset.comment.__contains__('pc_server'):
-        js_asset_address = js_asset.comment.split('-')[1].strip()
-        # js_asset_address = 'https://' + js_asset.comment.split('-')[1].strip()
+    # if asset_category == 'web' and js_asset.comment.__contains__('pc_server'):
+    #     js_asset_address = js_asset.comment.split('-')[1].strip()
 
     result = search_asset(asset_category, js_asset_address)
     if result['code'] != 0:
