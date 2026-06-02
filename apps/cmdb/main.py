@@ -53,22 +53,22 @@ def process_data(isFullSync):
     save_host_asset(host_data, asset_org_dict, user_org_dict, isFullSync)
     print("查询所有主机资产 End.")
 
-    print("查询PC机 Start.")
-    objects = {
-        "pc_server": "PC机"
-    }
-    for bk_obj_id, bk_obj_name in objects.items():
-        print("查询 bk_obj_id: {}, bk_obj_name: {}".format(bk_obj_id, bk_obj_name))
-        result = search_other_asset_no_region(bk_obj_id)
-        if result['code'] != 0:
-            print("查询 CMDB PC机数据失败，code: {}, requestId: {}".format(result['code'], result['request_id']))
-            return
-
-        pc_host_data = result['data']['list']
-        print("查询 bk_obj_id: {}, bk_obj_name: {}，total: {} 条".format(bk_obj_id, bk_obj_name, len(pc_host_data)))
-
-        save_pc_host_asset(pc_host_data, asset_org_dict, isFullSync, bk_obj_id)
-    print("查询所有PC机 End.")
+    # print("查询PC机 Start.")
+    # objects = {
+    #     "pc_server": "PC机"
+    # }
+    # for bk_obj_id, bk_obj_name in objects.items():
+    #     print("查询 bk_obj_id: {}, bk_obj_name: {}".format(bk_obj_id, bk_obj_name))
+    #     result = search_other_asset_no_region(bk_obj_id)
+    #     if result['code'] != 0:
+    #         print("查询 CMDB PC机数据失败，code: {}, requestId: {}".format(result['code'], result['request_id']))
+    #         return
+    #
+    #     pc_host_data = result['data']['list']
+    #     print("查询 bk_obj_id: {}, bk_obj_name: {}，total: {} 条".format(bk_obj_id, bk_obj_name, len(pc_host_data)))
+    #
+    #     save_pc_host_asset(pc_host_data, asset_org_dict, isFullSync, bk_obj_id)
+    # print("查询所有PC机 End.")
 
     print("查询中间件 Start.")
     objects = {
@@ -94,23 +94,23 @@ def process_data(isFullSync):
             save_middleware_asset(middleware_data, asset_org_dict, isFullSync, bk_obj_id)
     print("查询所有中间件 End.")
 
-    print("查询网络安全设备 Start.")
-    objects = {
-        "network_device": "网络设备",
-        "security_device": "安全设备"
-    }
-    for bk_obj_id, bk_obj_name in objects.items():
-        print("查询 bk_obj_id: {}, bk_obj_name: {}".format(bk_obj_id, bk_obj_name))
-        result = search_other_asset_no_region(bk_obj_id)
-        if result['code'] != 0:
-            print("查询 CMDB {}数据失败，code: {}, requestId: {}".format(bk_obj_name, result['code'], result['request_id']))
-            return
-
-        network_device_data = result['data']['list']
-        print("查询 bk_obj_id: {}, bk_obj_name: {}，total: {} 条".format(bk_obj_id, bk_obj_name, len(network_device_data)))
-
-        save_network_device_asset(network_device_data, asset_org_dict, isFullSync, bk_obj_id)
-    print("查询所有网络安全设备 End.")
+    # print("查询网络安全设备 Start.")
+    # objects = {
+    #     "network_device": "网络设备",
+    #     "security_device": "安全设备"
+    # }
+    # for bk_obj_id, bk_obj_name in objects.items():
+    #     print("查询 bk_obj_id: {}, bk_obj_name: {}".format(bk_obj_id, bk_obj_name))
+    #     result = search_other_asset_no_region(bk_obj_id)
+    #     if result['code'] != 0:
+    #         print("查询 CMDB {}数据失败，code: {}, requestId: {}".format(bk_obj_name, result['code'], result['request_id']))
+    #         return
+    #
+    #     network_device_data = result['data']['list']
+    #     print("查询 bk_obj_id: {}, bk_obj_name: {}，total: {} 条".format(bk_obj_id, bk_obj_name, len(network_device_data)))
+    #
+    #     save_network_device_asset(network_device_data, asset_org_dict, isFullSync, bk_obj_id)
+    # print("查询所有网络安全设备 End.")
 
     print("查询负载均衡 Start.")
     objects = {
