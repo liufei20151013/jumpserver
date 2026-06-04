@@ -15,7 +15,7 @@ ARG DEPENDENCIES="                    \
         libldap2-dev                  \
         libsasl2-dev"
 
-ARG APT_MIRROR=http://mirrors.ustc.edu.cn
+ARG APT_MIRROR=https://mirrors.ustc.edu.cn
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked,id=core \
     --mount=type=cache,target=/var/lib/apt,sharing=locked,id=core \
