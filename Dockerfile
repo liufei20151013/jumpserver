@@ -67,7 +67,7 @@ ARG TOOLS="                           \
         telnet                        \
         postgresql-client"
 
-ARG APT_MIRROR=http://mirrors.ustc.edu.cn
+ARG APT_MIRROR=https://mirrors.ustc.edu.cn
 
 RUN set -ex \
     && sed -i "s@http://.*.debian.org@${APT_MIRROR}@g" /etc/apt/sources.list.d/debian.sources \
