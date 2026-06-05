@@ -4,6 +4,7 @@ from urllib.parse import urlparse
 
 import requests
 import json
+import time
 
 from orgs.utils import set_current_org
 
@@ -1646,7 +1647,8 @@ def search_other_asset(bk_obj_id, region):
 
     while total_pages == -1 or current_page <= total_pages:
         data["page"]["start"] = (current_page - 1) * limit
-        r = requests.post(url, headers=CMDB_HEADERS, json=data, timeout=10)
+        time.sleep(1)
+        r = requests.post(url, headers=CMDB_HEADERS, json=data, timeout=30)
         response = r.json()
         code = response["code"]
 
@@ -1713,7 +1715,8 @@ def search_other_asset_no_region(bk_obj_id):
 
     while total_pages == -1 or current_page <= total_pages:
         data["page"]["start"] = (current_page - 1) * limit
-        r = requests.post(url, headers=CMDB_HEADERS, json=data, timeout=10)
+        time.sleep(1)
+        r = requests.post(url, headers=CMDB_HEADERS, json=data, timeout=30)
         response = r.json()
         code = response["code"]
 
@@ -1791,7 +1794,8 @@ def search_host_asset():
 
     while total_pages == -1 or current_page <= total_pages:
         data["page"]["start"] = (current_page - 1) * limit
-        r = requests.post(url, headers=CMDB_HEADERS, json=data, timeout=10)
+        time.sleep(1)
+        r = requests.post(url, headers=CMDB_HEADERS, json=data, timeout=30)
         response = r.json()
         code = response["code"]
 
@@ -1855,7 +1859,8 @@ def search_user_org_name(id, user_org_dict, default_user_org_name):
         "request_id": ""
     }
 
-    r = requests.post(url, headers=CMDB_HEADERS, json=data, timeout=10)
+    time.sleep(3)
+    r = requests.post(url, headers=CMDB_HEADERS, json=data, timeout=30)
     response = r.json()
     code = response["code"]
 
@@ -1917,6 +1922,7 @@ class Login(object):
             return resp.cookies[token_name]
 
     def login(self, login_url=None):
+        time.sleep(2)
         login_url = login_url or settings.CMDB_BK_PAAS_HOST + '/login/?bk_login=1/'
         # login_url = login_url or BK_PAAS_HOST
         login_csrftoken = self.get_csrftoken(login_url, 'bklogin_csrftoken')
