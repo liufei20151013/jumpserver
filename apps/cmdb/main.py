@@ -191,6 +191,26 @@ def process_data(isFullSync):
         save_db_asset(db_data, asset_org_dict, bk_obj_id, isFullSync)
     print("查询所有数据库资产、网络设备 End.")
 
+    print("查询桌面办公 Start.")
+    objects = {
+        "desk_support": "桌面办公"
+    }
+    desk_support_region = '2'
+    for bk_obj_id, bk_obj_name in objects.items():
+        print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}".format(bk_obj_id, bk_obj_name, desk_support_region))
+        result = search_other_asset(bk_obj_id, desk_support_region)
+        if result['code'] != 0:
+            print("查询 CMDB {}数据失败，code: {}, requestId: {}".format(bk_obj_name, result['code'],
+                                                                        result['request_id']))
+            return
+
+        desk_support_data = result['data']['list']
+        print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}, total: {} 条"
+              .format(bk_obj_id, bk_obj_name, desk_support_region, len(desk_support_data)))
+
+        save_desk_support_asset(desk_support_data, asset_org_dict, isFullSync, bk_obj_id)
+    print("查询所有桌面办公 End.")
+
 
     if isFullSync and len(asset_org_dict) > 0:
         print("删除已下线的资产 Start.")
@@ -381,6 +401,62 @@ def str_to_int(str_num):
     except (ValueError, TypeError):
         print("输入的字符串无法转换为整数")
         return 0
+
+
+# 所有的桌面办公都同步到太平金科的系统运行与信息安全管理部-桌面支持室组织下
+def save_desk_support_asset(assets, asset_org_dict, isFullSync, bk_obj_id):
+    desk_support_dept = '系统运行与信息安全管理部-桌面支持室'
+    org = Organization.objects.filter(name=desk_support_dept).first()
+    set_current_org(org)
+
+    assetnode_name = '/' + org.name
+    for asset in assets:
+        update_time = asset.get('last_time') or asset.get('create_time')
+        if not isFullSync:
+            if not compare_time(update_time):
+                continue
+
+        # 用途
+        usage = asset.get('usage', '')
+        address = asset.get('cls_address', '')
+        # 配置项状态
+        status = asset.get('status', '')
+        # 未维护信息过滤掉
+        if not usage or not address or not status:
+            print("There exist null parameter situations, skip.")
+            continue
+
+        # 运行、运行(不买保)
+        if not status in ["1", "7"]:
+            continue
+
+        asset_name = usage + "_" + address
+
+        try:
+            # 用户确认全平台主机名唯一
+            assetList = Asset.objects.filter(name=asset_name)
+            if not assetList.exists():
+                print("create desk support web asset[{}], bk_obj_id: {}.".format(asset_name, bk_obj_id))
+                platform = Platform.objects.filter(name='Website').first()
+                asset_protocol = ["http/443"]
+
+                a = Asset.objects.create(name=asset_name,
+                                         address=address,
+                                         platform=platform,
+                                         org_id=org.id)
+
+                asset_model = Web(asset_ptr_id=a.id, autofill='no')
+                asset_model.__dict__.update(a.__dict__)
+                asset_model.save()
+
+                key = f"{str(org.id)}_{a.name}"
+                asset_org_dict.update({key: a.id})
+                create_asset_node(assetnode_name, a)
+                relate_protocols(asset_protocol, a)
+                print("Success to create desk support web asset[{}].".format(asset_name))
+        except Exception as e:
+            print("Failed to save desk support asset[{}], error:{}".format(asset_name, e))
+            raise e
 
 
 # 所有的网络设备都同步到太平金科的系统运行与信息安全管理部-网络管理室组织下
