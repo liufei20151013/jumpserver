@@ -1647,11 +1647,8 @@ def search_other_asset(bk_obj_id, region):
 
     while total_pages == -1 or current_page <= total_pages:
         data["page"]["start"] = (current_page - 1) * limit
-        time.sleep(1)
-        r = requests.post(url, headers=CMDB_HEADERS, json=data, timeout=30)
-        response = r.json()
+        response = retry(url, CMDB_HEADERS, data)
         code = response["code"]
-
         if code != 0:
             message = response["message"]
             print("Search other asset failed. current_page: {}, Error: {}".format(current_page, message))
@@ -1715,11 +1712,8 @@ def search_other_asset_no_region(bk_obj_id):
 
     while total_pages == -1 or current_page <= total_pages:
         data["page"]["start"] = (current_page - 1) * limit
-        time.sleep(1)
-        r = requests.post(url, headers=CMDB_HEADERS, json=data, timeout=30)
-        response = r.json()
+        response = retry(url, CMDB_HEADERS, data)
         code = response["code"]
-
         if code != 0:
             message = response["message"]
             print("Search other asset failed. current_page: {}, Error: {}".format(current_page, message))
@@ -1794,11 +1788,8 @@ def search_host_asset():
 
     while total_pages == -1 or current_page <= total_pages:
         data["page"]["start"] = (current_page - 1) * limit
-        time.sleep(1)
-        r = requests.post(url, headers=CMDB_HEADERS, json=data, timeout=30)
-        response = r.json()
+        response = retry(url, CMDB_HEADERS, data)
         code = response["code"]
-
         if code != 0:
             message = response["message"]
             print("Search host asset failed. current_page: {}, Error: {}".format(current_page, message))
@@ -1859,9 +1850,7 @@ def search_user_org_name(id, user_org_dict, default_user_org_name):
         "request_id": ""
     }
 
-    time.sleep(3)
-    r = requests.post(url, headers=CMDB_HEADERS, json=data, timeout=30)
-    response = r.json()
+    response = retry(url, CMDB_HEADERS, data)
     code = response["code"]
 
     if code != 0:
@@ -1876,6 +1865,20 @@ def search_user_org_name(id, user_org_dict, default_user_org_name):
     res = response["data"]["name"]
     user_org_dict.update({id: res})
     return res
+
+
+def retry(url, CMDB_HEADERS, data):
+    retry = 0
+    while retry < 3:
+        try:
+            r = requests.post(url, headers=CMDB_HEADERS, json=data, timeout=30)
+            return r.json()
+        except Exception as e:
+            retry += 1
+            if retry == 3:
+                raise e
+            time.sleep(5)
+            print(f'retry: {retry}')
 
 
 def compare_time(time_str: str) -> bool:
@@ -1922,7 +1925,6 @@ class Login(object):
             return resp.cookies[token_name]
 
     def login(self, login_url=None):
-        time.sleep(2)
         login_url = login_url or settings.CMDB_BK_PAAS_HOST + '/login/?bk_login=1/'
         # login_url = login_url or BK_PAAS_HOST
         login_csrftoken = self.get_csrftoken(login_url, 'bklogin_csrftoken')
@@ -1931,10 +1933,16 @@ class Login(object):
             'username': self.username,
             'password': self.password
         }
-        resp = self.session.post(login_url, data=login_form, verify=False)
-        print(f'login_csrftoken: {login_csrftoken}')
-        print(f'username: {self.username}')
 
-        if resp.status_code == 200:
-            return resp.request.headers['Cookie'].split('bk_token=')[1].split(';')[0]
+        retry = 0
+        while retry < 3:
+            resp = self.session.post(login_url, data=login_form, verify=False)
+            print(f'login_csrftoken: {login_csrftoken}')
+            print(f'username: {self.username}')
+
+            if resp.status_code == 200:
+                return resp.request.headers['Cookie'].split('bk_token=')[1].split(';')[0]
+            retry += 1
+            time.sleep(5)
+            print(f'login retry: {retry}')
         return ""
