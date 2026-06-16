@@ -2,7 +2,7 @@ FROM python:3.11-slim-bullseye AS build-xpack
 
 COPY apps/xpack /opt/xpack
 
-ARG APT_MIRROR=http://mirrors.ustc.edu.cn
+ARG APT_MIRROR=https://mirrors.ustc.edu.cn
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked,id=xpack \
     sed -i "s@http://.*.debian.org@${APT_MIRROR}@g" /etc/apt/sources.list \
@@ -60,7 +60,7 @@ ARG TOOLS="                           \
         xz-utils                      \
         wget"
 
-ARG APT_MIRROR=http://mirrors.ustc.edu.cn
+ARG APT_MIRROR=https://mirrors.ustc.edu.cn
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked,id=core-apt \
     --mount=type=cache,target=/var/lib/apt,sharing=locked,id=core-apt \
     sed -i "s@http://.*.debian.org@${APT_MIRROR}@g" /etc/apt/sources.list \
@@ -114,7 +114,7 @@ ARG TOOLS="                           \
         bubblewrap                    \
         wget"
 
-ARG APT_MIRROR=http://mirrors.ustc.edu.cn
+ARG APT_MIRROR=https://mirrors.ustc.edu.cn
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked,id=core-apt \
     --mount=type=cache,target=/var/lib/apt,sharing=locked,id=core-apt \
     sed -i "s@http://.*.debian.org@${APT_MIRROR}@g" /etc/apt/sources.list \
