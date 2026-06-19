@@ -1,4 +1,5 @@
 import os
+import time
 
 import django
 
@@ -11,6 +12,7 @@ from assets.models import Asset
 from orgs.models import Organization
 from orgs.utils import set_current_org
 from datetime import datetime, timedelta
+from collections import defaultdict
 from cmdb.main import save_host_asset, save_db_asset, save_middleware_asset
 from dlt.tasks import process_data
 
@@ -58,25 +60,78 @@ class TestTaskCase(TestCase):
 
 
     def test2(self):
-        print("获取堡垒机上原始资产数据 Start.")
-        old_asset_org_dict = {}
-        orgs = Organization.objects.exclude(id=Organization.SYSTEM_ID)
-        for org in orgs:
-            set_current_org(org)
-
-            # jms_开头的是堡垒机服务器
-            assets = Asset.objects.exclude(name__istartswith='jms_')
-            for asset in assets:
-                key = f"{str(org.id)}_{asset.name}"
-                old_asset_org_dict.update({key: asset.id})
-        print("获取堡垒机上原始资产数据 End.")
+        start_time = time.time()
+        # print("获取堡垒机上原始资产数据 Start.")
+        # old_asset_org_dict = {}
+        # orgs = Organization.objects.exclude(id=Organization.SYSTEM_ID)
+        # for org in orgs:
+        #     set_current_org(org)
+        #
+        #     # jms_开头的是堡垒机服务器
+        #     assets = Asset.objects.exclude(name__istartswith='jms_')
+        #     for asset in assets:
+        #         key = f"{str(org.id)}_{asset.name}"
+        #         old_asset_org_dict.update({key: asset.id})
+        # print("获取堡垒机上原始资产数据 End.")
 
         asset_org_dict = {}
-        host_data = [
-            {
-                'sys_number': '',
-                'sys_name': '',
-                'bk_host_name': 'tpsql001',
+        # host_data = [
+        #     {
+        #         'sys_number': '',
+        #         'sys_name': '',
+        #         'bk_host_name': 'aaatpsql001',
+        #         'bk_host_innerip': '10.28.211.211',
+        #         'bk_os_type': '1',
+        #         'app_department': '应用部门',
+        #         'bk_os_name': '7',
+        #         'UseOffice': '系统管理室',
+        #         "create_time": "2026-04-16T10:28:41.178+08:00",
+        #         "last_time": "2026-05-13T17:46:41.178+08:00"
+        #     },{
+        #         'sys_number': 'TK-001',
+        #         'sys_name': '运维系统',
+        #         'bk_host_name': 'aaa主机02',
+        #         'bk_host_innerip': '10.1.10.12',
+        #         'bk_os_type': '2',
+        #         'app_department': '应用部门',
+        #         'bk_os_name': '2019'
+        #     },{
+        #         'sys_number': 'TK-001',
+        #         'sys_name': '运维系统',
+        #         'bk_host_name': 'aaa主机03',
+        #         'bk_host_innerip': '10.1.10.13',
+        #         'bk_os_type': '2',
+        #         'app_department': '应用部门',
+        #         'bk_os_name': '2016'
+        #     },{
+        #         'sys_number': 'TK-001',
+        #         'sys_name': 'aaa运维系统',
+        #         'bk_host_name': '主机04',
+        #         'bk_host_innerip': '10.1.10.14',
+        #         'bk_os_type': '3',
+        #         'app_department': '应用部门',
+        #         'bk_os_name': '6.7'
+        #     }
+        # ]
+        org_data_map = defaultdict(lambda: {
+            "create": [],
+            "update": [],
+            "host": [],
+            "db": [],
+            "device": [],
+            "web": [],
+            "node": [],
+            "protocol": []
+        })
+
+        user_org_dict = {}
+        host_data = []
+        i = 0
+        while i < 10000:
+            data = {
+                'sys_number': 'sys_00' + str(i // 100),
+                'sys_name': '系统_001',
+                'bk_host_name': '测试_' + str(i+1),
                 'bk_host_innerip': '10.28.211.211',
                 'bk_os_type': '1',
                 'app_department': '应用部门',
@@ -84,34 +139,14 @@ class TestTaskCase(TestCase):
                 'UseOffice': '系统管理室',
                 "create_time": "2026-04-16T10:28:41.178+08:00",
                 "last_time": "2026-05-13T17:46:41.178+08:00"
-            },{
-                'sys_number': 'TK-001',
-                'sys_name': '运维系统',
-                'bk_host_name': '主机02',
-                'bk_host_innerip': '10.1.10.12',
-                'bk_os_type': '2',
-                'app_department': '应用部门',
-                'bk_os_name': '2019'
-            },{
-                'sys_number': 'TK-001',
-                'sys_name': '运维系统',
-                'bk_host_name': '主机03',
-                'bk_host_innerip': '10.1.10.13',
-                'bk_os_type': '2',
-                'app_department': '应用部门',
-                'bk_os_name': '2016'
-            },{
-                'sys_number': 'TK-001',
-                'sys_name': '运维系统',
-                'bk_host_name': '主机04',
-                'bk_host_innerip': '10.1.10.14',
-                'bk_os_type': '3',
-                'app_department': '应用部门',
-                'bk_os_name': '6.7'
             }
-        ]
-        user_org_dict = {}
-        save_host_asset(host_data, asset_org_dict, user_org_dict, False)
+            host_data.append(data)
+            i += 1
+        save_host_asset(host_data, user_org_dict, False, org_data_map)
+        end_time = time.time()
+        total_seconds = end_time - start_time
+
+        print(f"程序总执行时间：{total_seconds:.2f} 秒")
 
         # bk_obj_id = 'db_redis'
         # db_data = [
