@@ -771,6 +771,9 @@ class Config(dict):
         'DLT_ENABLED': False,
         'DLT_FULL_DATA_SYNC_CRONTAB': None,
         'DLT_INCREMENTAL_DATA_SYNC_CRONTAB': None,
+
+        # 组织管理员可授权角色ID
+        'ENABLE_ORG_ROLE_IDS': '',
     }
 
     old_config_map = {
