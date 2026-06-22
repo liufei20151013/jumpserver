@@ -225,9 +225,9 @@ def relate_asset_to_account(pam_assets, pam_accounts, isFullSync, org_data_map):
                 username = account.get('assetAccount', '')
                 if not username:
                     continue
-                if asset_category == 'host':
-                    if not org.name.__contains__(asset.comment) and username in ['root', 'loginuser', 'cyuser']:
-                        continue
+                # if asset_category == 'host':
+                #     if not org.name.__contains__(asset.comment) and username in ['root', 'loginuser', 'cyuser']:
+                #         continue
 
                 # 需要添加的账号
                 # pam_accounts.append(username)
