@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db.models import Q, Count
 from django.utils.translation import gettext as _
 from rest_framework.decorators import action
@@ -126,7 +127,23 @@ class OrgRoleViewSet(RoleViewSet):
     perm_model = OrgRole
 
     def get_queryset(self):
-        qs = super().get_queryset().filter(scope='org')
+        # 获取操作人的角色  判断是不是系统管理员
+        isAdmin = False
+        system_roles = self.request.user.real.system_roles.all()
+        for system_role in system_roles:
+            if str(system_role.id) == '00000000-0000-0000-0000-000000000001':
+                isAdmin = True
+                break
+
+        enable_org_role_ids = settings.ENABLE_ORG_ROLE_IDS
+        if enable_org_role_ids and not isAdmin:
+            role_ids = [role_id.strip() for role_id in enable_org_role_ids.split(',') if role_id.strip()]
+            if role_ids:
+                qs = super().get_queryset().filter(scope='org', id__in=role_ids)
+            else:
+                qs = super().get_queryset().filter(scope='org')
+        else:
+            qs = super().get_queryset().filter(scope='org')
         return qs
 
 

@@ -119,3 +119,6 @@ PAM_SERVER:
 
 # DLT
 DLT_ENABLED: False
+
+# 组织管理员可授权角色ID
+ENABLE_ORG_ROLE_IDS:
