@@ -688,22 +688,22 @@ def save_storage_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org
 
         try:
             print("Save storage device asset[{}], bk_obj_id: {}.".format(asset_name, bk_obj_id))
-            if bk_obj_id == 'storage_oss' and manufacturer in ['EMC']:
-                address = storage_cls + '/#/dashboard'
-            elif bk_obj_id == 'storage_oss' and manufacturer in ['XSKY']:
-                address = storage_cls + '/login?redirect=dashboard'
-            elif bk_obj_id == 'storage_oss' and manufacturer in ['华为', '浪潮']:
-                address = storage_cls + '/#/login'
-            elif bk_obj_id == 'fc_storage' and manufacturer in ['EMC']:
-                address = storage_cls + '/cas/login'
-            elif bk_obj_id == 'fc_storage' and manufacturer in ['H3C', '华为']:
-                address = storage_cls + '/login'
-            elif bk_obj_id == 'network_storage' and manufacturer in ['NetApp']:
-                address = storage_cls + '/sysmgr/v4'
-            elif bk_obj_id == 'network_storage' and manufacturer in ['华为']:
-                address = storage_cls + '/deviceManager/devicemanager/feature/login/login.html'
-            else:
-                address = storage_cls + '/'
+            # if bk_obj_id == 'storage_oss' and manufacturer in ['EMC']:
+            #     address = storage_cls + '/#/dashboard'
+            # elif bk_obj_id == 'storage_oss' and manufacturer in ['XSKY']:
+            #     address = storage_cls + '/login?redirect=dashboard'
+            # elif bk_obj_id == 'storage_oss' and manufacturer in ['华为', '浪潮']:
+            #     address = storage_cls + '/#/login'
+            # elif bk_obj_id == 'fc_storage' and manufacturer in ['EMC']:
+            #     address = storage_cls + '/cas/login'
+            # elif bk_obj_id == 'fc_storage' and manufacturer in ['H3C', '华为']:
+            #     address = storage_cls + '/login'
+            # elif bk_obj_id == 'network_storage' and manufacturer in ['NetApp']:
+            #     address = storage_cls + '/sysmgr/#'
+            # elif bk_obj_id == 'network_storage' and manufacturer in ['华为']:
+            #     address = storage_cls + '/deviceManager/devicemanager/feature/login/login.html'
+            # else:
+            address = storage_cls + '/'
 
             comment = bk_obj_id + '-' + storage_cls
             asset_protocol = ["http/443"]
@@ -712,13 +712,15 @@ def save_storage_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org
             # 用户确认全平台资产名称唯一
             exist_asset = Asset.objects.filter(name=asset_name).first()
             if not exist_asset.exists():
-                create_web_asset_autofill(asset_name, address, platform, comment, org, org_data_map, asset_protocol,
-                                          node_path,  bk_obj_id, manufacturer, asset)
+                # create_web_asset_autofill(asset_name, address, platform, comment, org, org_data_map, asset_protocol,
+                #                           node_path,  bk_obj_id, manufacturer, asset)
+                create_web_asset(asset_name, address, platform, comment, org, org_data_map, asset_protocol, node_path)
             else:
                 if exist_asset.platform.type != platform.type:
                     exist_asset.delete()
-                    create_web_asset_autofill(asset_name, address, platform, comment, org, org_data_map, asset_protocol,
-                                              node_path, bk_obj_id, manufacturer, asset)
+                    # create_web_asset_autofill(asset_name, address, platform, comment, org, org_data_map, asset_protocol,
+                    #                           node_path, bk_obj_id, manufacturer, asset)
+                    create_web_asset(asset_name, address, platform, comment, org, org_data_map, asset_protocol, node_path)
                 else:
                     exist_asset.address = address
                     exist_asset.comment = comment
