@@ -466,10 +466,11 @@ def save_load_balance_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_d
                 valid_ports.append(port_stripped)
 
         for port in valid_ports:
-            asset_name = asset_name + '-' + port
+            asset_name = asset_name + '-' + address + '-' + port
             try:
                 print("Save load balance asset[{}].".format(asset_name))
                 asset_protocol = [f"ssh/{port}", "telnet/23"]
+                # 新建设备平台 Global
                 platform = Platform.objects.filter(name='Global').first()
 
                 # 用户确认全平台设备名称唯一
@@ -616,6 +617,7 @@ def save_middleware_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_dat
         org = Organization.objects.get(id=Organization.DEFAULT_ID)
         orgs = [org]
 
+        asset_name = asset_name + '-' + address
         try:
             print("Save middleware asset[{}].".format(asset_name))
             platform = Platform.objects.filter(name='Website').first()
@@ -1094,6 +1096,7 @@ def save_pc_host_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_m
                 # 其它  ['ZDNS', '戴尔']
 
             comment = bk_obj_id + '-' + haddr_ip_address
+            asset_name = asset_name + '-' + haddr_ip_address
 
             # 用户确认全平台资产名称唯一
             exist_asset = Asset.objects.filter(name=asset_name).first()
@@ -1294,7 +1297,7 @@ def create_db_asset(asset_name, address, platform, org, org_data_map, asset_prot
         org_id=org.id
     )
     org_data_map[org]["create"].append(new_asset)
-    if len(default_db) == 0:
+    if not default_db:
         asset_model = Database(asset_ptr_id=new_asset.id)
     else:
         asset_model = Database(asset_ptr_id=new_asset.id, db_name=default_db)
