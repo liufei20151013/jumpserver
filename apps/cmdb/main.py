@@ -1738,6 +1738,9 @@ def search_user_org_name(id, user_org_dict, default_user_org_name):
     if not id:
         return default_user_org_name
 
+    if id in user_org_dict:
+        return user_org_dict[id]
+
     bk_token = Login(username=settings.CMDB_USERNAME, password=settings.CMDB_PASSWORD).login()
     if not bk_token:
         print("获取bk_token失败.")
@@ -1781,7 +1784,7 @@ def search_user_org_name(id, user_org_dict, default_user_org_name):
         return default_user_org_name
 
     res = response["data"]["name"]
-    user_org_dict.update({id: res})
+    user_org_dict[id] = res
     return res
 
 
