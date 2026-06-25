@@ -270,13 +270,13 @@ def process_data(isFullSync):
 # 所有的数据库资产都同步到太平金科的 系统运行与信息安全管理部-系统管理室 组织下
 def save_db_asset(assets, asset_org_dict, bk_obj_id, isFullSync, org_data_map):
     network_dept = '系统运行与信息安全管理部-系统管理室'
-    orgs = Organization.objects.filter(name=network_dept)
-    if not orgs.exists():
+    org = Organization.objects.filter(name=network_dept).first()
+    if not org:
         print("It does not exist organization [{}].".format(network_dept))
         return
-    org = orgs.first()
     set_current_org(org)
 
+    node_path = "/" + org.name
     for asset in assets:
         update_time = asset.get('last_time') or asset.get('create_time')
         if not isFullSync:
@@ -351,28 +351,24 @@ def save_db_asset(assets, asset_org_dict, bk_obj_id, isFullSync, org_data_map):
                 continue
 
             asset_protocol = [protocol]
-            for org in orgs:
-                set_current_org(org)
+            if sys_number and sys_name:
+                assetnode_name = sys_number + '-' + sys_name
+                node_path = node_path + "/" + assetnode_name
 
-                node_path = "/" + org.name
-                if sys_number and sys_name:
-                    assetnode_name = sys_number + '-' + sys_name
-                    node_path = node_path + "/" + assetnode_name
-
-                # 用户确认全平台资产名称唯一
-                exist_asset = Asset.objects.filter(name=asset_name).first()
-                if not exist_asset:
-                    create_db_asset(asset_name, ip_addr, platform, org, org_data_map, asset_protocol, node_path, 
+            # 用户确认全平台资产名称唯一
+            exist_asset = Asset.objects.filter(name=asset_name).first()
+            if not exist_asset:
+                create_db_asset(asset_name, ip_addr, platform, org, org_data_map, asset_protocol, node_path,
+                                default_db)
+            else:
+                if exist_asset.platform.type != platform.type:
+                    exist_asset.delete()
+                    create_db_asset(asset_name, ip_addr, platform, org, org_data_map, asset_protocol, node_path,
                                     default_db)
                 else:
-                    if exist_asset.platform.type != platform.type:
-                        exist_asset.delete()
-                        create_db_asset(asset_name, ip_addr, platform, org, org_data_map, asset_protocol, node_path,
-                                        default_db)
-                    else:
-                        exist_asset.address = ip_addr
-                        update_asset(org, org_data_map, exist_asset, asset_protocol, node_path, asset_org_dict,
-                                     True, True)
+                    exist_asset.address = ip_addr
+                    update_asset(org, org_data_map, exist_asset, asset_protocol, node_path, asset_org_dict,
+                                 True, True)
         except Exception as e:
             print("Failed to save db asset[{}], error:{}".format(asset_name, e))
             raise e
@@ -514,11 +510,10 @@ def save_load_balance_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_d
 # 所有的网络设备都同步到太平金科的系统运行与信息安全管理部-网络管理室组织下
 def save_network_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map):
     network_dept = '系统运行与信息安全管理部-网络管理室'
-    orgs = Organization.objects.filter(name=network_dept)
-    if not orgs.exists():
+    org = Organization.objects.filter(name=network_dept).first()
+    if not org:
         print("It does not exist organization [{}].".format(network_dept))
         return
-    org = orgs.first()
     set_current_org(org)
 
     node_path = '/' + org.name
@@ -711,7 +706,7 @@ def save_storage_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org
 
             # 用户确认全平台资产名称唯一
             exist_asset = Asset.objects.filter(name=asset_name).first()
-            if not exist_asset.exists():
+            if not exist_asset:
                 # create_web_asset_autofill(asset_name, address, platform, comment, org, org_data_map, asset_protocol,
                 #                           node_path,  bk_obj_id, manufacturer, asset)
                 create_web_asset(asset_name, address, platform, comment, org, org_data_map, asset_protocol, node_path)
@@ -1102,7 +1097,7 @@ def save_pc_host_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_m
 
             # 用户确认全平台资产名称唯一
             exist_asset = Asset.objects.filter(name=asset_name).first()
-            if not exist_asset.exists():
+            if not exist_asset:
                 create_web_asset_autofill(asset_name, address, platform, comment, org, org_data_map, asset_protocol,
                                           node_path, bk_obj_id, manufacturer, asset)
             else:
@@ -1418,6 +1413,8 @@ def org_batch_run(org, create_objs, update_objs, host_objs=None, db_objs=None, d
     :param proto_objs: 协议列表
     """
     set_current_org(org)
+    print(f"当前组织：{org.name}")
+
     nodes = Node.objects.all()
     node_org_dict = {}
     for node in nodes:
@@ -1856,7 +1853,7 @@ class Login(object):
         }
 
         retry = 0
-        while retry < 3:
+        while retry < 5:
             resp = self.session.post(login_url, data=login_form, verify=False)
             print(f'login_csrftoken: {login_csrftoken}')
             print(f'username: {self.username}')
@@ -1864,6 +1861,6 @@ class Login(object):
             if resp.status_code == 200:
                 return resp.request.headers['Cookie'].split('bk_token=')[1].split(';')[0]
             retry += 1
-            time.sleep(5)
+            time.sleep(10)
             print(f'login retry: {retry}')
         return ""
