@@ -227,6 +227,26 @@ def process_data(isFullSync):
         save_desk_support_asset(desk_support_data, asset_org_dict, isFullSync, bk_obj_id, org_data_map)
     print("查询所有桌面办公 End.")
 
+    # 状态：运行 1      环境： 开发测试 2  生产等  1 3 4 5 7
+    print("查询数据库控制台 Start.")
+    region = '2'
+    objects = {
+        "db_console": "数据库控制台"
+    }
+    for bk_obj_id, bk_obj_name in objects.items():
+        print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}".format(bk_obj_id, bk_obj_name, region))
+        result = search_other_asset(bk_obj_id, region)
+        if result['code'] != 0:
+            print("查询 CMDB 数据库控制台数据失败，code: {}, requestId: {}".format(result['code'], result['request_id']))
+            return
+
+        db_console_data = result['data']['list']
+        print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}, total: {} 条"
+              .format(bk_obj_id, bk_obj_name, region, len(db_console_data)))
+
+        save_db_console_asset(db_console_data, asset_org_dict, isFullSync, bk_obj_id, org_data_map)
+    print("查询所有数据库控制台 End.")
+
     # ========== 逐个组织执行批量操作（组织隔离，同名互不冲突） ==========
     for org, batch in org_data_map.items():
         org_batch_run(
@@ -381,6 +401,50 @@ def str_to_int(str_num):
         print("输入的字符串无法转换为整数")
         return 0
 
+# 所有的数据库控制台都同步到太平金科的系统运行与信息安全管理部-系统管理室组织下
+def save_db_console_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map):
+    desk_support_dept = '系统运行与信息安全管理部-系统管理室'
+    org = Organization.objects.filter(name=desk_support_dept).first()
+    set_current_org(org)
+
+    node_path = '/' + org.name
+    for asset in assets:
+        update_time = asset.get('last_time') or asset.get('create_time')
+        if not isFullSync:
+            if not compare_time(update_time):
+                continue
+
+        # 控制台名称
+        cls_name = asset.get('cls_name', '')
+        # 控制台地址
+        address = asset.get('cls_url', '')
+        # 配置项状态
+        status = asset.get('status', '')
+        # 未维护信息过滤掉
+        if not cls_name or not address or not status:
+            print("There exist null parameter situations, skip.")
+            continue
+
+        # 运行
+        if status != '1':
+            continue
+
+        asset_name = cls_name + "_" + address
+        try:
+            # 用户确认全平台资产名称唯一
+            asset_protocol = ["http/443"]
+            platform = Platform.objects.filter(name='Website').first()
+            exist_asset = Asset.objects.filter(name=asset_name).first()
+            if not exist_asset:
+                print("create db console web asset[{}], bk_obj_id: {}.".format(asset_name, bk_obj_id))
+                create_web_asset(asset_name, address, platform, '', org, org_data_map, asset_protocol,
+                                 node_path)
+            else:
+                update_asset(org, org_data_map, exist_asset, asset_protocol, node_path, asset_org_dict,
+                             False, False)
+        except Exception as e:
+            print("Failed to save db console asset[{}], error:{}".format(asset_name, e))
+            raise e
 
 # 所有的桌面办公都同步到太平金科的系统运行与信息安全管理部-桌面支持室组织下
 def save_desk_support_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map):
