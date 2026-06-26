@@ -287,17 +287,9 @@ def process_data(isFullSync):
     print('CMDB 数据处理 End.')
 
 
-# 专业公司的数据库资产不在CMDB管理，所有数据库资产归属 系统运行与信息安全管理部-系统管理室 管理
+# 专业公司的数据库资产不在CMDB管理，所有数据库资产归属 系统运行与信息安全管理部-系统管理室和应用开发部门 管理
 # 所有的数据库资产都同步到太平金科的 系统运行与信息安全管理部-系统管理室 组织下
 def save_db_asset(assets, asset_org_dict, bk_obj_id, isFullSync, org_data_map):
-    network_dept = '系统运行与信息安全管理部-系统管理室'
-    org = Organization.objects.filter(name=network_dept).first()
-    if not org:
-        print("It does not exist organization [{}].".format(network_dept))
-        return
-    set_current_org(org)
-
-    node_path = "/" + org.name
     for asset in assets:
         update_time = asset.get('last_time') or asset.get('create_time')
         if not isFullSync:
@@ -315,84 +307,97 @@ def save_db_asset(assets, asset_org_dict, bk_obj_id, isFullSync, org_data_map):
             print("There exist null parameter situations, skip.")
             continue
 
-        try:
-            print("Save db asset[{}].".format(asset_name))
-            default_db = ''
-            db_port = str(db_port)
-            if bk_obj_id == 'db_redis':
-                protocol = "redis/" + db_port
-                db_version = asset.get('db_version', '0')
-                if db_version and str_to_int(db_version) >= 6:
-                    platform = Platform.objects.filter(name='Redis6+').first()
-                else:
-                    platform = Platform.objects.filter(name='Redis').first()
-            elif bk_obj_id == 'db_sqlserver':
-                protocol = "sqlserver/" + db_port
-                platform = Platform.objects.filter(name='SQLServer').first()
-                # 缺少默认数据库  非必填
-            elif bk_obj_id == 'db_postgresql' or bk_obj_id == 'db_tdsql_pg':
-                protocol = "postgresql/" + db_port
-                platform = Platform.objects.filter(name='PostgreSQL').first()
-                # 缺少默认数据库
-                default_db = 'postgres'
-            elif bk_obj_id == 'db_mysql' or bk_obj_id == 'db_tdsql_mysql':
-                protocol = "mysql/" + db_port
-                platform = Platform.objects.filter(name='MySQL').first()
-                # 缺少默认数据库  非必填
-            elif bk_obj_id == 'db_mongodb':
-                protocol = "mongodb/" + db_port
-                platform = Platform.objects.filter(name='MongoDB').first()
-                # 缺少默认数据库
-                default_db = 'admin'
-            elif bk_obj_id == 'db_oracle':
-                protocol = "oracle/" + db_port
-                default_db = asset.get('db_inst_name', '')
-                if default_db and len(default_db) == 0:
-                    default_db = asset.get('sid', '')
+        orgs = []
+        org_names = ['系统运行与信息安全管理部-系统管理室', org_name]
+        for name in org_names:
+            org, created = Organization.objects.get_or_create(name=name)
+            orgs.append(org)
+            if created:
+                print("Success to create org[{}].".format(name))
+
+
+        for org in orgs:
+            set_current_org(org)
+            node_path = "/" + org.name
+
+            try:
+                print("Save db asset[{}].".format(asset_name))
+                default_db = ''
+                db_port = str(db_port)
+                if bk_obj_id == 'db_redis':
+                    protocol = "redis/" + db_port
+                    db_version = asset.get('db_version', '0')
+                    if db_version and str_to_int(db_version) >= 6:
+                        platform = Platform.objects.filter(name='Redis6+').first()
+                    else:
+                        platform = Platform.objects.filter(name='Redis').first()
+                elif bk_obj_id == 'db_sqlserver':
+                    protocol = "sqlserver/" + db_port
+                    platform = Platform.objects.filter(name='SQLServer').first()
+                    # 缺少默认数据库  非必填
+                elif bk_obj_id == 'db_postgresql' or bk_obj_id == 'db_tdsql_pg':
+                    protocol = "postgresql/" + db_port
+                    platform = Platform.objects.filter(name='PostgreSQL').first()
+                    # 缺少默认数据库
+                    default_db = 'postgres'
+                elif bk_obj_id == 'db_mysql' or bk_obj_id == 'db_tdsql_mysql':
+                    protocol = "mysql/" + db_port
+                    platform = Platform.objects.filter(name='MySQL').first()
+                    # 缺少默认数据库  非必填
+                elif bk_obj_id == 'db_mongodb':
+                    protocol = "mongodb/" + db_port
+                    platform = Platform.objects.filter(name='MongoDB').first()
+                    # 缺少默认数据库
+                    default_db = 'admin'
+                elif bk_obj_id == 'db_oracle':
+                    protocol = "oracle/" + db_port
+                    default_db = asset.get('db_inst_name', '')
                     if default_db and len(default_db) == 0:
-                        continue
-                platform = Platform.objects.filter(name='Oracle').first()
-                # 缺少默认数据库  非必填
-            elif bk_obj_id == 'db_dm':
-                protocol = "dameng/" + db_port
-                platform = Platform.objects.filter(name='Dameng').first()
-                # 缺少默认数据库  非必填
-            elif (bk_obj_id == 'db_elasticsearch' or bk_obj_id == 'db_essbase' or bk_obj_id == 'db_sybaseiq' or
-                  bk_obj_id == 'db_hana' or bk_obj_id == 'db_oceanbase' or bk_obj_id == 'db_tidb' or
-                  bk_obj_id == 'db_gaussdb' or bk_obj_id == 'db_custom'):
-                # 自定义类型 远程应用方式连接
-                protocol = "orig_app/" + db_port
-                platform = Platform.objects.filter(name='OriginalApp').first()
-            else:
-                print("bk_obj_id[{}] is not exist, skip.".format(bk_obj_id))
-                continue
+                        default_db = asset.get('sid', '')
+                        if default_db and len(default_db) == 0:
+                            continue
+                    platform = Platform.objects.filter(name='Oracle').first()
+                    # 缺少默认数据库  非必填
+                elif bk_obj_id == 'db_dm':
+                    protocol = "dameng/" + db_port
+                    platform = Platform.objects.filter(name='Dameng').first()
+                    # 缺少默认数据库  非必填
+                elif (bk_obj_id == 'db_elasticsearch' or bk_obj_id == 'db_essbase' or bk_obj_id == 'db_sybaseiq' or
+                      bk_obj_id == 'db_hana' or bk_obj_id == 'db_oceanbase' or bk_obj_id == 'db_tidb' or
+                      bk_obj_id == 'db_gaussdb' or bk_obj_id == 'db_custom'):
+                    # 自定义类型 远程应用方式连接
+                    protocol = "orig_app/" + db_port
+                    platform = Platform.objects.filter(name='OriginalApp').first()
+                else:
+                    print("bk_obj_id[{}] is not exist, skip.".format(bk_obj_id))
+                    continue
 
-            if not platform:
-                print("asset[{}]'s platform is not exist, bk_obj_id: {}.".format(asset_name, bk_obj_id))
-                continue
+                if not platform:
+                    print("asset[{}]'s platform is not exist, bk_obj_id: {}.".format(asset_name, bk_obj_id))
+                    continue
 
-            asset_protocol = [protocol]
-            if sys_number and sys_name:
-                assetnode_name = sys_number + '-' + sys_name
-                node_path = node_path + "/" + assetnode_name
+                asset_protocol = [protocol]
+                if sys_number and sys_name:
+                    assetnode_name = sys_number + '-' + sys_name
+                    node_path = node_path + "/" + assetnode_name
 
-            # 用户确认全平台资产名称唯一
-            exist_asset = Asset.objects.filter(name=asset_name).first()
-            if not exist_asset:
-                create_db_asset(asset_name, ip_addr, platform, org, org_data_map, asset_protocol, node_path,
-                                default_db)
-            else:
-                if exist_asset.platform.type != platform.type:
-                    exist_asset.delete()
+                # 用户确认全平台资产名称唯一
+                exist_asset = Asset.objects.filter(name=asset_name).first()
+                if not exist_asset:
                     create_db_asset(asset_name, ip_addr, platform, org, org_data_map, asset_protocol, node_path,
                                     default_db)
                 else:
-                    exist_asset.address = ip_addr
-                    update_asset(org, org_data_map, exist_asset, asset_protocol, node_path, asset_org_dict,
-                                 True, True)
-        except Exception as e:
-            print("Failed to save db asset[{}], error:{}".format(asset_name, e))
-            raise e
+                    if exist_asset.platform.type != platform.type:
+                        exist_asset.delete()
+                        create_db_asset(asset_name, ip_addr, platform, org, org_data_map, asset_protocol, node_path,
+                                        default_db)
+                    else:
+                        exist_asset.address = ip_addr
+                        update_asset(org, org_data_map, exist_asset, asset_protocol, node_path, asset_org_dict,
+                                     True, True)
+            except Exception as e:
+                print("Failed to save db asset[{}], error:{}".format(asset_name, e))
+                raise e
 
 def str_to_int(str_num):
     try:
@@ -404,8 +409,7 @@ def str_to_int(str_num):
 
 # 所有的数据库控制台都同步到太平金科的系统运行与信息安全管理部-系统管理室组织下
 def save_db_console_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map):
-    desk_support_dept = '系统运行与信息安全管理部-系统管理室'
-    org = Organization.objects.filter(name=desk_support_dept).first()
+    org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-系统管理室')
     set_current_org(org)
 
     node_path = '/' + org.name
@@ -449,8 +453,7 @@ def save_db_console_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_dat
 
 # 所有的桌面办公都同步到太平金科的系统运行与信息安全管理部-桌面支持室组织下
 def save_desk_support_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map):
-    desk_support_dept = '系统运行与信息安全管理部-桌面支持室'
-    org = Organization.objects.filter(name=desk_support_dept).first()
+    org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-桌面支持室')
     set_current_org(org)
 
     node_path = '/' + org.name
@@ -494,8 +497,7 @@ def save_desk_support_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_d
 
 # 所有的网络设备都同步到太平金科的系统运行与信息安全管理部-网络管理室组织下
 def save_load_balance_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map):
-    network_dept = '系统运行与信息安全管理部-网络管理室'
-    org = Organization.objects.filter(name=network_dept).first()
+    org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-网络管理室')
     set_current_org(org)
 
     node_path = '/' + org.name
@@ -575,11 +577,7 @@ def save_load_balance_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_d
 # 专业公司的网络设备资产不在CMDB管理，所有网络设备资产归属 系统运行与信息安全管理部-网络管理室 管理
 # 所有的网络设备都同步到太平金科的系统运行与信息安全管理部-网络管理室组织下
 def save_network_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map):
-    network_dept = '系统运行与信息安全管理部-网络管理室'
-    org = Organization.objects.filter(name=network_dept).first()
-    if not org:
-        print("It does not exist organization [{}].".format(network_dept))
-        return
+    org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-网络管理室')
     set_current_org(org)
 
     node_path = '/' + org.name
@@ -679,7 +677,7 @@ def save_middleware_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_dat
 
         # 在 Default 组织下管理所有资产，在归属部门 app_department 对应组织下管理关联资产
         # 专业公司的中间件资产不在CMDB管理，所有中间件资产归属 系统运行与信息安全管理部-系统管理室 管理
-        org = Organization.objects.get(id=Organization.DEFAULT_ID)
+        org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-系统管理室')
         orgs = [org]
 
         asset_name = asset_name + '-' + address
@@ -717,7 +715,7 @@ def save_middleware_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_dat
 
 # 所有存储设备归属系统管理室
 def save_storage_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map):
-    org = Organization.objects.get(id=Organization.DEFAULT_ID)
+    org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-系统管理室')
     set_current_org(org)
 
     for asset in assets:
@@ -1113,7 +1111,7 @@ def get_web_asset_model(bk_obj_id, manufacturer, asset, a):
 
 # 所有PC机归属系统管理室
 def save_pc_host_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map):
-    org = Organization.objects.get(id=Organization.DEFAULT_ID)
+    org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-系统管理室')
     set_current_org(org)
 
     for asset in assets:
@@ -1240,7 +1238,7 @@ def save_host_asset(assets, asset_org_dict, user_org_dict, isFullSync, org_data_
 
                 if not user_org_name:
                     # 系统运行与信息安全管理部-系统管理室
-                    org = Organization.objects.get(id=Organization.DEFAULT_ID)
+                    org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-系统管理室')
                     orgs.append(org)
                     org_asset_comment_dict[org.id] = default_user_org_name
 
@@ -1249,16 +1247,10 @@ def save_host_asset(assets, asset_org_dict, user_org_dict, isFullSync, org_data_
                                           asset_name)
                 else:
                     name = '系统运行与信息安全管理部-' + user_org_name
-                    org = Organization.objects.filter(name=name).first()
+                    org = Organization.objects.get_or_create(name=name)
                     if org:
                         orgs.append(org)
                         org_asset_comment_dict.update({org.id: user_org_name})
-                    else:
-                        print("堡垒机上不存在组织[{}]，asset_name: {}.".format(name, asset_name))
-                        org = Organization.objects.create(name=name)
-                        orgs.append(org)
-                        org_asset_comment_dict[org.id] = user_org_name
-                        print("Success to create org[{}].".format(name))
 
                     # 在应用科室归属组织下创建资产
                     relate_app_office_org(app_office, dept_name, orgs, org_asset_comment_dict, user_org_name, asset_name)
@@ -1266,25 +1258,19 @@ def save_host_asset(assets, asset_org_dict, user_org_dict, isFullSync, org_data_
                 if user_org_name:
                     if str(user_org_name) == default_user_org_name:
                         # 系统运行与信息安全管理部-系统管理室
-                        org = Organization.objects.get(id=Organization.DEFAULT_ID)
+                        org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-系统管理室')
                         orgs.append(org)
                         org_asset_comment_dict[org.id] = user_org_name
                 else:
-                    org = Organization.objects.get(id=Organization.DEFAULT_ID)
+                    org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-系统管理室')
                     orgs.append(org)
                     org_asset_comment_dict[org.id] = default_user_org_name
 
                 # 所属应用部门
-                org = Organization.objects.filter(name=org_name).first()
+                org = Organization.objects.get_or_create(name=org_name)
                 if org:
                     orgs.append(org)
                     org_asset_comment_dict[org.id] = user_org_name
-                else:
-                    print("堡垒机上不存在组织[{}]，asset_name: {}.".format(org_name, asset_name))
-                    org = Organization.objects.create(name=org_name)
-                    orgs.append(org)
-                    org_asset_comment_dict[org.id] = user_org_name
-                    print("Success to create org[{}].".format(org_name))
 
         try:
             print("Save host asset[{}].".format(asset_name))
@@ -1568,16 +1554,10 @@ def relate_app_office_org(app_office, dept_name, orgs, org_asset_comment_dict, u
     if app_office:
         # 应用科室所属组织
         app_office_org_name = dept_name + '-' + app_office
-        org = Organization.objects.filter(name=app_office_org_name).first()
+        org = Organization.objects.get_or_create(name=app_office_org_name)
         if org:
             orgs.append(org)
             org_asset_comment_dict.update({org.id: user_org_name})
-        else:
-            print("堡垒机上不存在组织[{}]，asset_name: {}.".format(app_office_org_name, asset_name))
-            org = Organization.objects.create(name=app_office_org_name)
-            orgs.append(org)
-            org_asset_comment_dict[org.id] = user_org_name
-            print("Success to create org[{}].".format(app_office_org_name))
 
 
 def search_other_asset(bk_obj_id, region):

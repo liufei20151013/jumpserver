@@ -259,4 +259,13 @@ class TestTaskCase(TestCase):
 
 
     def test4(self):
-        process_data(True)
+        # process_data(True)
+
+        orgs = []
+        org_name = '运维开发部'
+        org_names = ['系统运行与信息安全管理部-系统管理室', org_name]
+        for name in org_names:
+            org, created = Organization.objects.get_or_create(name=name)
+            orgs.append(org)
+            if created:
+                print("Success to create org[{}].".format(name))
