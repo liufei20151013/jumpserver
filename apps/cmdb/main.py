@@ -408,7 +408,7 @@ def str_to_int(str_num):
 
 # 所有的数据库控制台都同步到太平金科的系统运行与信息安全管理部-系统管理室组织下
 def save_db_console_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map):
-    org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-系统管理室')
+    org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-系统管理室')[0]
     set_current_org(org)
 
     node_path = '/' + org.name
@@ -452,7 +452,7 @@ def save_db_console_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_dat
 
 # 所有的桌面办公都同步到太平金科的系统运行与信息安全管理部-桌面支持室组织下
 def save_desk_support_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map):
-    org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-桌面支持室')
+    org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-桌面支持室')[0]
     set_current_org(org)
 
     node_path = '/' + org.name
@@ -496,7 +496,7 @@ def save_desk_support_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_d
 
 # 所有的网络设备都同步到太平金科的系统运行与信息安全管理部-网络管理室组织下
 def save_load_balance_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map):
-    org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-网络管理室')
+    org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-网络管理室')[0]
     set_current_org(org)
 
     node_path = '/' + org.name
@@ -576,7 +576,7 @@ def save_load_balance_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_d
 # 专业公司的网络设备资产不在CMDB管理，所有网络设备资产归属 系统运行与信息安全管理部-网络管理室 管理
 # 所有的网络设备都同步到太平金科的系统运行与信息安全管理部-网络管理室组织下
 def save_network_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map):
-    org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-网络管理室')
+    org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-网络管理室')[0]
     set_current_org(org)
 
     node_path = '/' + org.name
@@ -676,7 +676,7 @@ def save_middleware_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_dat
 
         # 在 Default 组织下管理所有资产，在归属部门 app_department 对应组织下管理关联资产
         # 专业公司的中间件资产不在CMDB管理，所有中间件资产归属 系统运行与信息安全管理部-系统管理室 管理
-        org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-系统管理室')
+        org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-系统管理室')[0]
         orgs = [org]
 
         asset_name = asset_name + '-' + address
@@ -714,7 +714,7 @@ def save_middleware_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_dat
 
 # 所有存储设备归属系统管理室
 def save_storage_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map):
-    org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-系统管理室')
+    org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-系统管理室')[0]
     set_current_org(org)
 
     for asset in assets:
@@ -1110,7 +1110,7 @@ def get_web_asset_model(bk_obj_id, manufacturer, asset, a):
 
 # 所有PC机归属系统管理室
 def save_pc_host_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map):
-    org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-系统管理室')
+    org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-系统管理室')[0]
     set_current_org(org)
 
     for asset in assets:
@@ -1237,7 +1237,7 @@ def save_host_asset(assets, asset_org_dict, user_org_dict, isFullSync, org_data_
 
                 if not user_org_name:
                     # 系统运行与信息安全管理部-系统管理室
-                    org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-系统管理室')
+                    org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-系统管理室')[0]
                     orgs.append(org)
                     org_asset_comment_dict[org.id] = default_user_org_name
 
@@ -1246,7 +1246,7 @@ def save_host_asset(assets, asset_org_dict, user_org_dict, isFullSync, org_data_
                                           asset_name)
                 else:
                     name = '系统运行与信息安全管理部-' + user_org_name
-                    org = Organization.objects.get_or_create(name=name)
+                    org = Organization.objects.get_or_create(name=name)[0]
                     if org:
                         orgs.append(org)
                         org_asset_comment_dict.update({org.id: user_org_name})
@@ -1257,16 +1257,16 @@ def save_host_asset(assets, asset_org_dict, user_org_dict, isFullSync, org_data_
                 if user_org_name:
                     if str(user_org_name) == default_user_org_name:
                         # 系统运行与信息安全管理部-系统管理室
-                        org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-系统管理室')
+                        org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-系统管理室')[0]
                         orgs.append(org)
                         org_asset_comment_dict[org.id] = user_org_name
                 else:
-                    org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-系统管理室')
+                    org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-系统管理室')[0]
                     orgs.append(org)
                     org_asset_comment_dict[org.id] = default_user_org_name
 
                 # 所属应用部门
-                org = Organization.objects.get_or_create(name=org_name)
+                org = Organization.objects.get_or_create(name=org_name)[0]
                 if org:
                     orgs.append(org)
                     org_asset_comment_dict[org.id] = user_org_name
@@ -1553,7 +1553,7 @@ def relate_app_office_org(app_office, dept_name, orgs, org_asset_comment_dict, u
     if app_office:
         # 应用科室所属组织
         app_office_org_name = dept_name + '-' + app_office
-        org = Organization.objects.get_or_create(name=app_office_org_name)
+        org = Organization.objects.get_or_create(name=app_office_org_name)[0]
         if org:
             orgs.append(org)
             org_asset_comment_dict.update({org.id: user_org_name})
