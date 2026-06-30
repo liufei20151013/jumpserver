@@ -143,7 +143,7 @@ class ConnectionTokenSecretSerializer(OrgResourceModelSerializerMixin):
     user = _ConnectionTokenUserSerializer(read_only=True)
     asset = _ConnectionTokenAssetSerializer(read_only=True)
     account = _ConnectionTokenAccountSerializer(read_only=True, source='account_object')
-    gateway = _ConnectionTokenGatewaySerializer(read_only=True)
+    gateway = serializers.SerializerMethodField()
     platform = _ConnectionTokenPlatformSerializer(read_only=True)
     zone = ObjectRelatedField(queryset=Zone.objects, required=False, label=_('Domain'))
     command_filter_acls = _ConnectionTokenCommandFilterACLSerializer(read_only=True, many=True)
@@ -167,6 +167,25 @@ class ConnectionTokenSecretSerializer(OrgResourceModelSerializerMixin):
             'face_monitor_token': {'read_only': True},
             'value': {'read_only': True},
         }
+
+    def get_gateway(self, instance):
+        if instance.gateway:
+            return _ConnectionTokenGatewaySerializer(instance.gateway).data
+        endpoint = instance.endpoint
+        if endpoint and not endpoint.is_default() and endpoint.host:
+            return {
+                'id': str(endpoint.id),
+                'name': f'endpoint-{endpoint.name}',
+                'address': endpoint.host,
+                'protocols': [{'name': 'ssh', 'port': endpoint.ssh_port}],
+                'account': {
+                    'name': '@TOKEN',
+                    'username': f'JMS-{instance.value}',
+                    'secret_type': 'password',
+                    'secret': instance.value,
+                },
+            }
+        return None
 
 
 class ConnectTokenAppletOptionSerializer(serializers.Serializer):

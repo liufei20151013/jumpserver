@@ -22,7 +22,7 @@ from common.utils.timezone import as_current_tz
 from orgs.mixins.models import JMSOrgBaseModel
 from orgs.utils import tmp_to_org
 from perms.const import ActionChoices
-from terminal.models import Applet, VirtualApp
+from terminal.models import Applet, VirtualApp, Endpoint, EndpointRule
 
 
 def date_expired_default():
@@ -325,6 +325,19 @@ class ConnectionToken(JMSOrgBaseModel):
         if not self.asset or not self.zone:
             return
         return self.asset.gateway
+
+    @lazyproperty
+    def endpoint(self):
+        if not self.asset:
+            return None
+        endpoint = Endpoint.match_by_instance_label(self.asset, self.protocol)
+        if not endpoint:
+            target_ip = self.asset.get_target_ip()
+            endpoint = EndpointRule.match_endpoint(
+                target_instance=self.asset, target_ip=target_ip,
+                protocol=self.protocol,
+            )
+        return endpoint
 
     @lazyproperty
     def command_filter_acls(self):
