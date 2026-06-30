@@ -1477,6 +1477,16 @@ def org_batch_run(org, create_objs, update_objs, host_objs=None, db_objs=None, d
     for node in nodes:
         node_org_dict[node.full_value] = node
 
+    # 去重
+    seen_keys = set()
+    dedup_create = []
+    for asset in create_objs:
+        key = (asset.org_id, asset.name)
+        if key not in seen_keys:
+            seen_keys.add(key)
+            dedup_create.append(asset)
+    create_objs = dedup_create
+
     with transaction.atomic():
         # 1. 批量创建主资产
         if create_objs:
