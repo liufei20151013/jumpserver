@@ -308,7 +308,10 @@ def save_db_asset(assets, asset_org_dict, bk_obj_id, isFullSync, org_data_map):
             continue
 
         orgs = []
-        org_names = ['系统运行与信息安全管理部-系统管理室', org_name]
+        default_org_name = '系统运行与信息安全管理部-系统管理室'
+        org_names = [default_org_name]
+        if not default_org_name.__contains__(org_name):
+            org_names.append(org_name)
         for name in org_names:
             org, created = Organization.objects.get_or_create(name=name)
             orgs.append(org)
@@ -508,7 +511,7 @@ def save_load_balance_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_d
                 continue
 
         # 设备名称
-        asset_name = asset.get('device_name', '')
+        device_name = asset.get('device_name', '')
         address = asset.get('ip_address', '')
         manufacturer = asset.get('manufacturer', '')
         # 配置项状态
@@ -516,7 +519,7 @@ def save_load_balance_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_d
         # ssh 端口
         ssh_port = asset.get('ssh_port', '')
         # 未维护信息过滤掉
-        if not asset_name or not address or not manufacturer or not status or not ssh_port:
+        if not device_name or not address or not manufacturer or not status or not ssh_port:
             print("There exist null parameter situations, skip.")
             continue
 
@@ -533,7 +536,7 @@ def save_load_balance_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_d
                 valid_ports.append(port_stripped)
 
         for port in valid_ports:
-            asset_name = asset_name + '-' + address + '-' + port
+            asset_name = device_name + '-' + address + '-' + port
             try:
                 print("Save load balance asset[{}].".format(asset_name))
                 asset_protocol = [f"ssh/{port}", "telnet/23"]
@@ -556,7 +559,7 @@ def save_load_balance_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_d
                                      True, False)
 
                 # 添加 web 控制台地址，不对接3A，无账号代填，全部手动输入
-                address = asset.get('web_mgr', '')
+                address = device_name + '-' + asset.get('web_mgr', '')
                 if address:
                     # 用户确认全平台资产名称唯一
                     asset_protocol = ["http/443"]
@@ -587,6 +590,8 @@ def save_network_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org
             if not compare_time(update_time):
                 continue
 
+        # 实例名
+        bk_inst_name = asset.get('bk_inst_name', '')
         # 设备名称
         asset_name = asset.get('device_name', '') if bk_obj_id == 'network_device' else asset.get('host_name', '')
         address = asset.get('ip_address', '') if bk_obj_id == 'network_device' else asset.get('manage_ip', '')
@@ -594,7 +599,7 @@ def save_network_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org
         # 配置项状态
         status = asset.get('status', '')
         # 未维护信息过滤掉
-        if not asset_name or not address or not manufacturer or not status:
+        if not bk_inst_name or not asset_name or not address or not manufacturer or not status:
             print("There exist null parameter situations, skip.")
             continue
 
@@ -607,7 +612,7 @@ def save_network_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org
             if not status in ["1", "5", "6"]:
                 continue
 
-        asset_name = asset_name + '-' + address
+        asset_name = asset_name + '-' + address + '-' + bk_inst_name
         try:
             print("Save network device asset[{}].".format(asset_name))
             asset_protocol = ["ssh/22", "telnet/23"]
@@ -638,7 +643,7 @@ def save_network_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org
                                  False, False)
 
             # 添加 web 控制台地址，不对接3A，无账号代填，全部手动输入
-            address = asset.get('web_mgr', '')
+            address = bk_inst_name + '-' + asset.get('web_mgr', '')
             if address:
                 # 用户确认全平台资产名称唯一
                 asset_protocol = ["http/443"]
@@ -1159,7 +1164,6 @@ def save_pc_host_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_m
                 # 其它  ['ZDNS', '戴尔']
 
             comment = bk_obj_id + '-' + haddr_ip_address
-            asset_name = asset_name + '-' + haddr_ip_address
 
             # 用户确认全平台资产名称唯一
             exist_asset = Asset.objects.filter(name=asset_name).first()
