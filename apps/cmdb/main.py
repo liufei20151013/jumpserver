@@ -422,11 +422,11 @@ def save_db_console_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_dat
         # 控制台名称
         cls_name = asset.get('cls_name', '')
         # 控制台地址
-        address = asset.get('cls_url', '')
+        cls_url = asset.get('cls_url', '')
         # 配置项状态
         status = asset.get('status', '')
         # 未维护信息过滤掉
-        if not cls_name or not address or not status:
+        if not cls_name or not cls_url or not status:
             print("There exist null parameter situations, skip.")
             continue
 
@@ -434,19 +434,28 @@ def save_db_console_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_dat
         if status != '1':
             continue
 
-        asset_name = cls_name + "_" + address
         try:
-            # 用户确认全平台资产名称唯一
-            asset_protocol = ["http/443"]
-            platform = Platform.objects.filter(name='Website').first()
-            exist_asset = Asset.objects.filter(name=asset_name).first()
-            if not exist_asset:
-                print("create db console web asset[{}], bk_obj_id: {}.".format(asset_name, bk_obj_id))
-                create_web_asset(asset_name, address, platform, '', org, org_data_map, asset_protocol,
-                                 node_path)
-            else:
-                update_asset(org, org_data_map, exist_asset, asset_protocol, node_path, asset_org_dict,
-                             False, False)
+            url_list = cls_url.split(',')
+            address_list = []
+            for url in url_list:
+                # 去除两端空白 + 判断是否为空
+                url_stripped = url.strip()
+                if url_stripped:
+                    address_list.append(url_stripped)
+
+            for address in address_list:
+                asset_name = cls_name + "_" + address
+                # 用户确认全平台资产名称唯一
+                asset_protocol = ["http/443"]
+                platform = Platform.objects.filter(name='Website').first()
+                exist_asset = Asset.objects.filter(name=asset_name).first()
+                if not exist_asset:
+                    print("create db console web asset[{}], bk_obj_id: {}.".format(asset_name, bk_obj_id))
+                    create_web_asset(asset_name, address, platform, '', org, org_data_map, asset_protocol,
+                                     node_path)
+                else:
+                    update_asset(org, org_data_map, exist_asset, asset_protocol, node_path, asset_org_dict,
+                                 False, False)
         except Exception as e:
             print("Failed to save db console asset[{}], error:{}".format(asset_name, e))
             raise e
