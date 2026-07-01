@@ -7,8 +7,6 @@ import requests
 import json
 import time
 
-from django.db import transaction
-
 from orgs.utils import set_current_org
 
 from orgs.models import Organization
@@ -558,15 +556,16 @@ def save_load_balance_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_d
                                      True, False)
 
                 # 添加 web 控制台地址，不对接3A，无账号代填，全部手动输入
-                address = device_name + '-' + asset.get('web_mgr', '')
+                address = asset.get('web_mgr', '')
                 if address:
+                    asset_name = device_name + '-' + address
                     # 用户确认全平台资产名称唯一
                     asset_protocol = ["http/443"]
                     platform = Platform.objects.filter(name='Website').first()
-                    exist_asset = Asset.objects.filter(name=address).first()
+                    exist_asset = Asset.objects.filter(name=asset_name).first()
                     if not exist_asset:
-                        print("create load balance web asset[{}], bk_obj_id: {}.".format(address, bk_obj_id))
-                        create_web_asset(address, address, platform, '', org, org_data_map, asset_protocol,
+                        print("create load balance web asset[{}], bk_obj_id: {}.".format(asset_name, bk_obj_id))
+                        create_web_asset(asset_name, address, platform, '', org, org_data_map, asset_protocol,
                                          node_path)
                     else:
                         update_asset(org, org_data_map, exist_asset, asset_protocol, node_path, asset_org_dict,
@@ -642,14 +641,15 @@ def save_network_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org
                                  False, False)
 
             # 添加 web 控制台地址，不对接3A，无账号代填，全部手动输入
-            address = bk_inst_name + '-' + asset.get('web_mgr', '')
+            address = asset.get('web_mgr', '')
             if address:
+                asset_name = bk_inst_name + '-' + address
                 # 用户确认全平台资产名称唯一
                 asset_protocol = ["http/443"]
                 platform = Platform.objects.filter(name='Website').first()
-                exist_asset = Asset.objects.filter(name=address).first()
+                exist_asset = Asset.objects.filter(name=asset_name).first()
                 if not exist_asset:
-                    print("create network device web asset[{}], bk_obj_id: {}.".format(address, bk_obj_id))
+                    print("create network device web asset[{}], bk_obj_id: {}.".format(asset_name, bk_obj_id))
                     create_web_asset(address, address, platform, '', org, org_data_map, asset_protocol,
                                      node_path)
                 else:
