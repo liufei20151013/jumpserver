@@ -1430,7 +1430,14 @@ def update_asset(org, org_data_map, exist_asset, asset_protocol, node_path, asse
     org_data_map[org]["node"].append((exist_asset, node_path))
     protocols = get_protocols(asset_protocol)
     for p in protocols:
-        org_data_map[org]["protocol"].append(Protocol(asset=exist_asset, **p))
+        protocol = Protocol.objects.filter(name=p["name"], asset_id=exist_asset.id).first()
+        if not protocol:
+            org_data_map[org]["protocol"].append(Protocol(asset=exist_asset, **p))
+        else:
+            if protocol.port != p["port"]:
+                protocol.delete()
+                org_data_map[org]["protocol"].append(Protocol(asset=exist_asset, **p))
+
     unique_key = f"{org.id}_{exist_asset.name}"
     asset_org_dict[unique_key] = exist_asset.id
 
@@ -1447,7 +1454,11 @@ def get_protocols(protocol_str_list):
     for proto_str in protocol_str_list:
         if '/' not in proto_str:
             continue
-        name, port = proto_str.strip().lower().split('/', 1)
+        name, port_str = proto_str.strip().lower().split('/', 1)
+        try:
+            port = int(port_str)
+        except (ValueError, TypeError):
+            continue
         protocols.append({
             "name": name,
             "port": port
@@ -1487,80 +1498,66 @@ def org_batch_run(org, create_objs, update_objs, host_objs=None, db_objs=None, d
             dedup_create.append(asset)
     create_objs = dedup_create
 
-    with transaction.atomic():
-        # 1. 批量创建主资产
-        if create_objs:
-            start_time = time.time()
-            Asset.objects.bulk_create(create_objs, batch_size=BATCH_SIZE)
-            end_time = time.time()
-            total_seconds = end_time - start_time
-            print(f"create_objs 程序总执行时间：{total_seconds:.2f} 秒")
+    # 1. 批量创建主资产
+    if create_objs:
+        start_time = time.time()
+        Asset.objects.bulk_create(create_objs, batch_size=BATCH_SIZE)
+        end_time = time.time()
+        total_seconds = end_time - start_time
+        print(f"create_objs 程序总执行时间：{total_seconds:.2f} 秒")
 
-        # 2. 批量更新主资产
-        if update_objs:
-            start_time = time.time()
-            Asset.objects.bulk_update(
-                update_objs,
-                fields=["address", "platform", "comment"],
-                batch_size=BATCH_SIZE
-            )
-            end_time = time.time()
-            total_seconds = end_time - start_time
-            print(f"update_objs 程序总执行时间：{total_seconds:.2f} 秒")
+    # 2. 批量更新主资产
+    if update_objs:
+        start_time = time.time()
+        Asset.objects.bulk_update(
+            update_objs,
+            fields=["address", "platform", "comment"],
+            batch_size=BATCH_SIZE
+        )
+        end_time = time.time()
+        total_seconds = end_time - start_time
+        print(f"update_objs 程序总执行时间：{total_seconds:.2f} 秒")
 
-        # 3. 批量创建各类子资产模型
-        if host_objs:
-            start_time = time.time()
-            for host in host_objs:
-                host.save()
-            end_time = time.time()
-            total_seconds = end_time - start_time
-            print(f"host_objs 程序总执行时间：{total_seconds:.2f} 秒")
+    # 3. 批量创建各类子资产模型
+    batch_save_objs(db_objs, 'db_objs')
+    batch_save_objs(web_objs, 'web_objs')
+    batch_save_objs(host_objs, 'host_objs')
+    batch_save_objs(device_objs, 'device_objs')
 
-        if db_objs:
-            start_time = time.time()
-            for db in db_objs:
-                db.save()
-            end_time = time.time()
-            total_seconds = end_time - start_time
-            print(f"db_objs 程序总执行时间：{total_seconds:.2f} 秒")
+    # 4. 绑定节点 时间消耗在查找node上
+    if node_bind:
+        start_time = time.time()
+        for asset, node_path in node_bind:
+            node = node_org_dict.get(node_path)
+            if node:
+                exist = asset.nodes.filter(id=node.id).exists()
+                if not exist:
+                    asset.nodes.set([node.id])
+            else:
+                node = Node.create_node_by_full_value(node_path)
+                node_org_dict[node_path] = node
+                asset.nodes.set([node.id])
+        end_time = time.time()
+        total_seconds = end_time - start_time
+        print(f"node_bind 程序总执行时间：{total_seconds:.2f} 秒")
 
-        if device_objs:
-            start_time = time.time()
-            for dev in device_objs:
-                dev.save()
-            end_time = time.time()
-            total_seconds = end_time - start_time
-            print(f"device_objs 程序总执行时间：{total_seconds:.2f} 秒")
+    # 5. 批量创建协议，忽略重复
+    if proto_objs:
+        start_time = time.time()
+        Protocol.objects.bulk_create(proto_objs, batch_size=BATCH_SIZE, ignore_conflicts=True)
+        end_time = time.time()
+        total_seconds = end_time - start_time
+        print(f"proto_objs 程序总执行时间：{total_seconds:.2f} 秒")
 
-        if web_objs:
-            start_time = time.time()
-            for web in web_objs:
-                web.save()
-            end_time = time.time()
-            total_seconds = end_time - start_time
-            print(f"web_objs 程序总执行时间：{total_seconds:.2f} 秒")
 
-        # 4. 绑定节点 时间消耗在查找node上
-        if node_bind:
-            start_time = time.time()
-            for asset, node_path in node_bind:
-                node = node_org_dict.get(node_path)
-                if not node:
-                    node = Node.create_node_by_full_value(node_path)
-                    node_org_dict[node.full_value] = node
-                asset.nodes.add(node)
-            end_time = time.time()
-            total_seconds = end_time - start_time
-            print(f"node_bind 程序总执行时间：{total_seconds:.2f} 秒")
-
-        # 5. 批量创建协议，忽略重复
-        if proto_objs:
-            start_time = time.time()
-            Protocol.objects.bulk_create(proto_objs, batch_size=BATCH_SIZE, ignore_conflicts=True)
-            end_time = time.time()
-            total_seconds = end_time - start_time
-            print(f"proto_objs 程序总执行时间：{total_seconds:.2f} 秒")
+def batch_save_objs(objs, name):
+    if objs:
+        start_time = time.time()
+        for obj in objs:
+            obj.save()
+        end_time = time.time()
+        total_seconds = end_time - start_time
+        print(f"{name} 程序总执行时间：{total_seconds:.2f} 秒")
 
 
 def relate_app_office_org(app_office, dept_name, orgs, org_asset_comment_dict, user_org_name, asset_name):
