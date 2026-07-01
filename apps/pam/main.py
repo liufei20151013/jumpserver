@@ -4,7 +4,6 @@ from collections import defaultdict
 from datetime import datetime, date
 
 from croniter import croniter
-from django.db import transaction
 
 from accounts.const import SecretType
 from orgs.utils import set_current_org
@@ -74,6 +73,7 @@ def org_batch_run(org, create_objs, normal_update_objs, su_from_update_objs):
     :param update_objs: 待更新 Account 列表
     """
     set_current_org(org)
+    print(f"当前组织：{org.name}")
 
     # 1. 批量创建资产账号
     if create_objs:
