@@ -75,32 +75,31 @@ def org_batch_run(org, create_objs, normal_update_objs, su_from_update_objs):
     """
     set_current_org(org)
 
-    with transaction.atomic():
-        # 1. 批量创建资产账号
-        if create_objs:
-            start_time = time.time()
-            Account.objects.bulk_create(create_objs, batch_size=BATCH_SIZE)
-            end_time = time.time()
-            total_seconds = end_time - start_time
-            print(f"create_objs 程序总执行时间：{total_seconds:.2f} 秒")
+    # 1. 批量创建资产账号
+    if create_objs:
+        start_time = time.time()
+        Account.objects.bulk_create(create_objs, batch_size=BATCH_SIZE)
+        end_time = time.time()
+        total_seconds = end_time - start_time
+        print(f"create_objs 程序总执行时间：{total_seconds:.2f} 秒")
 
-        # 2. 批量更新普通资产账号
-        base_fields = ["asset", "name", "username", "privileged", "secret_type", "_secret", "org_id"]
-        if normal_update_objs:
-            start_time = time.time()
-            Account.objects.bulk_update(normal_update_objs,fields=base_fields, batch_size=BATCH_SIZE)
-            end_time = time.time()
-            total_seconds = end_time - start_time
-            print(f"normal_update_objs 程序总执行时间：{total_seconds:.2f} 秒")
+    # 2. 批量更新普通资产账号
+    base_fields = ["asset", "name", "username", "privileged", "secret_type", "_secret", "org_id"]
+    if normal_update_objs:
+        start_time = time.time()
+        Account.objects.bulk_update(normal_update_objs,fields=base_fields, batch_size=BATCH_SIZE)
+        end_time = time.time()
+        total_seconds = end_time - start_time
+        print(f"normal_update_objs 程序总执行时间：{total_seconds:.2f} 秒")
 
-        # 3. 批量更新 root 资产账号
-        su_from_fields = base_fields + ["su_from"]
-        if su_from_update_objs:
-            start_time = time.time()
-            Account.objects.bulk_update(normal_update_objs,fields=su_from_fields, batch_size=BATCH_SIZE)
-            end_time = time.time()
-            total_seconds = end_time - start_time
-            print(f"su_from_update_objs 程序总执行时间：{total_seconds:.2f} 秒")
+    # 3. 批量更新 root 资产账号
+    su_from_fields = base_fields + ["su_from"]
+    if su_from_update_objs:
+        start_time = time.time()
+        Account.objects.bulk_update(su_from_update_objs,fields=su_from_fields, batch_size=BATCH_SIZE)
+        end_time = time.time()
+        total_seconds = end_time - start_time
+        print(f"su_from_update_objs 程序总执行时间：{total_seconds:.2f} 秒")
 
 
 def get_timestamp(hour):
