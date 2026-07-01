@@ -8,7 +8,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'jumpserver.settings')
 django.setup()
 
 import uuid
-from assets.models import Asset
+from assets.models import Asset, Node
 from orgs.models import Organization
 from orgs.utils import set_current_org
 from datetime import datetime, timedelta
@@ -261,11 +261,22 @@ class TestTaskCase(TestCase):
     def test4(self):
         # process_data(True)
 
-        orgs = []
-        org_name = '运维开发部'
-        org_names = ['系统运行与信息安全管理部-系统管理室', org_name]
-        for name in org_names:
-            org, created = Organization.objects.get_or_create(name=name)
-            orgs.append(org)
-            if created:
-                print("Success to create org[{}].".format(name))
+        # orgs = []
+        # org_name = '运维开发部'
+        # org_names = ['系统运行与信息安全管理部-系统管理室', org_name]
+        # for name in org_names:
+        #     org, created = Organization.objects.get_or_create(name=name)
+        #     orgs.append(org)
+        #     if created:
+        #         print("Success to create org[{}].".format(name))
+
+        node_path = '/DEFAULT/TK-001-运维系统11'
+        asset = Asset.objects.filter(name='测试02').first()
+        node = Node.objects.filter(full_value=node_path).first()
+        if node:
+            exist = asset.nodes.filter(id=node.id).exists()
+            if not exist:
+                asset.nodes.set([node.id])
+        else:
+            node = Node.create_node_by_full_value(node_path)
+            asset.nodes.set([node.id])
