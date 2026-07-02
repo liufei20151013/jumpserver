@@ -1,3 +1,5 @@
+import time
+
 from celery import shared_task
 from django.utils.translation import gettext_lazy as _
 
@@ -62,6 +64,7 @@ def sync_pam_full_data_periodic():
 @shared_task(verbose_name=_('Sync pam incremental data to JumpServer'))
 def sync_pam_incremental_data():
     # 检测全量同步是否在运行
+    time.sleep(10)
     if full_sync_is_running():
         logger.warning("存在CMDB全量同步任务，终止本次增量同步")
         return
