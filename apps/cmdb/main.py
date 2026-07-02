@@ -181,7 +181,7 @@ def process_data(isFullSync):
         "db_oracle": "ORACLE",
         "db_tdsql_mysql": "TDSQL-MYSQL",
         "db_tdsql_pg": "TDSQL-PG",
-        # "db_dm": "DM",
+        "db_dm": "DM",
         # "db_elasticsearch": "TBDS",
         # "db_essbase": "ESSBASE",
         # "db_sybaseiq": "SybaseIQ",

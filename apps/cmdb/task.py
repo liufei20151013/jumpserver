@@ -17,8 +17,10 @@ logger = get_logger(__name__)
 def sync_cmdb_full_data():
     # 尝试抢占全量锁
     if not acquire_sync_lock():
-        logger.warning("全量同步已在运行，本次任务退出")
-        return
+        # 一般是重启服务，全量锁未释放
+        logger.warning("终止正在运行的同步任务")
+        release_sync_lock()
+        acquire_sync_lock()
 
     # 释放正在运行的增量任务，执行全量任务（业务优先全量）
     if incr_sync_is_running():
