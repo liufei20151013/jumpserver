@@ -32,6 +32,7 @@ def sync_cmdb_full_data():
         logger.info("CMDB全量同步完成")
     except Exception as e:
         logger.error(f"全量同步异常: {e}", exc_info=True)
+        raise e
     finally:
         release_sync_lock()
 
@@ -79,6 +80,7 @@ def sync_cmdb_incremental_data():
         process_data(False)
     except Exception as e:
         logger.error(f"增量同步异常: {e}", exc_info=True)
+        raise e
     finally:
         release_incr_lock()
 

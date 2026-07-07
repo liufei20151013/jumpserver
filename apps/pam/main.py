@@ -1,9 +1,6 @@
 import time
 import json
-from collections import defaultdict
 from datetime import datetime, date
-
-from croniter import croniter
 
 from accounts.const import SecretType
 from orgs.utils import set_current_org
@@ -44,62 +41,8 @@ def process_data(isFullSync):
     print(f"账号获取完成，总数：{len(accounts)}")
 
     print("===== 开始关联同步 =====")
-    # 按组织分组：key=组织对象，value=该组织下所有待处理数据
-    org_data_map = defaultdict(lambda: {
-        "create": [],
-        "normal_update": [],
-        "su_from_update": []
-    })
-
-    relate_asset_to_account(assets, accounts, isFullSync, org_data_map)
-
-    for org, batch in org_data_map.items():
-        org_batch_run(
-            org=org,
-            create_objs=batch["create"],
-            normal_update_objs=batch["normal_update"],
-            su_from_update_objs=batch["su_from_update"]
-        )
+    relate_asset_to_account(assets, accounts, isFullSync)
     print("===== PAM 同步全部完成 =====")
-
-# 批量分片大小，根据业务数据量调整
-BATCH_SIZE = 200
-
-def org_batch_run(org, create_objs, normal_update_objs, su_from_update_objs):
-    """
-    单组织批量执行入口
-    :param org: 当前操作组织
-    :param create_objs: 待创建 Account 列表
-    :param update_objs: 待更新 Account 列表
-    """
-    set_current_org(org)
-    print(f"当前组织：{org.name}")
-
-    # 1. 批量创建资产账号
-    if create_objs:
-        start_time = time.time()
-        Account.objects.bulk_create(create_objs, batch_size=BATCH_SIZE)
-        end_time = time.time()
-        total_seconds = end_time - start_time
-        print(f"create_objs 程序总执行时间：{total_seconds:.2f} 秒")
-
-    # 2. 批量更新普通资产账号
-    base_fields = ["asset", "name", "username", "privileged", "secret_type", "_secret", "org_id"]
-    if normal_update_objs:
-        start_time = time.time()
-        Account.objects.bulk_update(normal_update_objs,fields=base_fields, batch_size=BATCH_SIZE)
-        end_time = time.time()
-        total_seconds = end_time - start_time
-        print(f"normal_update_objs 程序总执行时间：{total_seconds:.2f} 秒")
-
-    # 3. 批量更新 root 资产账号
-    su_from_fields = base_fields + ["su_from"]
-    if su_from_update_objs:
-        start_time = time.time()
-        Account.objects.bulk_update(su_from_update_objs,fields=su_from_fields, batch_size=BATCH_SIZE)
-        end_time = time.time()
-        total_seconds = end_time - start_time
-        print(f"su_from_update_objs 程序总执行时间：{total_seconds:.2f} 秒")
 
 
 def get_timestamp(hour):
@@ -107,25 +50,9 @@ def get_timestamp(hour):
     return int(today.timestamp() * 1000)
 
 
-def relate_asset_to_account(pam_assets, pam_accounts, isFullSync, org_data_map):
+def relate_asset_to_account(pam_assets, pam_accounts, isFullSync):
     pam_asset_dict = {}
     pam_asset_account_dict = {}
-
-    isSync = False
-    cron_expr = settings.PAM_FULL_DATA_SYNC_CRONTAB
-    hour = croniter(cron_expr, datetime.now()).get_next(datetime).hour
-    today_sync_timpstamp = get_timestamp(hour)
-    now_hour_timestamp = get_timestamp(datetime.now().hour)
-    if now_hour_timestamp > today_sync_timpstamp and isFullSync:
-        isSync = True
-        isFullSync = False
-
-    # 针对新增的机器
-    # date_created = (timezone.now() - timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S.%f")
-    # new_assets = Asset.objects.filter(date_created__gte=date_created)
-    # if new_assets.exists():
-    #     isSync = False
-    #     isFullSync = True
 
     if isFullSync:
         for asset in pam_assets:
@@ -148,11 +75,8 @@ def relate_asset_to_account(pam_assets, pam_accounts, isFullSync, org_data_map):
             account_arr.append(account)
             pam_asset_account_dict.update({asset_id: account_arr})
     else:
-        if isSync:
-            timestamp = today_sync_timpstamp
-        else:
-            # 只同步一个小时前新增的账号或者新校验的账号
-            timestamp = int(time.time() * 1000) - 3600000
+        # 只同步一个小时前新增的账号或者新校验的账号
+        timestamp = int(time.time() * 1000) - 3600000
         for account in pam_accounts:
             verify_status = account.get('verifyStatus', '')
             asset_id = account.get('assetId', '')
@@ -182,12 +106,13 @@ def relate_asset_to_account(pam_assets, pam_accounts, isFullSync, org_data_map):
 
     pam_account_secret_dict = {}
     url = '{PAM_SERVER}/openapi/v1/account/info/getPwd'.format(PAM_SERVER=settings.PAM_SERVER)
-    orgs = Organization.objects.exclude(id=Organization.SYSTEM_ID)
+    orgs = Organization.objects.all()
     for org in orgs:
         set_current_org(org)
 
-        assets = Asset.objects.all()
+        assets = Asset.objects.filter(is_active=True)
         for asset in assets:
+            print(f"Sync asset's accounts, asset: {asset.address}, org_id: {org.id}]")
             if asset.category == 'host':
                 asset_category = 'host'
             elif asset.category == 'database':
@@ -208,7 +133,8 @@ def relate_asset_to_account(pam_assets, pam_accounts, isFullSync, org_data_map):
 
             asset_id = pam_asset_dict.get(key, '')
             if not asset_id:
-                print("Asset[{}-{}] not exist, asset_category:{}, skip.".format(asset_id, asset.address, asset_category))
+                print("Asset[{}-{}] not exist, asset_category:{}, skip."
+                      .format(asset_id, asset.address, asset_category))
                 continue
 
             account_arr = pam_asset_account_dict.get(asset_id, [])
@@ -216,20 +142,10 @@ def relate_asset_to_account(pam_assets, pam_accounts, isFullSync, org_data_map):
                 continue
             print("pam account_arr: {}.".format(json.dumps(account_arr)))
 
-           # 查询堡垒机资产下有哪些账号
-           #  js_accounts = Account.objects.filter(asset_id=asset.id)
-
-            # pam_accounts = []
             for account in account_arr:
                 username = account.get('assetAccount', '')
                 if not username:
                     continue
-                # if asset_category == 'host':
-                #     if not org.name.__contains__(asset.comment) and username in ['root', 'loginuser', 'cyuser']:
-                #         continue
-
-                # 需要添加的账号
-                # pam_accounts.append(username)
 
                 try:
                     # 多组织存在相同资产、账号，可减少接口调用查询时间
@@ -246,91 +162,72 @@ def relate_asset_to_account(pam_assets, pam_accounts, isFullSync, org_data_map):
 
                     name = asset.address + "_" + username
                     privileged = True if account.get('accountType', '') == '0' else False
-                    exist_account = Account.objects.filter(asset=asset, username=username).first()
-                    if not exist_account:
+                    account_list = Account.objects.filter(asset=asset, username=username)
+                    if not account_list.exists():
                         if asset.category == 'host' and username == 'root':
                             su_from_username = 'cyuser' if asset.platform.name == 'AIX' else 'loginuser'
-                            su_from_account = Account.objects.filter(asset=asset, username=su_from_username).first()
-                            if not su_from_account:
+                            accounts = Account.objects.filter(asset=asset, username=su_from_username)
+                            if not accounts.exists():
                                 su_from_name = asset.address + '_' + su_from_username
-                                # su_from_account 需要先建，以防批量创建或更新的时候出现冲突
-                                su_from_account = Account.objects.create(asset=asset,
-                                                             name=su_from_name,
-                                                             username=su_from_username,
-                                                             privileged=False,
-                                                             secret_type=SecretType.PASSWORD,
-                                                             _secret=secret,
-                                                             org_id=org.id)
+                                acc = Account.objects.create(asset=asset,
+                                                       name=su_from_name,
+                                                       username=su_from_username,
+                                                       privileged=False,
+                                                       secret_type=SecretType.PASSWORD,
+                                                       _secret=secret,
+                                                       org_id=org.id)
                                 print("Success to create account[{}] for asset[{}], asset_category:{}."
                                       .format(su_from_username, asset.address, asset_category))
-
-                            new_account = Account(
-                                    asset=asset,
-                                    name=name,
-                                    username=username,
-                                    privileged=privileged,
-                                    secret_type=SecretType.PASSWORD,
-                                    _secret=secret,
-                                    su_from=su_from_account,
-                                    org_id=org.id
-                                )
-                            org_data_map[org]["create"].append(new_account)
+                            else:
+                                acc = accounts.first()
+                            Account.objects.create(asset=asset,
+                                                   name=name,
+                                                   username=username,
+                                                   privileged=privileged,
+                                                   secret_type=SecretType.PASSWORD,
+                                                   _secret=secret,
+                                                   su_from=acc,
+                                                   org_id=org.id)
+                            print("Success to create account[{}] for asset[{}], asset_category:{}."
+                                  .format(username, asset.address, asset_category))
                         else:
-                            new_account = Account(
-                                    asset=asset,
-                                    name=name,
-                                    username=username,
-                                    privileged=privileged,
-                                    secret_type=SecretType.PASSWORD,
-                                    _secret=secret,
-                                    org_id=org.id
-                                )
-                            org_data_map[org]["create"].append(new_account)
+                            Account.objects.create(asset=asset,
+                                                   name=name,
+                                                   username=username,
+                                                   privileged=privileged,
+                                                   secret_type=SecretType.PASSWORD,
+                                                   _secret=secret,
+                                                   org_id=org.id)
                         print("Success to create account[{}] for asset[{}], asset_category:{}."
                               .format(username, asset.address, asset_category))
                     else:
-                        exist_account.asset = asset
-                        exist_account.name = name
-                        exist_account.username = username
-                        exist_account.privileged = privileged
-                        exist_account.secret_type = SecretType.PASSWORD
-                        exist_account._secret = secret
-                        exist_account.org_id = org.id
                         if asset.category == 'host' and username == 'root':
                             su_from_username = 'cyuser' if asset.platform.name == 'AIX' else 'loginuser'
-                            su_from_account = Account.objects.filter(asset=asset, username=su_from_username).first()
-                            if not su_from_account:
-                                su_from_name = asset.address + '_' + su_from_username
-                                # su_from_account 需要先建，以防批量创建或更新的时候出现冲突
-                                su_from_account = Account.objects.create(asset=asset,
-                                                             name=su_from_name,
-                                                             username=su_from_username,
-                                                             privileged=False,
-                                                             secret_type=SecretType.PASSWORD,
-                                                             _secret=secret,
-                                                             org_id=org.id)
-
-                            exist_account.su_from = su_from_account
-                            org_data_map[org]["su_from_update"].append(exist_account)
+                            accounts = Account.objects.filter(asset=asset, username=su_from_username)
+                            if accounts.exists():
+                                account_list.update(asset=asset,
+                                                    name=name,
+                                                    username=username,
+                                                    privileged=privileged,
+                                                    secret_type=SecretType.PASSWORD,
+                                                    _secret=secret,
+                                                    su_from=accounts.first(),
+                                                    org_id=org.id)
+                                print("Success to update account[{}] for asset[{}], asset_category:{}."
+                                      .format(username, asset.address, asset_category))
                         else:
-                            org_data_map[org]["normal_update"].append(exist_account)
-                        print("Success to update account[{}] for asset[{}], asset_category:{}.".format(username, asset.address, asset_category))
+                            account_list.update(asset=asset,
+                                                name=name,
+                                                username=username,
+                                                privileged=privileged,
+                                                secret_type=SecretType.PASSWORD,
+                                                _secret=secret,
+                                                org_id=org.id)
+                        print("Success to update account[{}] for asset[{}], asset_category:{}."
+                              .format(username, asset.address, asset_category))
                 except Exception as e:
-                    print("Failed to save account[{}] for asset[{}], asset_category:{}, error:{}".format(username, asset.address, asset_category, e))
-
-            # 清理多余的账号  如果接口调用失败，存在误删账号的情况！！！建议手动删除多余账号。
-            # print("js_accounts size: {}, pam_accounts size: {}.".format(len(js_accounts), len(pam_accounts)))
-            # if len(js_accounts) > len(pam_accounts):
-            #     print("Remove extra accounts of asset[{}], asset_category:{}.".format(asset.address, asset_category))
-            #     for ja in js_accounts:
-            #         if ja.username not in pam_accounts:
-            #             try:
-            #                 print("Remove account[{}].".format(ja.username))
-            #                 Account.objects.get(id=ja.id).delete()
-            #                 print("Success to remove account[{}].".format(ja.username))
-            #             except:
-            #                 print("Failed to remove account[{}].".format(ja.username))
-            #                 continue
+                    print("Failed to save account[{}] for asset[{}], asset_category:{}, error:{}"
+                          .format(username, asset.address, asset_category, e))
 
 
 def search_asset(category):
@@ -455,3 +352,4 @@ def search_by_id(url, id):
     )
     # print("search result: {}".format(json.dumps(result)))
     return result
+

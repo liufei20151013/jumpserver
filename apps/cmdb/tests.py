@@ -8,7 +8,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'jumpserver.settings')
 django.setup()
 
 import uuid
-from assets.models import Asset, Node
+from assets.models import Asset, Node, Database
 from orgs.models import Organization
 from orgs.utils import set_current_org
 from datetime import datetime, timedelta
@@ -270,13 +270,23 @@ class TestTaskCase(TestCase):
         #     if created:
         #         print("Success to create org[{}].".format(name))
 
-        node_path = '/DEFAULT/TK-001-运维系统11'
-        asset = Asset.objects.filter(name='测试02').first()
-        node = Node.objects.filter(full_value=node_path).first()
-        if node:
-            exist = asset.nodes.filter(id=node.id).exists()
-            if not exist:
-                asset.nodes.set([node.id])
+        # node_path = '/DEFAULT/TK-001-运维系统11'
+        # asset = Asset.objects.filter(name='测试02').first()
+        # node = Node.objects.filter(full_value=node_path).first()
+        # if node:
+        #     exist = asset.nodes.filter(id=node.id).exists()
+        #     if not exist:
+        #         asset.nodes.set([node.id])
+        # else:
+        #     node = Node.create_node_by_full_value(node_path)
+        #     asset.nodes.set([node.id])
+
+        default_db = 'test'
+        asset = Asset.objects.filter(name='数据库01').first()
+        asset_model = Database.objects.filter(asset_ptr_id=asset.id).first()
+        if asset_model:
+            asset_model.db_name = default_db
         else:
-            node = Node.create_node_by_full_value(node_path)
-            asset.nodes.set([node.id])
+            asset_model = Database(asset_ptr_id=asset.id, db_name=default_db)
+        asset_model.__dict__.update(asset.__dict__)
+        asset_model.save()
