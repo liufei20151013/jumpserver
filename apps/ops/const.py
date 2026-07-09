@@ -84,8 +84,8 @@ COMMAND_EXECUTION_DISABLED = _('Command execution disabled')
 
 
 class Scope(models.TextChoices):
-    public = 'public', pgettext_lazy("scope", 'Public')
     private = 'private', _('Private')
+    public = 'public', pgettext_lazy("scope", 'Public')
 
 
 class FieldType(models.TextChoices):

@@ -31,7 +31,7 @@ class Playbook(JMSBaseModel):
     comment = models.CharField(max_length=1024, default='', verbose_name=_('Comment'), null=True, blank=True)
     create_method = models.CharField(max_length=128, choices=CreateMethods.choices, default=CreateMethods.blank,
                                      verbose_name=_('CreateMethod'))
-    scope = models.CharField(max_length=64, default=Scope.public, verbose_name=_('Scope'))
+    scope = models.CharField(max_length=64, default=Scope.private, verbose_name=_('Scope'))
     vcs_url = models.CharField(max_length=1024, default='', verbose_name=_('VCS URL'), null=True, blank=True)
 
     def __str__(self):

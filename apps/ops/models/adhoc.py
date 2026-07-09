@@ -23,7 +23,7 @@ class AdHoc(JMSBaseModel):
     args = models.CharField(max_length=8192, default='', verbose_name=_('Args'))
     creator = models.ForeignKey('users.User', verbose_name=_("Creator"), on_delete=models.SET_NULL, null=True)
     comment = models.CharField(max_length=1024, default='', verbose_name=_('Comment'), null=True, blank=True)
-    scope = models.CharField(max_length=64, default=Scope.public, verbose_name=_('Scope'))
+    scope = models.CharField(max_length=64, default=Scope.private, verbose_name=_('Scope'))
 
     @property
     def row_count(self):
