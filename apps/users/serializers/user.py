@@ -163,6 +163,8 @@ class UserSerializer(
         "org_roles": [BuiltinRole.org_user],
     }
 
+    dingtalk_id = serializers.CharField(required=False, allow_null=True)
+
     class Meta:
         model = User
         # mini 是指能识别对象的最小单元
