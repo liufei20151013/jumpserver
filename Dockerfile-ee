@@ -25,7 +25,7 @@ RUN set -ex \
 
 WORKDIR /opt/jumpserver
 
-ARG PIP_MIRROR=https://pypi.org/simple
+ARG PIP_MIRROR=https://mirrors.ustc.edu.cn/pypi/simple
 
 RUN set -ex \
     && uv pip install -i${PIP_MIRROR} --group xpack \

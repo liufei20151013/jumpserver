@@ -1,6 +1,22 @@
-FROM jumpserver/core-base:20260122_035753 AS stage-build
+ARG VERSION=v4.10.16
 
-ARG VERSION
+FROM registry.fit2cloud.com/jumpserver/xpack:${VERSION} AS build-xpack
+#FROM jumpserver/core-base:20260122_035753 AS stage-build
+FROM jumpserver/core-base:v4.10.16 AS stage-build
+
+COPY pyproject.toml /opt/jumpserver/pyproject.toml
+COPY --from=build-xpack /opt/xpack /opt/jumpserver/apps/xpack
+
+ARG TOOLS="                           \
+        g++                           \
+        curl                          \
+        postgresql-client"
+
+RUN set -ex \
+    && apt-get update \
+    && apt-get -y install --no-install-recommends ${TOOLS} \
+    && apt-get clean all \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt/jumpserver
 
@@ -34,9 +50,16 @@ ARG TOOLS="                           \
         openssh-client                \
         sshpass                       \
         nmap                          \
-        bubblewrap"
+        bubblewrap                    \
+        vim                           \
+        wget                          \
+        curl                          \
+        iputils-ping                  \
+        netcat-openbsd                \
+        telnet                        \
+        postgresql-client"
 
-ARG APT_MIRROR=http://deb.debian.org
+ARG APT_MIRROR=https://mirrors.ustc.edu.cn
 
 RUN set -ex \
     && sed -i "s@http://.*.debian.org@${APT_MIRROR}@g" /etc/apt/sources.list.d/debian.sources \
