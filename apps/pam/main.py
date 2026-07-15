@@ -166,10 +166,10 @@ def relate_asset_to_account(pam_assets, pam_accounts, isFullSync):
                     if not account_list.exists():
                         if asset.category == 'host' and username == 'root':
                             su_from_username = 'cyuser' if asset.platform.name == 'AIX' else 'loginuser'
-                            accounts = Account.objects.filter(asset=asset, username=su_from_username)
-                            if not accounts.exists():
+                            account = Account.objects.filter(asset=asset, username=su_from_username).first()
+                            if not account:
                                 su_from_name = asset.address + '_' + su_from_username
-                                acc = Account.objects.create(asset=asset,
+                                account = Account.objects.create(asset=asset,
                                                        name=su_from_name,
                                                        username=su_from_username,
                                                        privileged=False,
@@ -178,15 +178,13 @@ def relate_asset_to_account(pam_assets, pam_accounts, isFullSync):
                                                        org_id=org.id)
                                 print("Success to create account[{}] for asset[{}], asset_category:{}."
                                       .format(su_from_username, asset.address, asset_category))
-                            else:
-                                acc = accounts.first()
                             Account.objects.create(asset=asset,
                                                    name=name,
                                                    username=username,
                                                    privileged=privileged,
                                                    secret_type=SecretType.PASSWORD,
                                                    _secret=secret,
-                                                   su_from=acc,
+                                                   su_from=account,
                                                    org_id=org.id)
                             print("Success to create account[{}] for asset[{}], asset_category:{}."
                                   .format(username, asset.address, asset_category))
@@ -203,18 +201,29 @@ def relate_asset_to_account(pam_assets, pam_accounts, isFullSync):
                     else:
                         if asset.category == 'host' and username == 'root':
                             su_from_username = 'cyuser' if asset.platform.name == 'AIX' else 'loginuser'
-                            accounts = Account.objects.filter(asset=asset, username=su_from_username)
-                            if accounts.exists():
-                                account_list.update(asset=asset,
-                                                    name=name,
-                                                    username=username,
-                                                    privileged=privileged,
-                                                    secret_type=SecretType.PASSWORD,
-                                                    _secret=secret,
-                                                    su_from=accounts.first(),
-                                                    org_id=org.id)
-                                print("Success to update account[{}] for asset[{}], asset_category:{}."
-                                      .format(username, asset.address, asset_category))
+                            account = Account.objects.filter(asset=asset, username=su_from_username).first()
+                            if not account:
+                                su_from_name = asset.address + '_' + su_from_username
+                                account = Account.objects.create(asset=asset,
+                                                                 name=su_from_name,
+                                                                 username=su_from_username,
+                                                                 privileged=False,
+                                                                 secret_type=SecretType.PASSWORD,
+                                                                 _secret=secret,
+                                                                 org_id=org.id)
+                                print("Success to create account[{}] for asset[{}], asset_category:{}."
+                                      .format(su_from_username, asset.address, asset_category))
+
+                            account_list.update(asset=asset,
+                                                name=name,
+                                                username=username,
+                                                privileged=privileged,
+                                                secret_type=SecretType.PASSWORD,
+                                                _secret=secret,
+                                                su_from=account,
+                                                org_id=org.id)
+                            print("Success to update account[{}] for asset[{}], asset_category:{}."
+                                  .format(username, asset.address, asset_category))
                         else:
                             account_list.update(asset=asset,
                                                 name=name,
