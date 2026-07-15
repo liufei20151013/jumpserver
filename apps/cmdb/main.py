@@ -250,7 +250,6 @@ def process_data(isFullSync):
     if isFullSync and len(asset_org_dict) > 0:
         print("删除已下线的资产 Start.")
         offline_asset_org_dict = {k: v for k, v in old_asset_org_dict.items() if k not in asset_org_dict}
-        print(f"待下线资产数：{len(offline_asset_org_dict)}")
         for key, value in offline_asset_org_dict.items():
             org_id, asset_name = key.split("_", 1)
             org = Organization.objects.get(id=org_id)
@@ -269,6 +268,7 @@ def process_data(isFullSync):
             asset.save()
 
             print("Success to delete asset: {}, org_id: {}.".format(asset_name, str(org_id)))
+        print(f"下线资产数：{len(offline_asset_org_dict)}")
         print("删除已下线的资产 End.")
 
     print('CMDB 数据处理 End.')
@@ -348,7 +348,7 @@ def save_db_asset(assets, asset_org_dict, bk_obj_id, isFullSync, org_data_map):
                     default_db = 'admin'
                 elif bk_obj_id == 'db_oracle':
                     protocol = "oracle/" + db_port
-                    default_db = asset.get('db_inst_name', asset.get('sid', ''))
+                    default_db = asset.get('db_name')
                     if not default_db:
                         print(f"The default_db field cannot be empty, asset: {json.dumps(asset)}, skip.")
                         continue
