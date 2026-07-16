@@ -282,11 +282,15 @@ class TestTaskCase(TestCase):
         #     asset.nodes.set([node.id])
 
         default_db = 'test'
-        asset = Asset.objects.filter(name='数据库01').first()
-        asset_model = Database.objects.filter(asset_ptr_id=asset.id).first()
+        exist_asset = Asset.objects.filter(name='10.1.12.224-mysql').first()
+        asset_model = Database.objects.filter(asset_ptr_id=exist_asset.id).first()
         if asset_model:
-            asset_model.db_name = default_db
+            if default_db:
+                asset_model.db_name = default_db
         else:
-            asset_model = Database(asset_ptr_id=asset.id, db_name=default_db)
-        asset_model.__dict__.update(asset.__dict__)
+            if default_db:
+                asset_model = Database(asset_ptr_id=exist_asset.id, db_name=default_db)
+            else:
+                asset_model = Database(asset_ptr_id=exist_asset.id)
+        asset_model.__dict__.update(exist_asset.__dict__)
         asset_model.save()

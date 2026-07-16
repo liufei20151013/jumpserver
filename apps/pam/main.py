@@ -104,7 +104,9 @@ def relate_asset_to_account(pam_assets, pam_accounts, isFullSync):
             key = f"{str(asset_address)}_{asset_category}"
             pam_asset_dict.update({key: asset_id})
 
-    pam_account_secret_dict = {}
+
+    # pam_account_secret_dict = {}
+    privileged_accounts = ['root', 'cyuser', 'loginuser', 'wlsoper']
     url = '{PAM_SERVER}/openapi/v1/account/info/getPwd'.format(PAM_SERVER=settings.PAM_SERVER)
     orgs = Organization.objects.all()
     for org in orgs:
@@ -147,18 +149,30 @@ def relate_asset_to_account(pam_assets, pam_accounts, isFullSync):
                 if not username:
                     continue
 
+                if asset_category == 'host':
+                    if not org.name.__contains__(asset.comment) and username in privileged_accounts:
+                        continue
+
                 try:
-                    # 多组织存在相同资产、账号，可减少接口调用查询时间
-                    account_key = f"{str(asset.address)}_{str(username)}_{asset_category}"
-                    secret = pam_account_secret_dict.get(account_key, '')
-                    if not secret:
-                        result = search_by_id(url, account['id'])
-                        if result['code'] != '1000':
-                            print("获取 PAM 上的账号密码失败, account_id:{}, asset_category:{}, code: {}, error: {}."
-                                  .format(account['id'], asset_category, result['code'], result.get('msg', '')))
-                            continue
-                        secret = result.get('rows', '')
-                        pam_account_secret_dict.update({account_key: secret})
+                    # 多组织存在相同资产、账号，可减少接口调用查询时间  可能相同地址存在多个账号，密码被覆盖
+                    # account_key = f"{str(asset.address)}_{str(username)}_{asset_category}"
+                    # secret = pam_account_secret_dict.get(account_key, '')
+                    # if not secret:
+                    #     result = search_by_id(url, account['id'])
+                    #     if result['code'] != '1000':
+                    #         print("获取 PAM 上的账号密码失败, account_id:{}, asset_category:{}, code: {}, error: {}."
+                    #               .format(account['id'], asset_category, result['code'], result.get('msg', '')))
+                    #         continue
+                    #     secret = result.get('rows', '')
+                    #     pam_account_secret_dict.update({account_key: secret})
+
+                    # 可能相同地址存在多个账号，密码被覆盖
+                    result = search_by_id(url, account['id'])
+                    if result['code'] != '1000':
+                        print("获取 PAM 上的账号密码失败, account_id:{}, asset_category:{}, code: {}, error: {}."
+                              .format(account['id'], asset_category, result['code'], result.get('msg', '')))
+                        continue
+                    secret = result.get('rows', '')
 
                     name = asset.address + "_" + username
                     privileged = True if account.get('accountType', '') == '0' else False

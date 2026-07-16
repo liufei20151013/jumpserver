@@ -1,5 +1,8 @@
 import json
 
+from rest_framework import status
+from rest_framework.response import Response
+
 from accounts.const import SecretType
 from orgs.utils import set_current_org
 
@@ -36,7 +39,8 @@ def process_data(js_asset):
         js_asset_address = js_asset.comment.split('-')[1].strip()
         # js_asset_address = 'https://' + js_asset.comment.split('-')[1].strip()
 
-    result = search_asset(asset_category, js_asset_address)
+    # 只能根据资产名称过滤，无法根据IP过滤，只能查询host全部资产
+    result = search_asset(asset_category)
     if result['code'] != 0:
         logger.error("查询 PAM 上的资产数据失败，code: {}, error: {}".format(asset_category, result['code'], result['error']))
         return
@@ -69,14 +73,15 @@ def process_data(js_asset):
     logger.info("关联 PAM 上资产[{}]的账号数据 Start.".format(js_asset.name))
     relate_asset_to_account(js_asset, accounts, asset_category)
     logger.info("关联 PAM 上资产[{}]的账号数据 End.".format(js_asset.name))
+    return Response(status=status.HTTP_200_OK)
 
 
 def relate_asset_to_account(js_asset, pam_accounts, asset_category):
     pam_account_secret_dict = {}
-    privileged_accounts = ['root', 'loginuser', 'cyuser']
+    privileged_accounts = ['root', 'loginuser', 'cyuser', 'wlsoper']
     url = '{PAM_SERVER}/openapi/v1/account/info/getPwd'.format(PAM_SERVER=settings.PAM_SERVER)
 
-    orgs = Organization.objects.exclude(id=Organization.SYSTEM_ID)
+    orgs = Organization.objects.all()
     for org in orgs:
         set_current_org(org)
 
@@ -178,13 +183,12 @@ def relate_asset_to_account(js_asset, pam_accounts, asset_category):
                     logger.error("Failed to save account[{}] for asset[{}], asset_category:{}, error:{}".format(username, asset.address, asset_category, e))
 
 
-def search_asset(category, keyword):
+def search_asset(category):
     limit = 10000
     base_param = {
         "pageNum": "",
         "pageSize": limit,
-        "category": category,
-        "keyword": keyword
+        "category": category
     }
 
     result = {
@@ -234,6 +238,7 @@ def search_asset(category, keyword):
     return result
 
 def search_account(pam_asset_id):
+    # keyword 根据 资产IP 查询关联的账号  这里是模糊查询，需要根据资产ip和category再过滤下账号，多次调用PAM接口
     limit = 10
     base_param = {
         "pageNum": "",
