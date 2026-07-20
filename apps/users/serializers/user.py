@@ -278,6 +278,10 @@ class UserSerializer(
     def get_fields(self):
         fields = super().get_fields()
         self.pop_fields_if_need(fields)
+        view = self.context.get("view")
+        if view and hasattr(view, "action"):
+            if view.action in ["update"]:
+                fields.pop("dingtalk_id", None)
         return fields
 
     def pop_fields_if_need(self, fields):
