@@ -12,6 +12,7 @@ from accounts.const import ChangeSecretRecordStatusChoice, Source
 from accounts.filters import AccountFilterSet, NodeFilterBackend
 from accounts.mixins import AccountRecordViewLogMixin
 from accounts.models import Account, ChangeSecretRecord, AccountTemplate
+from accounts.pagination import AllAccountPagination
 from assets.const.gpt import create_or_update_chatx_resources
 from assets.models import Asset, Node
 from authentication.permissions import UserConfirmation, ConfirmType
@@ -32,6 +33,8 @@ __all__ = [
 
 
 class AccountViewSet(OrgBulkModelViewSet):
+    pagination_class = AllAccountPagination
+
     model = Account
     search_fields = ('username', 'name', 'asset__name', 'asset__address', 'comment')
     extra_filter_backends = [AttrRulesFilterBackend, NodeFilterBackend]
