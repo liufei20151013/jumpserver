@@ -179,7 +179,7 @@ def relate_asset_to_account(pam_assets, pam_accounts, isFullSync):
                     account_list = Account.objects.filter(asset=asset, username=username)
                     if not account_list.exists():
                         if asset.category == 'host' and username == 'root':
-                            su_from_username = 'cyuser' if asset.platform.name == 'AIX' else 'loginuser'
+                            su_from_username = 'cyuser' if asset.platform.name in ['AIX', 'AIX-1'] else 'loginuser'
                             account = Account.objects.filter(asset=asset, username=su_from_username).first()
                             if not account:
                                 su_from_name = asset.address + '_' + su_from_username
@@ -214,7 +214,7 @@ def relate_asset_to_account(pam_assets, pam_accounts, isFullSync):
                               .format(username, asset.address, asset_category))
                     else:
                         if asset.category == 'host' and username == 'root':
-                            su_from_username = 'cyuser' if asset.platform.name == 'AIX' else 'loginuser'
+                            su_from_username = 'cyuser' if asset.platform.name in ['AIX', 'AIX-1'] else 'loginuser'
                             account = Account.objects.filter(asset=asset, username=su_from_username).first()
                             if not account:
                                 su_from_name = asset.address + '_' + su_from_username
