@@ -273,8 +273,8 @@ def process_data(isFullSync):
     print('CMDB 数据处理 End.')
 
 
-# 专业公司的数据库资产不在CMDB管理，所有数据库资产归属 系统运行与信息安全管理部-系统管理室和应用开发部门 管理
-# 所有的数据库资产都同步到太平金科的 系统运行与信息安全管理部-系统管理室 组织下
+# 专业公司的数据库资产不在CMDB管理，所有数据库资产归属 系统运行部-系统管理室和应用开发部门 管理
+# 所有的数据库资产都同步到太平金科的 系统运行部-系统管理室 组织下
 def save_db_asset(assets, asset_org_dict, bk_obj_id, isFullSync, org_data_map):
     for asset in assets:
         update_time = asset.get('last_time') or asset.get('create_time')
@@ -294,7 +294,7 @@ def save_db_asset(assets, asset_org_dict, bk_obj_id, isFullSync, org_data_map):
             continue
 
         orgs = []
-        default_org_name = '系统运行与信息安全管理部-系统管理室'
+        default_org_name = '系统运行部-系统管理室'
         org_names = [default_org_name]
         if not default_org_name.__contains__(org_name) and org_name != '系统运行部':
             org_names.append(org_name)
@@ -419,9 +419,9 @@ def str_to_int(str_num):
         print("输入的字符串无法转换为整数")
         return 0
 
-# 所有的数据库控制台都同步到太平金科的系统运行与信息安全管理部-系统管理室组织下
+# 所有的数据库控制台都同步到太平金科的系统运行部-系统管理室组织下
 def save_db_console_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map):
-    org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-系统管理室')[0]
+    org = Organization.objects.get_or_create(name='系统运行部-系统管理室')[0]
     set_current_org(org)
 
     node_path = '/' + org.name
@@ -482,9 +482,9 @@ def save_db_console_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_dat
             print("Failed to save db console asset[{}], error:{}".format(cls_name, e))
             raise e
 
-# 所有的桌面办公都同步到太平金科的系统运行与信息安全管理部-桌面支持室组织下
+# 所有的桌面办公都同步到太平金科的系统运行部-桌面支持室组织下
 def save_desk_support_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map):
-    org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-桌面支持室')[0]
+    org = Organization.objects.get_or_create(name='系统运行部-桌面支持室')[0]
     set_current_org(org)
 
     node_path = '/' + org.name
@@ -536,9 +536,9 @@ def save_desk_support_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_d
             raise e
 
 
-# 所有的网络设备都同步到太平金科的系统运行与信息安全管理部-网络管理室组织下
+# 所有的网络设备都同步到太平金科的系统运行部-网络管理室组织下
 def save_load_balance_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map):
-    org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-网络管理室')[0]
+    org = Organization.objects.get_or_create(name='系统运行部-网络管理室')[0]
     set_current_org(org)
 
     node_path = '/' + org.name
@@ -628,10 +628,10 @@ def save_load_balance_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_d
                 raise e
 
 
-# 专业公司的网络设备资产不在CMDB管理，所有网络设备资产归属 系统运行与信息安全管理部-网络管理室 管理
-# 所有的网络设备都同步到太平金科的系统运行与信息安全管理部-网络管理室组织下
+# 专业公司的网络设备资产不在CMDB管理，所有网络设备资产归属 系统运行部-网络管理室 管理
+# 所有的网络设备都同步到太平金科的系统运行部-网络管理室组织下
 def save_network_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map):
-    org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-网络管理室')[0]
+    org = Organization.objects.get_or_create(name='系统运行部-网络管理室')[0]
     set_current_org(org)
 
     node_path = '/' + org.name
@@ -747,8 +747,8 @@ def save_middleware_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_dat
             continue
 
         # 在 Default 组织下管理所有资产，在归属部门 app_department 对应组织下管理关联资产
-        # 专业公司的中间件资产不在CMDB管理，所有中间件资产归属 系统运行与信息安全管理部-系统管理室 管理
-        org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-系统管理室')[0]
+        # 专业公司的中间件资产不在CMDB管理，所有中间件资产归属 系统运行部-系统管理室 管理
+        org = Organization.objects.get_or_create(name='系统运行部-系统管理室')[0]
         orgs = [org]
 
         asset_name = asset_name + '-' + address
@@ -797,7 +797,7 @@ def save_middleware_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_dat
 
 # 所有存储设备归属系统管理室
 def save_storage_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map):
-    org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-系统管理室')[0]
+    org = Organization.objects.get_or_create(name='系统运行部-系统管理室')[0]
     set_current_org(org)
 
     for asset in assets:
@@ -1203,7 +1203,7 @@ def get_web_asset_model(bk_obj_id, manufacturer, asset, a):
 
 # 所有PC机归属系统管理室
 def save_pc_host_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map):
-    org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-系统管理室')[0]
+    org = Organization.objects.get_or_create(name='系统运行部-系统管理室')[0]
     set_current_org(org)
 
     for asset in assets:
@@ -1333,15 +1333,15 @@ def save_host_asset(assets, asset_org_dict, user_org_dict, isFullSync, org_data_
         orgs = []
         org_asset_comment_dict = {}
         if len(org_name) > 0:
-            # 太平金科-系统运行与信息安全管理部 特殊处理
-            dept_name = '系统运行与信息安全管理部'
+            # 太平金科-系统运行部 特殊处理
+            dept_name = '系统运行部'
             if str(org_name) == dept_name or str(org_name) == '系统运行部':
                 # 应用科室
                 app_office = asset.get('app_office', '')
 
                 if not user_org_name:
-                    # 系统运行与信息安全管理部-系统管理室
-                    org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-系统管理室')[0]
+                    # 系统运行部-系统管理室
+                    org = Organization.objects.get_or_create(name='系统运行部-系统管理室')[0]
                     orgs.append(org)
                     org_asset_comment_dict[org.id] = default_user_org_name
 
@@ -1349,7 +1349,7 @@ def save_host_asset(assets, asset_org_dict, user_org_dict, isFullSync, org_data_
                     relate_app_office_org(app_office, dept_name, orgs, org_asset_comment_dict, default_user_org_name,
                                           asset_name)
                 else:
-                    name = '系统运行与信息安全管理部-' + user_org_name
+                    name = '系统运行部-' + user_org_name
                     org = Organization.objects.get_or_create(name=name)[0]
                     if org:
                         orgs.append(org)
@@ -1360,12 +1360,12 @@ def save_host_asset(assets, asset_org_dict, user_org_dict, isFullSync, org_data_
             else:
                 if user_org_name:
                     if str(user_org_name) == default_user_org_name:
-                        # 系统运行与信息安全管理部-系统管理室
-                        org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-系统管理室')[0]
+                        # 系统运行部-系统管理室
+                        org = Organization.objects.get_or_create(name='系统运行部-系统管理室')[0]
                         orgs.append(org)
                         org_asset_comment_dict[org.id] = user_org_name
                 else:
-                    org = Organization.objects.get_or_create(name='系统运行与信息安全管理部-系统管理室')[0]
+                    org = Organization.objects.get_or_create(name='系统运行部-系统管理室')[0]
                     orgs.append(org)
                     org_asset_comment_dict[org.id] = default_user_org_name
 
