@@ -77,15 +77,21 @@ class ConnectionToken(JMSOrgBaseModel):
 
     @classmethod
     def get_typed_connection_token(cls, token_id):
-        try:
-            token = get_object_or_404(cls, id=token_id)
-        except ValidationError:
-            return None
+        if not is_uuid(token_id):
+            try:
+                token = cls.objects.get(value=token_id)
+            except cls.DoesNotExist:
+                return None
+        else:
+            try:
+                token = get_object_or_404(cls, id=token_id)
+            except ValidationError:
+                return None
 
         if token.type == ConnectionTokenType.ADMIN.value:
-            token = AdminConnectionToken.objects.get(id=token_id)
+            token = AdminConnectionToken.objects.get(id=token.id)
         else:
-            token = ConnectionToken.objects.get(id=token_id)
+            token = ConnectionToken.objects.get(id=token.id)
         return token
 
     @property

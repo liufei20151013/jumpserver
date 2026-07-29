@@ -181,7 +181,7 @@ class ConnectionTokenSecretSerializer(OrgResourceModelSerializerMixin):
                 'account': {
                     'name': '@TOKEN',
                     'username': f'JMS-{instance.value}',
-                    'secret_type': 'password',
+                    'secret_type': {'value': 'password', 'label': 'Password'},
                     'secret': instance.value,
                 },
             }
