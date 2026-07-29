@@ -653,10 +653,20 @@ class SuperConnectionTokenViewSet(ConnectionTokenViewSet):
         if asset_type in ['k8s', 'kubernetes']:
             expire_now = False
 
+        # Endpoint 充当网关时，token 需要被两个 koko 实例使用
+        has_endpoint_gateway = (
+            not token.gateway
+            and token.endpoint
+            and not token.endpoint.is_default()
+            and token.endpoint.host
+        )
+        if has_endpoint_gateway:
+            expire_now = False
+
         if token.is_reusable and settings.CONNECTION_TOKEN_REUSABLE:
             logger.debug('Token is reusable, not expire now')
         elif is_false(expire_now):
-            logger.debug('Api specified, now expire now')
+            logger.debug('Api specified, not expire now')
         else:
             token.expire()
 
