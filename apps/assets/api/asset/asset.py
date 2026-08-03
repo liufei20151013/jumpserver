@@ -161,6 +161,7 @@ class BaseAssetViewSet(OrgBulkModelViewSet):
             error = _('The number of assets exceeds the limit of 5000')
             return Response({'error': error}, status=400)
 
+        request.data['name'] = 'jms_' + request.data['name']
         return super().create(request, *args, **kwargs)
 
 
