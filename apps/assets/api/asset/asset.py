@@ -70,7 +70,7 @@ class AssetFilterSet(BaseFilterSet):
         model = Asset
         fields = [
             "id", "name", "address", "is_active",
-            "type", "category", "platform",
+            "type", "category", "platform", "created_by"
         ]
 
     @staticmethod
@@ -98,6 +98,11 @@ class AssetFilterSet(BaseFilterSet):
     def filter_protocols(queryset, name, value):
         value = value.split(',')
         return queryset.filter(protocols__name__in=value).distinct()
+
+    @staticmethod
+    def filter_created_by(queryset, name, value):
+        queryset = queryset.filter(created_by=value)
+        return queryset
 
 
 class BaseAssetViewSet(OrgBulkModelViewSet):
