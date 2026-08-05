@@ -6,6 +6,8 @@ import requests
 import json
 import time
 
+from django.db.models import Q
+
 from orgs.utils import set_current_org
 
 from orgs.models import Organization
@@ -35,7 +37,8 @@ def process_data(isFullSync):
             set_current_org(org)
 
             # jms_开头的是堡垒机服务器
-            assets = Asset.objects.exclude(name__istartswith='jms_').filter(is_active=True)
+            assets = (Asset.objects.filter(is_active=True)
+                      .exclude(Q(name__istartswith='jms_') | Q(name__startswith='手动创建_')))
             for asset in assets:
                 key = f"{org.id}_{asset.name}"
                 old_asset_org_dict.update({key: asset.id})
