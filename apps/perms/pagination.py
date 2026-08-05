@@ -20,9 +20,10 @@ class NodePermedAssetPagination(GrantedAssetPaginationBase):
     def get_count_from_nodes(self, queryset):
         node = getattr(self._view, 'pagination_node', None)
         if node:
-            logger.debug(f'Hit node.assets_amount[{node.assets_amount}] -> '
+            assets_amount = queryset.count()
+            logger.debug(f'Hit node.assets_amount[{assets_amount}] -> '
                          f'{self._request.get_full_path()}')
-            return node.assets_amount
+            return assets_amount
         else:
             logger.warning(f'Not hit node.assets_amount[{node}] because {self._view} '
                         f'not has `pagination_node` -> {self._request.get_full_path()}')
@@ -31,14 +32,19 @@ class NodePermedAssetPagination(GrantedAssetPaginationBase):
 
 class AllPermedAssetPagination(GrantedAssetPaginationBase):
     def get_count_from_nodes(self, queryset):
-        if settings.PERM_SINGLE_ASSET_TO_UNGROUP_NODE:
-            return None
-        values = UserAssetGrantedTreeNodeRelation.objects.filter(
-            user=self._user, node_parent_key=''
-        ).values_list('node_assets_amount', flat=True)
-        if not values:
-            return None
-
-        assets_amount = sum(values)
+        # if settings.PERM_SINGLE_ASSET_TO_UNGROUP_NODE:
+        #     return None
+        # values = UserAssetGrantedTreeNodeRelation.objects.filter(
+        #     user=self._user, node_parent_key=''
+        # ).values_list('node_assets_amount', flat=True)
+        # if not values:
+        #     return None
+        #
+        # assets_amount = sum(values)
+        # logger.debug(f'Hit all assets amount {assets_amount} -> {self._request.get_full_path()}')
+        # return assets_amount
+        if queryset is None:
+            return 0
+        assets_amount = queryset.count()
         logger.debug(f'Hit all assets amount {assets_amount} -> {self._request.get_full_path()}')
         return assets_amount

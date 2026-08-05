@@ -63,7 +63,7 @@ class BaseUserPermedAssetsApi(SelfOrPKUserMixin, ExtraFilterFieldsMixin, ListAPI
 
     @abc.abstractmethod
     def get_assets(self):
-        return Asset.objects.none()
+        return Asset.objects.filter(is_active=True)
 
     query_asset_util: UserPermAssetUtil
 
@@ -84,7 +84,7 @@ class UserAllPermedAssetsApi(BaseUserPermedAssetsApi):
             __, assets = self.query_asset_util.get_node_all_assets(node_id)
         else:
             assets = self.query_asset_util.get_all_assets()
-        return assets
+        return assets.filter(is_active=True)
 
 
 class UserDirectPermedAssetsApi(BaseUserPermedAssetsApi):
