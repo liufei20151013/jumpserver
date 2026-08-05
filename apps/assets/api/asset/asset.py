@@ -136,6 +136,8 @@ class BaseAssetViewSet(OrgBulkModelViewSet):
         queryset = super().get_queryset()
         if queryset.model.__name__ != 'Asset':
             queryset = queryset.select_related('asset_ptr')
+        # else:
+        #     queryset = queryset.filter(is_active=True)
         return queryset
 
     def get_serializer_class(self):

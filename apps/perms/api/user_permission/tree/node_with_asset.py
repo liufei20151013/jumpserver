@@ -133,7 +133,7 @@ class UserPermedNodeChildrenWithAssetsAsTreeApi(BaseUserNodeWithAssetAsTreeApi):
         else:
             nodes = query_node_util.get_node_children(node_key)
             assets = query_asset_util.get_node_assets(key=node_key)
-        assets = assets.prefetch_related('platform')
+        assets = assets.prefetch_related('platform').filter(is_active=True)
         return nodes, assets
 
     @lazyproperty

@@ -52,7 +52,7 @@ class AssetPermissionPermAssetUtil:
         asset_ids = AssetPermission.assets.through.objects \
             .filter(assetpermission_id__in=self.perm_ids) \
             .values_list('asset_id', flat=True)
-        assets = Asset.objects.filter(id__in=asset_ids)
+        assets = Asset.objects.filter(id__in=asset_ids, is_active=True)
         return assets
 
 
@@ -68,7 +68,7 @@ class UserPermAssetUtil(AssetPermissionPermAssetUtil):
 
     @timeit
     def get_favorite_assets(self):
-        assets = Asset.objects.all().valid()
+        assets = Asset.objects.filter(is_active=True).valid()
         asset_ids = FavoriteAsset.objects.filter(user=self.user).values_list('asset_id', flat=True)
         assets = assets.filter(id__in=list(asset_ids))
         return assets
@@ -134,7 +134,7 @@ class UserPermAssetUtil(AssetPermissionPermAssetUtil):
         node = PermNode.objects.get(key=key)
         node.compute_node_from_and_assets_amount(self.user)
         if node.node_from == node.NodeFrom.granted:
-            assets = Asset.objects.filter(nodes__id=node.id).order_by()
+            assets = Asset.objects.filter(nodes__id=node.id, is_active=True).order_by()
         elif node.node_from == node.NodeFrom.asset:
             assets = self._get_indirect_perm_node_assets(node)
         else:
@@ -159,7 +159,7 @@ class UserPermAssetUtil(AssetPermissionPermAssetUtil):
     def _get_indirect_perm_node_assets(self, node):
         """ 获取间接授权节点下的直接资产 """
         assets = self.get_direct_assets()
-        assets = assets.filter(nodes__id=node.id).order_by().distinct()
+        assets = assets.filter(nodes__id=node.id, is_active=True).order_by().distinct()
         return assets
 
     @timeit
@@ -197,7 +197,7 @@ class UserPermAssetUtil(AssetPermissionPermAssetUtil):
             .values_list('id', flat=True)
         asset_ids.update(list(_asset_ids))
 
-        return Asset.objects.filter(id__in=asset_ids)
+        return Asset.objects.filter(id__in=asset_ids, is_active=True)
 
 
 class UserPermNodeUtil:
@@ -211,7 +211,7 @@ class UserPermNodeUtil:
             .filter(user=self.user) \
             .values_list('asset_id') \
             .distinct()
-        assets_amount = Asset.objects.all().valid().filter(id__in=favor_ids).count()
+        assets_amount = Asset.objects.all().valid().filter(id__in=favor_ids, is_active=True).count()
         return PermNode.get_favorite_node(assets_amount)
 
     def get_ungrouped_node(self):

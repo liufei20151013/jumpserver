@@ -21,7 +21,7 @@ class FavoriteAssetViewSet(BulkModelViewSet):
             return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
-        queryset = FavoriteAsset.objects.filter(user=self.request.user)
+        queryset = FavoriteAsset.objects.filter(user=self.request.user, asset__is_active=True)
         return queryset
 
     def allow_bulk_destroy(self, qs, filtered):
