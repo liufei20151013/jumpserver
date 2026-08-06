@@ -77,7 +77,7 @@ def sync_cmdb_incremental_data():
 
     try:
         logger.info("开始执行增量数据同步")
-        process_data(False)
+        process_data(True)
     except Exception as e:
         logger.error(f"增量同步异常: {e}", exc_info=True)
         raise e
