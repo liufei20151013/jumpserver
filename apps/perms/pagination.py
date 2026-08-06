@@ -1,8 +1,6 @@
-from django.conf import settings
 from rest_framework.request import Request
 
 from assets.pagination import AssetPaginationBase
-from perms.models import UserAssetGrantedTreeNodeRelation
 from common.utils import get_logger
 
 logger = get_logger(__name__)

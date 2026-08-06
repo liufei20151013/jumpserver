@@ -397,8 +397,10 @@ class UserPermTreeBuildUtil(object):
     @lazyproperty
     def direct_asset_id_node_id_pairs(self):
         """ 直接授权的资产 id 和 节点 id  """
+        asset_ids = (Asset.objects.filter(id__in=self.direct_asset_ids, is_active=True).distinct()
+                     .values_list('id', flat=True))
         asset_node_pairs = Asset.nodes.through.objects \
-            .filter(asset_id__in=self.direct_asset_ids) \
+            .filter(asset_id__in=asset_ids) \
             .annotate(
             str_asset_id=F('asset_id'),
             str_node_id=F('node_id')
