@@ -24,7 +24,7 @@ from common.drf.filters import BaseFilterSet, AttrRulesFilterBackend
 from common.utils import get_logger, is_uuid
 from orgs.mixins import generics
 from orgs.mixins.api import OrgBulkModelViewSet
-from pam.sync import process_data
+from pam.sync import sync_asset_accounts
 from ...const import GATEWAY_NAME
 from ...notifications import BulkUpdatePlatformSkipAssetUserMsg
 
@@ -337,8 +337,9 @@ class AssetSyncAccountApi(APIView):
             return Response({"status": "error", "msg": "pk is required"}, status=400)
 
         try:
-            asset = Asset.objects.get(id=pk)
-            process_data(asset)
+            assets = Asset.objects.filter(pk=pk, is_active=True)
+            if assets.exists():
+                sync_asset_accounts(assets)
             return Response({"status": "success", "msg": "Sync completed"})
         except Asset.DoesNotExist:
             return Response({"status": "error", "msg": "Asset not found"}, status=404)

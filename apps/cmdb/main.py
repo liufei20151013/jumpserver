@@ -18,6 +18,7 @@ from django.conf import settings
 from datetime import datetime
 import croniter
 
+from pam.sync import sync_asset_accounts
 from perms.models import AssetPermission
 
 logger = get_logger(__name__)
@@ -46,6 +47,7 @@ def process_data(isFullSync):
 
     asset_org_dict = {}
     user_org_dict = {}
+    new_assets = []
 
     # 按组织分组：key=组织对象，value=该组织下所有待处理数据
     org_data_map = defaultdict(lambda: {"node": []})
@@ -59,7 +61,7 @@ def process_data(isFullSync):
     host_data = result['data']['list']
     print("查询 CMDB 主机数据成功，total: {} 条".format(len(host_data)))
 
-    save_host_asset(host_data, asset_org_dict, user_org_dict, isFullSync, org_data_map)
+    save_host_asset(host_data, asset_org_dict, user_org_dict, isFullSync, org_data_map, new_assets)
     print("查询所有主机资产 End.")
 
     print("查询PC机 Start.")
@@ -76,7 +78,7 @@ def process_data(isFullSync):
         pc_host_data = result['data']['list']
         print("查询 bk_obj_id: {}, bk_obj_name: {}，total: {} 条".format(bk_obj_id, bk_obj_name, len(pc_host_data)))
 
-        save_pc_host_asset(pc_host_data, asset_org_dict, isFullSync, bk_obj_id, org_data_map)
+        save_pc_host_asset(pc_host_data, asset_org_dict, isFullSync, bk_obj_id, org_data_map, new_assets)
     print("查询所有PC机 End.")
 
     print("查询中间件 Start.")
@@ -100,7 +102,7 @@ def process_data(isFullSync):
             print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}, total: {} 条"
                   .format(bk_obj_id, bk_obj_name, region, len(middleware_data)))
 
-            save_middleware_asset(middleware_data, asset_org_dict, isFullSync, bk_obj_id, org_data_map)
+            save_middleware_asset(middleware_data, asset_org_dict, isFullSync, bk_obj_id, org_data_map, new_assets)
     print("查询所有中间件 End.")
 
     print("查询网络安全设备 Start.")
@@ -118,7 +120,7 @@ def process_data(isFullSync):
         network_device_data = result['data']['list']
         print("查询 bk_obj_id: {}, bk_obj_name: {}，total: {} 条".format(bk_obj_id, bk_obj_name, len(network_device_data)))
 
-        save_network_device_asset(network_device_data, asset_org_dict, isFullSync, bk_obj_id, org_data_map)
+        save_network_device_asset(network_device_data, asset_org_dict, isFullSync, bk_obj_id, org_data_map, new_assets)
     print("查询所有网络安全设备 End.")
 
     print("查询负载均衡 Start.")
@@ -140,7 +142,7 @@ def process_data(isFullSync):
             print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}, total: {} 条"
                   .format(bk_obj_id, bk_obj_name, load_balance_region, len(load_balance_data)))
 
-            save_load_balance_asset(load_balance_data, asset_org_dict, isFullSync, bk_obj_id, org_data_map)
+            save_load_balance_asset(load_balance_data, asset_org_dict, isFullSync, bk_obj_id, org_data_map, new_assets)
     print("查询所有负载均衡 End.")
 
     print("查询存储设备 Start.")
@@ -163,7 +165,7 @@ def process_data(isFullSync):
             print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}, total: {} 条"
                   .format(bk_obj_id, bk_obj_name, storage_region, len(storage_device_data)))
 
-            save_storage_device_asset(storage_device_data, asset_org_dict, isFullSync, bk_obj_id, org_data_map)
+            save_storage_device_asset(storage_device_data, asset_org_dict, isFullSync, bk_obj_id, org_data_map, new_assets)
     print("查询所有存储设备 End.")
 
     print("查询所有数据库资产 Start.")
@@ -197,7 +199,7 @@ def process_data(isFullSync):
             db_data = result['data']['list']
             print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}, total: {}条".format(bk_obj_id, bk_obj_name, region, len(db_data)))
 
-            save_db_asset(db_data, asset_org_dict, bk_obj_id, isFullSync, org_data_map)
+            save_db_asset(db_data, asset_org_dict, bk_obj_id, isFullSync, org_data_map, new_assets)
     print("查询所有数据库资产 End.")
 
     print("查询桌面办公 Start.")
@@ -218,7 +220,7 @@ def process_data(isFullSync):
             print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}, total: {} 条"
                   .format(bk_obj_id, bk_obj_name, desk_support, len(desk_support_data)))
 
-            save_desk_support_asset(desk_support_data, asset_org_dict, isFullSync, bk_obj_id, org_data_map)
+            save_desk_support_asset(desk_support_data, asset_org_dict, isFullSync, bk_obj_id, org_data_map, new_assets)
     print("查询所有桌面办公 End.")
 
     # 状态：运行 1      环境： 开发测试 2  生产等  1 3 4 5 7
@@ -238,7 +240,7 @@ def process_data(isFullSync):
             print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}, total: {} 条"
                   .format(bk_obj_id, bk_obj_name, region, len(db_console_data)))
 
-            save_db_console_asset(db_console_data, asset_org_dict, isFullSync, bk_obj_id, org_data_map)
+            save_db_console_asset(db_console_data, asset_org_dict, isFullSync, bk_obj_id, org_data_map, new_assets)
     print("查询所有数据库控制台 End.")
 
     # ========== 逐个组织执行批量操作（组织隔离，同名互不冲突） ==========
@@ -276,10 +278,15 @@ def process_data(isFullSync):
 
     print('CMDB 数据处理 End.')
 
+    # 处理那些重装的机器：重装的机器IP不变但是主机名变化，会在堡垒机新建资产，但是PAM上同IP关联的账号没有更新时间，不会触发账号的同步，需要单独同步
+    print('新建资产同步账号密码 Start.')
+    sync_asset_accounts(new_assets)
+    print('新建资产同步账号密码 End.')
+
 
 # 专业公司的数据库资产不在CMDB管理，所有数据库资产归属 系统运行部-系统管理室和应用开发部门 管理
 # 所有的数据库资产都同步到太平金科的 系统运行部-系统管理室 组织下
-def save_db_asset(assets, asset_org_dict, bk_obj_id, isFullSync, org_data_map):
+def save_db_asset(assets, asset_org_dict, bk_obj_id, isFullSync, org_data_map, new_assets):
     for asset in assets:
         update_time = asset.get('last_time') or asset.get('create_time')
         if not isFullSync:
@@ -386,13 +393,13 @@ def save_db_asset(assets, asset_org_dict, bk_obj_id, isFullSync, org_data_map):
                     exist_asset = Asset.objects.filter(name=new_asset_name).first()
                     if not exist_asset:
                         create_db_asset(new_asset_name, address, platform, org, org_data_map, asset_protocol, node_path,
-                                        default_db, asset_org_dict)
+                                        default_db, asset_org_dict, new_assets)
                         print("Success to create db asset[{}], org_id: {}.".format(new_asset_name, org.id))
                     else:
                         if exist_asset.platform.type != platform.type:
                             exist_asset.delete()
                             create_db_asset(new_asset_name, address, platform, org, org_data_map, asset_protocol, node_path,
-                                            default_db, asset_org_dict)
+                                            default_db, asset_org_dict, new_assets)
                             print("Success to create db asset[{}], org_id: {}.".format(new_asset_name, org.id))
                         else:
                             exist_asset.address = address
@@ -424,7 +431,7 @@ def str_to_int(str_num):
         return 0
 
 # 所有的数据库控制台都同步到太平金科的系统运行部-系统管理室组织下
-def save_db_console_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map):
+def save_db_console_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map, new_assets):
     org = Organization.objects.get_or_create(name='系统运行部-系统管理室')[0]
     set_current_org(org)
 
@@ -468,7 +475,7 @@ def save_db_console_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_dat
                 exist_asset = Asset.objects.filter(name=asset_name).first()
                 if not exist_asset:
                     create_web_asset(asset_name, address, platform, '', org, org_data_map, asset_protocol,
-                                     node_path, asset_org_dict)
+                                     node_path, asset_org_dict, new_assets)
                     print("Success to create db console asset[{}], org_id: {}.".format(asset_name, org.id))
                 else:
                     update_asset(org, org_data_map, exist_asset, asset_protocol, node_path, asset_org_dict)
@@ -487,7 +494,7 @@ def save_db_console_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_dat
             raise e
 
 # 所有的桌面办公都同步到太平金科的系统运行部-桌面支持室组织下
-def save_desk_support_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map):
+def save_desk_support_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map, new_assets):
     org = Organization.objects.get_or_create(name='系统运行部-桌面支持室')[0]
     set_current_org(org)
 
@@ -521,7 +528,7 @@ def save_desk_support_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_d
             exist_asset = Asset.objects.filter(name=asset_name).first()
             if not exist_asset:
                 create_web_asset(asset_name, address, platform, '', org, org_data_map, asset_protocol,
-                                 node_path, asset_org_dict)
+                                 node_path, asset_org_dict, new_assets)
                 print("Success to create desk support web asset[{}], org_id: {}.".format(asset_name, org.id))
             else:
                 update_asset(org, org_data_map, exist_asset, asset_protocol, node_path, asset_org_dict)
@@ -541,7 +548,7 @@ def save_desk_support_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_d
 
 
 # 所有的网络设备都同步到太平金科的系统运行部-网络管理室组织下
-def save_load_balance_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map):
+def save_load_balance_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map, new_assets):
     org = Organization.objects.get_or_create(name='系统运行部-网络管理室')[0]
     set_current_org(org)
 
@@ -590,13 +597,13 @@ def save_load_balance_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_d
                 exist_asset = Asset.objects.filter(name=asset_name).first()
                 if not exist_asset:
                     create_device_asset(asset_name, address, platform, '', org, org_data_map, asset_protocol,
-                                        node_path, asset_org_dict)
+                                        node_path, asset_org_dict, new_assets)
                     print("Success to create load balance asset[{}], org_id: {}.".format(asset_name, org.id))
                 else:
                     if exist_asset.platform.type != platform.type:
                         exist_asset.delete()
                         create_device_asset(asset_name, address, platform, '', org, org_data_map,
-                                            asset_protocol, node_path, asset_org_dict)
+                                            asset_protocol, node_path, asset_org_dict, new_assets)
                         print("Success to create load balance asset[{}], org_id: {}.".format(asset_name, org.id))
                     else:
                         exist_asset.address = address
@@ -613,7 +620,7 @@ def save_load_balance_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_d
                     exist_asset = Asset.objects.filter(name=asset_name).first()
                     if not exist_asset:
                         create_web_asset(asset_name, address, platform, '', org, org_data_map, asset_protocol,
-                                         node_path, asset_org_dict)
+                                         node_path, asset_org_dict, new_assets)
                         print("Success to create load balance web asset[{}], bk_obj_id: {}.".format(asset_name, bk_obj_id))
                     else:
                         update_asset(org, org_data_map, exist_asset, asset_protocol, node_path, asset_org_dict)
@@ -634,7 +641,7 @@ def save_load_balance_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_d
 
 # 专业公司的网络设备资产不在CMDB管理，所有网络设备资产归属 系统运行部-网络管理室 管理
 # 所有的网络设备都同步到太平金科的系统运行部-网络管理室组织下
-def save_network_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map):
+def save_network_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map, new_assets):
     org = Organization.objects.get_or_create(name='系统运行部-网络管理室')[0]
     set_current_org(org)
 
@@ -689,13 +696,13 @@ def save_network_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org
             exist_asset = Asset.objects.filter(name=asset_name).first()
             if not exist_asset:
                 create_device_asset(asset_name, address, platform, '', org, org_data_map, asset_protocol,
-                                    node_path, asset_org_dict)
+                                    node_path, asset_org_dict, new_assets)
                 print("Success to create network device asset[{}], org_id: {}.".format(asset_name, org.id))
             else:
                 if exist_asset.platform.type != platform.type:
                     exist_asset.delete()
                     create_device_asset(asset_name, address, platform, '', org, org_data_map, asset_protocol,
-                                        node_path, asset_org_dict)
+                                        node_path, asset_org_dict, new_assets)
                     print("Success to create network device asset[{}], org_id: {}.".format(asset_name, org.id))
                 else:
                     update_asset(org, org_data_map, exist_asset, asset_protocol, node_path, asset_org_dict)
@@ -711,7 +718,7 @@ def save_network_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org
                 exist_asset = Asset.objects.filter(name=asset_name).first()
                 if not exist_asset:
                     create_web_asset(asset_name, address, platform, '', org, org_data_map, asset_protocol,
-                                     node_path, asset_org_dict)
+                                     node_path, asset_org_dict, new_assets)
                     print("Success to create network device web asset[{}], bk_obj_id: {}.".format(asset_name, bk_obj_id))
                 else:
                     update_asset(org, org_data_map, exist_asset, asset_protocol, node_path, asset_org_dict)
@@ -730,7 +737,7 @@ def save_network_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org
             raise e
 
 
-def save_middleware_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map):
+def save_middleware_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map, new_assets):
     for asset in assets:
         update_time = asset.get('last_time') or asset.get('create_time')
         if not isFullSync:
@@ -773,13 +780,13 @@ def save_middleware_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_dat
                 exist_asset = Asset.objects.filter(name=asset_name).first()
                 if not exist_asset:
                     create_web_asset_autofill(asset_name, address, platform, '', org, org_data_map,
-                                              asset_protocol, node_path, bk_obj_id, '', asset, asset_org_dict)
+                                              asset_protocol, node_path, bk_obj_id, '', asset, asset_org_dict, new_assets)
                     print("Success to create middleware asset[{}], org_id: {}.".format(asset_name, org.id))
                 else:
                     if exist_asset.platform.type != platform.type:
                         exist_asset.delete()
                         create_web_asset_autofill(asset_name, address, platform, '', org, org_data_map,
-                                                  asset_protocol, node_path, bk_obj_id, '', asset, asset_org_dict)
+                                                  asset_protocol, node_path, bk_obj_id, '', asset, asset_org_dict, new_assets)
                         print("Success to create middleware asset[{}], org_id: {}.".format(asset_name, org.id))
                     else:
                         exist_asset.address = address
@@ -800,7 +807,7 @@ def save_middleware_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_dat
 
 
 # 所有存储设备归属系统管理室
-def save_storage_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map):
+def save_storage_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map, new_assets):
     org = Organization.objects.get_or_create(name='系统运行部-系统管理室')[0]
     set_current_org(org)
 
@@ -860,13 +867,13 @@ def save_storage_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org
             exist_asset = Asset.objects.filter(name=asset_name).first()
             if not exist_asset:
                 create_web_asset(asset_name, address, platform, comment, org, org_data_map, asset_protocol,
-                                 node_path, asset_org_dict)
+                                 node_path, asset_org_dict, new_assets)
                 print("Success to create storage device asset[{}], org_id: {}.".format(asset_name, org.id))
             else:
                 if exist_asset.platform.type != platform.type:
                     exist_asset.delete()
                     create_web_asset(asset_name, address, platform, comment, org, org_data_map, asset_protocol,
-                                     node_path, asset_org_dict)
+                                     node_path, asset_org_dict, new_assets)
                     print("Success to create storage device asset[{}], org_id: {}.".format(asset_name, org.id))
                 else:
                     exist_asset.address = address
@@ -1206,7 +1213,7 @@ def get_web_asset_model(bk_obj_id, manufacturer, asset, a):
 
 
 # 所有PC机归属系统管理室
-def save_pc_host_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map):
+def save_pc_host_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map, new_assets):
     org = Organization.objects.get_or_create(name='系统运行部-系统管理室')[0]
     set_current_org(org)
 
@@ -1261,13 +1268,13 @@ def save_pc_host_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_m
             exist_asset = Asset.objects.filter(name=asset_name).first()
             if not exist_asset:
                 create_web_asset_autofill(asset_name, address, platform, comment, org, org_data_map, asset_protocol,
-                                          node_path, bk_obj_id, manufacturer, asset, asset_org_dict)
+                                          node_path, bk_obj_id, manufacturer, asset, asset_org_dict, new_assets)
                 print("Success to create pc host asset[{}], org_id: {}.".format(asset_name, org.id))
             else:
                 if exist_asset.platform.type != platform.type:
                     exist_asset.delete()
                     create_web_asset_autofill(asset_name, address, platform, comment, org, org_data_map, asset_protocol,
-                                              node_path, bk_obj_id, manufacturer, asset, asset_org_dict)
+                                              node_path, bk_obj_id, manufacturer, asset, asset_org_dict, new_assets)
                     print("Success to create pc host asset[{}], org_id: {}.".format(asset_name, org.id))
                 else:
                     exist_asset.address = address
@@ -1310,7 +1317,7 @@ def extract_ip_from_url(haddr_ip_address):
     return match.group(1) if match else None
 
 
-def save_host_asset(assets, asset_org_dict, user_org_dict, isFullSync, org_data_map):
+def save_host_asset(assets, asset_org_dict, user_org_dict, isFullSync, org_data_map, new_assets):
     for asset in assets:
         update_time = asset.get('last_time') or asset.get('create_time')
         if not isFullSync:
@@ -1410,14 +1417,14 @@ def save_host_asset(assets, asset_org_dict, user_org_dict, isFullSync, org_data_
                 exist_asset = Asset.objects.filter(name=asset_name).first()
                 if not exist_asset:
                     create_host_asset(asset_name, address, platform, org_asset_comment_dict.get(org.id, ''), org,
-                                      org_data_map, asset_protocol, node_path, asset_org_dict)
+                                      org_data_map, asset_protocol, node_path, asset_org_dict, new_assets)
                 else:
                     # 场景2：组织内已存在该资产
                     # 平台类型不一致：删除旧资产，重新创建
                     if exist_asset.platform.type != platform.type:
                         exist_asset.delete()
                         create_host_asset(asset_name, address, platform, org_asset_comment_dict.get(org.id, ''), org,
-                                          org_data_map, asset_protocol, node_path, asset_org_dict)
+                                          org_data_map, asset_protocol, node_path, asset_org_dict, new_assets)
                         print("Success to create host asset[{}], org_id: {}.".format(asset_name, org.id))
                     else:
                         exist_asset.address = address
@@ -1429,32 +1436,37 @@ def save_host_asset(assets, asset_org_dict, user_org_dict, isFullSync, org_data_
             print("Failed to save host asset[{}], error:{}".format(asset_name, e))
             raise e
 
-def create_host_asset(asset_name, address, platform, comment, org, org_data_map, asset_protocol, node_path, asset_org_dict):
+def create_host_asset(asset_name, address, platform, comment, org, org_data_map, asset_protocol, node_path, asset_org_dict, new_assets):
     new_asset = Asset.objects.create(name=asset_name, address=address, platform=platform, comment=comment, org_id=org.id, is_active=True)
+    new_assets.append(new_asset)
     asset_model = Host(asset_ptr_id=new_asset.id)
     save_other_param(asset_model, org, new_asset, asset_org_dict, org_data_map, asset_protocol, node_path)
 
-def create_db_asset(asset_name, address, platform, org, org_data_map, asset_protocol, node_path, default_db, asset_org_dict):
+def create_db_asset(asset_name, address, platform, org, org_data_map, asset_protocol, node_path, default_db, asset_org_dict, new_assets):
     new_asset = Asset.objects.create(name=asset_name, address=address, platform=platform, org_id=org.id, is_active=True)
+    new_assets.append(new_asset)
     if not default_db:
         asset_model = Database(asset_ptr_id=new_asset.id)
     else:
         asset_model = Database(asset_ptr_id=new_asset.id, db_name=default_db)
     save_other_param(asset_model, org, new_asset, asset_org_dict, org_data_map, asset_protocol, node_path)
 
-def create_web_asset(asset_name, address, platform, comment, org, org_data_map, asset_protocol, node_path, asset_org_dict):
+def create_web_asset(asset_name, address, platform, comment, org, org_data_map, asset_protocol, node_path, asset_org_dict, new_assets):
     new_asset = Asset.objects.create(name=asset_name, address=address, platform=platform, comment=comment, org_id=org.id, is_active=True)
+    new_assets.append(new_asset)
     asset_model = Web(asset_ptr_id=new_asset.id, autofill='no')
     save_other_param(asset_model, org, new_asset, asset_org_dict, org_data_map, asset_protocol, node_path)
 
 def create_web_asset_autofill(asset_name, address, platform, comment, org, org_data_map, asset_protocol, node_path,
-                              bk_obj_id, manufacturer, asset, asset_org_dict):
+                              bk_obj_id, manufacturer, asset, asset_org_dict, new_assets):
     new_asset = Asset.objects.create(name=asset_name, address=address, platform=platform, comment=comment, org_id=org.id, is_active=True)
+    new_assets.append(new_asset)
     asset_model = get_web_asset_model(bk_obj_id, manufacturer, asset, new_asset)
     save_other_param(asset_model, org, new_asset, asset_org_dict, org_data_map, asset_protocol, node_path)
 
-def create_device_asset(asset_name, address, platform, comment, org, org_data_map, asset_protocol, node_path, asset_org_dict):
+def create_device_asset(asset_name, address, platform, comment, org, org_data_map, asset_protocol, node_path, asset_org_dict, new_assets):
     new_asset = Asset.objects.create(name=asset_name, address=address, platform=platform, comment=comment, org_id=org.id, is_active=True)
+    new_assets.append(new_asset)
     asset_model = Device(asset_ptr_id=new_asset.id)
     save_other_param(asset_model, org, new_asset, asset_org_dict, org_data_map, asset_protocol, node_path)
 
