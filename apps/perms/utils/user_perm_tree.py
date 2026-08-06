@@ -385,6 +385,11 @@ class UserPermTreeBuildUtil(object):
             .filter(assetpermission_id__in=self.user_perm_ids) \
             .values_list('node_id', flat=True).distinct()
         nodes = PermNode.objects.filter(id__in=node_ids).only(*self.node_only_fields)
+
+        for node in nodes:
+            node_assets = Asset.objects.filter(org_id=node.org_id, is_active=True).distinct()
+            node.assets_amount = len(node_assets)
+
         return nodes
 
     @lazyproperty
