@@ -254,6 +254,14 @@ class UserPermNodeUtil:
         if node.node_from == node.NodeFrom.granted:
             """ 直接授权的节点, 直接从完整资产树获取子节点 """
             children = PermNode.objects.filter(parent_key=key)
+
+            if node.level == 1:
+                node_asset = Asset.objects.filter(org_id=node.org_id, is_active=True)
+                node.assets_amount = len(node_asset)
+            for child in children:
+                child_asset = child.assets.filter(is_active=True)
+                child.assets_amount = len(child_asset)
+
         elif node.node_from in (node.NodeFrom.asset, node.NodeFrom.child):
             """ 间接授权的节点, 从 Relation 表中获取子节点 """
             children = self._get_perm_node_children_from_relation(key)

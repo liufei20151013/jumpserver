@@ -458,6 +458,10 @@ class NodeAssetsMixin(NodeAllAssetsMappingMixin):
         org_id = str(org_id)
         nodekey_assetsid_mapping = cls.get_node_all_asset_ids_mapping(org_id)
         asset_ids = nodekey_assetsid_mapping.get(node_key, [])
+
+        from .asset import Asset
+        asset_ids = Asset.objects.filter(id__in=asset_ids, is_active=True).distinct().values_list('id', flat=True)
+
         return set(asset_ids)
 
 
