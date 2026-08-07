@@ -66,9 +66,21 @@ class PeriodTaskModelMixin(models.Model):
         return '{} {}'.format(self.interval, unit)
 
     def set_period_schedule(self):
-        name, task, args, kwargs = self.get_register_task()
+        result = self.get_register_task()
+        # 兼容 4 元素和 5 元素返回值
+        if len(result) == 5:
+            name, task, args, kwargs, queues = result
+        else:
+            name, task, args, kwargs = result
+            queues = ['ansible']
+
         is_active = self.is_active if hasattr(self, 'is_active') else True
         if not self.is_periodic or not is_active:
+            # 禁用所有相关的定时任务
+            for queue in queues:
+                task_name = f"{name}_{queue}" if len(queues) > 1 else name
+                disable_celery_periodic_task(task_name)
+            # 同时禁用原名任务（兼容旧数据）
             disable_celery_periodic_task(name)
             return
 
@@ -78,8 +90,11 @@ class PeriodTaskModelMixin(models.Model):
         elif self.interval:
             interval = self.interval * self.interval_ratio[0]
 
-        tasks = {
-            name: {
+        tasks = {}
+        for queue in queues:
+            # 多队列时为每个队列注册独立的定时任务
+            task_name = f"{name}_{queue}" if len(queues) > 1 else name
+            tasks[task_name] = {
                 'task': task,
                 'interval': interval,
                 'crontab': cron,
@@ -87,8 +102,8 @@ class PeriodTaskModelMixin(models.Model):
                 'kwargs': kwargs,
                 'enabled': True,
                 'start_time': self.start_time,
+                'queue': queue if queue != 'ansible' else None,
             }
-        }
         create_or_update_celery_periodic_tasks(tasks)
 
     def execute(self, *args, **kwargs):
@@ -100,8 +115,14 @@ class PeriodTaskModelMixin(models.Model):
         return instance
 
     def delete(self, using=None, keep_parents=False):
-        name = self.get_register_task()[0]
+        result = self.get_register_task()
+        name = result[0]
+        queues = result[4] if len(result) == 5 else ['ansible']
         instance = super().delete(using=using, keep_parents=keep_parents)
+        # 删除所有相关的定时任务
+        for queue in queues:
+            task_name = f"{name}_{queue}" if len(queues) > 1 else name
+            delete_celery_periodic_task(task_name)
         delete_celery_periodic_task(name)
         return instance
 
@@ -116,7 +137,13 @@ class PeriodTaskModelMixin(models.Model):
     @property
     def schedule(self):
         from django_celery_beat.models import PeriodicTask
-        name = self.get_register_task()[0]
+        result = self.get_register_task()
+        name = result[0]
+        queues = result[4] if len(result) == 5 else ['ansible']
+        # 查找第一个匹配的定时任务
+        if len(queues) > 1:
+            task_names = [f"{name}_{q}" for q in queues]
+            return PeriodicTask.objects.filter(name__in=task_names).first()
         return PeriodicTask.objects.filter(name=name).first()
 
     def get_next_run_time(self):

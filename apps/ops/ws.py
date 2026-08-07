@@ -64,26 +64,30 @@ class TaskLogWebsocket(AsyncJsonWebsocketConsumer, OrgMixin):
 
     async def receive_json(self, content, **kwargs):
         task_id = content.get('task')
-        task = await self.get_task(task_id)
-        if not task:
-            await self.send_json({'message': 'Task not found', 'task': task_id})
-            return
 
-        admin_auditor_role_ids = {
-            BuiltinRole.system_admin.id,
-            BuiltinRole.system_auditor.id,
-            BuiltinRole.org_admin.id,
-            BuiltinRole.org_auditor.id
-        }
-        user = self.scope['user']
-        user_role_ids = await self.get_current_user_role_ids(user)
-        has_admin_auditor_role = bool(admin_auditor_role_ids & user_role_ids)
-        has_perms = await self.has_perms(user, ['audits.view_joblog'])
-        user_can_view = task.creator == user or (task.name in self.user_tasks and has_perms)
-        # (有管理员或审计员角色) 或者 (任务是用户自己创建的 或者 有查看任务日志权限), 其他情况没有权限
-        if not (has_admin_auditor_role or user_can_view):
-            await self.send_json({'message': 'No permission', 'task': task_id})
-            return
+        # 检查是否为批量任务 batch_id（非 celery 任务 ID）
+        is_batch = await self._is_batch_task(task_id)
+        if not is_batch:
+            task = await self.get_task(task_id)
+            if not task:
+                await self.send_json({'message': 'Task not found', 'task': task_id})
+                return
+
+            admin_auditor_role_ids = {
+                BuiltinRole.system_admin.id,
+                BuiltinRole.system_auditor.id,
+                BuiltinRole.org_admin.id,
+                BuiltinRole.org_auditor.id
+            }
+            user = self.scope['user']
+            user_role_ids = await self.get_current_user_role_ids(user)
+            has_admin_auditor_role = bool(admin_auditor_role_ids & user_role_ids)
+            has_perms = await self.has_perms(user, ['audits.view_joblog'])
+            user_can_view = task.creator == user or (task.name in self.user_tasks and has_perms)
+            # (有管理员或审计员角色) 或者 (任务是用户自己创建的 或者 有查看任务日志权限), 其他情况没有权限
+            if not (has_admin_auditor_role or user_can_view):
+                await self.send_json({'message': 'No permission', 'task': task_id})
+                return
 
         task_type = content.get('type', 'celery')
         log_path = self.get_log_path(task_id, task_type)
@@ -91,20 +95,40 @@ class TaskLogWebsocket(AsyncJsonWebsocketConsumer, OrgMixin):
 
     async def async_handle_task(self, task_id, log_path):
         logger.info("Task id: {}".format(task_id))
+
+        # 检查是否为批量任务（batch_id），如果是则自动聚合子任务日志
+        is_batch = await self._is_batch_task(task_id)
+        if is_batch:
+            logger.info("Task {} is a batch task, aggregating sub-task logs".format(task_id))
+
         timeout = 0
         while not self.disconnected:
-            if timeout >= 60:
-                await self.send_json({'message': '\r\n', 'task': task_id})
-                await self.send_json({'message': 'Task log was not found, the directory may not be shared.',
-                                      'task': task_id})
-                break
             if not os.path.exists(log_path):
+                if timeout >= 60:
+                    await self.send_json({'message': '\r\n', 'task': task_id})
+                    await self.send_json({'message': 'Task log was not found, the directory may not be shared.',
+                         'task': task_id})
+                    break
+                # 等待增量同步将日志推送到本节点
                 await self.send_json({'message': '.', 'task': task_id})
                 timeout += 0.5
                 await asyncio.sleep(0.5)
             else:
                 await self.send_task_log(task_id, log_path)
                 break
+
+    @sync_to_async
+    def _is_batch_task(self, task_id):
+        """检查 task_id 是否为批量任务的 batch_id"""
+        try:
+            # 写入端（endpoint_routing.py）用 Django cache.set 存储 batch_tasks_xxx，
+            # 键会带上版本前缀（如 ':1:batch_tasks_xxx'）。这里必须用 cache.get 读取，
+            # 直接用 get_redis_client().exists 查的是无前缀的裸键，永远查不到，
+            # 导致批量任务被误判为普通 celery 任务而返回 "Task not found"。
+            from django.core.cache import cache
+            return bool(cache.get(f'batch_tasks_{task_id}'))
+        except Exception:
+            return False
 
     async def send_task_log(self, task_id, log_path):
         await self.send_json({'message': '\r\n'})

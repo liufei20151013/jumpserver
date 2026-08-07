@@ -32,6 +32,7 @@ urlpatterns = [
 
     path('celery/task/<uuid:name>/task-execution/<uuid:pk>/log/', api.CeleryTaskExecutionLogApi.as_view(),
          name='celery-task-execution-log'),
+    path('task-logs/sync/', api.TaskLogSyncApi.as_view(), name='task-log-sync'),
     path('celery/task/<uuid:name>/task-execution/<uuid:pk>/result/', api.CeleryResultApi.as_view(),
          name='celery-task-execution-result'),
 

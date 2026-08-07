@@ -44,11 +44,18 @@ def after_app_shutdown_periodic_tasks(sender=None, **kwargs):
     PeriodicTask.objects.filter(name__in=tasks).delete()
 
 
+_task_log_handler = None
+
+
 @after_setup_logger.connect
 def add_celery_logger_handler(sender=None, logger=None, loglevel=None, format=None, **kwargs):
+    global _task_log_handler
     if not logger:
         return
-    task_handler = CeleryThreadTaskFileHandler()
+    # 复用已创建的 handler：避免重复实例各自写文件/各自推送日志
+    if _task_log_handler is None:
+        _task_log_handler = CeleryThreadTaskFileHandler()
+    task_handler = _task_log_handler
     task_handler.setLevel(loglevel)
     formatter = logging.Formatter(format)
     task_handler.setFormatter(formatter)
