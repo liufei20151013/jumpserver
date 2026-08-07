@@ -242,8 +242,33 @@ class AssetsTaskMixin:
 
     def set_task_to_serializer_data(self, serializer, task):
         data = getattr(serializer, "_data", {})
-        data["task"] = task.id
+        if isinstance(task, list):
+            if len(task) == 1:
+                data["task"] = task[0].id
+            elif len(task) > 1:
+                # 多端点批量任务：检查是否有 batch_id 用于日志聚合
+                batch_id = self._get_batch_id_for_tasks(task)
+                if batch_id:
+                    data["task"] = batch_id  # 前端用 batch_id 订阅聚合日志
+                else:
+                    data["task"] = task[0].id  # 回退到第一个任务 ID
+                data["tasks"] = [t.id for t in task]  # 所有子任务 ID
+        elif task:
+            data["task"] = task.id
         setattr(serializer, "_data", data)
+
+    @staticmethod
+    def _get_batch_id_for_tasks(tasks):
+        """从 Redis 获取批量任务的 batch_id"""
+        try:
+            from django.core.cache import cache
+            for t in tasks:
+                batch_id = cache.get(f'task_batch_{t.id}')
+                if batch_id:
+                    return batch_id
+        except Exception:
+            pass
+        return None
 
 
 class AssetTaskCreateApi(AssetsTaskMixin, generics.CreateAPIView):
@@ -276,6 +301,7 @@ class AssetTaskCreateApi(AssetsTaskMixin, generics.CreateAPIView):
         if data["action"] not in ["push_account", "test_account"]:
             return
 
+        from common.utils.endpoint_routing import dispatch_task_to_endpoints_for_accounts
         asset = data["asset"]
         accounts = data.get("accounts")
         if not accounts:
@@ -283,13 +309,17 @@ class AssetTaskCreateApi(AssetsTaskMixin, generics.CreateAPIView):
 
         account_ids = accounts.values_list('id', flat=True)
         account_ids = [str(_id) for _id in account_ids]
-        if action == "push_account":
-            task = push_accounts_to_assets_task.delay(account_ids)
-        elif action == "test_account":
-            task = verify_accounts_connectivity_task.delay(account_ids)
+        if data["action"] == "push_account":
+            tasks = dispatch_task_to_endpoints_for_accounts(
+                push_accounts_to_assets_task, account_ids
+            )
+        elif data["action"] == "test_account":
+            tasks = dispatch_task_to_endpoints_for_accounts(
+                verify_accounts_connectivity_task, account_ids
+            )
         else:
-            task = None
-        return task
+            tasks = []
+        return tasks  # 返回完整列表，支持批量聚合
 
     def perform_create(self, serializer):
         task = self.perform_asset_task(serializer)

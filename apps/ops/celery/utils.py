@@ -79,6 +79,7 @@ def create_or_update_celery_periodic_tasks(tasks):
             kwargs=json.dumps(detail.get('kwargs', {})),
             description=detail.get('description') or '',
             last_run_at=last_run_at,
+            queue=detail.get('queue'),
         )
         enabled = detail.get('enabled')
         if enabled is not None:

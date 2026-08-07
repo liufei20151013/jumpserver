@@ -41,13 +41,23 @@ def gather_assets_facts_task(asset_ids, org_id, task_name=None):
 
 
 def update_assets_hardware_info_manual(assets):
+    from common.utils.endpoint_routing import dispatch_task_to_endpoints
     task_name = gettext_noop("Update assets hardware info: ")
     asset_ids = [str(i.id) for i in assets]
-    return gather_assets_facts_task.delay(asset_ids, str(current_org.id), task_name=task_name)
+    return dispatch_task_to_endpoints(
+        gather_assets_facts_task, asset_ids,
+        extra_args=[str(current_org.id)],
+        extra_kwargs={'task_name': task_name}
+    )
 
 
 def update_node_assets_hardware_info_manual(node):
+    from common.utils.endpoint_routing import dispatch_task_to_endpoints
     asset_ids = node.get_all_asset_ids()
     asset_ids = [str(i) for i in asset_ids]
     task_name = gettext_noop("Update node asset hardware information: ")
-    return gather_assets_facts_task.delay(asset_ids, str(current_org.id), task_name=task_name)
+    return dispatch_task_to_endpoints(
+        gather_assets_facts_task, asset_ids,
+        extra_args=[str(current_org.id)],
+        extra_kwargs={'task_name': task_name}
+    )

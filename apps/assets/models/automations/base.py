@@ -72,7 +72,26 @@ class BaseAutomation(PeriodTaskModelMixin, JMSOrgBaseModel):
         task = self.execute_task.name
         args = (str(self.id), Trigger.timing, self.type)
         kwargs = {}
-        return name, task, args, kwargs
+        queues = self.get_endpoint_queues_for_automation()
+        return name, task, args, kwargs, queues
+
+    def get_endpoint_queues_for_automation(self):
+        """
+        确定此自动化涉及的端点队列列表。
+        端点路由未启用时返回 ['ansible']。
+        """
+        try:
+            from common.utils.endpoint_routing import (
+                is_endpoint_routing_enabled, resolve_queue_for_asset
+            )
+            if not is_endpoint_routing_enabled():
+                return ['ansible']
+            queues = set()
+            for asset in self.get_all_assets():
+                queues.add(resolve_queue_for_asset(asset))
+            return list(queues) if queues else ['ansible']
+        except Exception:
+            return ['ansible']
 
     def get_many_to_many_ids(self, field: str):
         return [str(i) for i in getattr(self, field).all().values_list("id", flat=True)]

@@ -36,15 +36,25 @@ def test_assets_connectivity_task(asset_ids, org_id, task_name=None):
 
 
 def test_assets_connectivity_manual(assets):
+    from common.utils.endpoint_routing import dispatch_task_to_endpoints
     task_name = gettext_noop("Test assets connectivity ")
     asset_ids = [str(i.id) for i in assets]
     org_id = str(current_org.id)
-    return test_assets_connectivity_task.delay(asset_ids, org_id, task_name)
+    return dispatch_task_to_endpoints(
+        test_assets_connectivity_task, asset_ids,
+        extra_args=[org_id, task_name],
+        log_sync=True  # 连通性测试：副节点增量同步日志到主节点
+    )
 
 
 def test_node_assets_connectivity_manual(node):
+    from common.utils.endpoint_routing import dispatch_task_to_endpoints
     task_name = gettext_noop("Test if the assets under the node are connectable ")
     asset_ids = node.get_all_asset_ids()
     asset_ids = [str(i) for i in asset_ids]
     org_id = str(current_org.id)
-    return test_assets_connectivity_task.delay(asset_ids, org_id, task_name)
+    return dispatch_task_to_endpoints(
+        test_assets_connectivity_task, asset_ids,
+        extra_args=[org_id, task_name],
+        log_sync=True  # 连通性测试：副节点增量同步日志到主节点
+    )

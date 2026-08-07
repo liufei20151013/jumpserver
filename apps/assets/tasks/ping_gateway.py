@@ -35,7 +35,10 @@ def test_gateways_connectivity_task(asset_ids, org_id, local_port, task_name=Non
 
 
 def test_gateways_connectivity_manual(gateway_ids, local_port):
+    from common.utils.endpoint_routing import dispatch_task_to_endpoints
     task_name = gettext_noop("Test gateways connectivity")
     gateway_ids = [str(i) for i in gateway_ids]
-    return test_gateways_connectivity_task.delay(gateway_ids, str(current_org.id), local_port,
-                                                 task_name)
+    return dispatch_task_to_endpoints(
+        test_gateways_connectivity_task, gateway_ids,
+        extra_args=[str(current_org.id), local_port, task_name]
+    )

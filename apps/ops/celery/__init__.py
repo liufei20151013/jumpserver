@@ -18,10 +18,26 @@ configs = {k: v for k, v in settings.__dict__.items() if k.startswith('CELERY')}
 # Using a string here means the worker will not have to
 # pickle the object when using Windows.
 # app.config_from_object('django.conf:settings', namespace='CELERY')
-configs["CELERY_QUEUES"] = [
+celery_queues = [
     Queue("celery", Exchange("celery"), routing_key="celery"),
     Queue("ansible", Exchange("ansible"), routing_key="ansible"),
 ]
+
+# 动态注册端点队列（基于 Endpoint 服务终端）
+try:
+    from terminal.models import Endpoint
+    _endpoints = Endpoint.objects.filter(is_active=True).exclude(
+        id=Endpoint.default_id
+    )
+    for _ep in _endpoints:
+        _q = 'ansible_endpoint_{}'.format(
+            _ep.name.lower().replace(' ', '_').replace('-', '_')
+        )
+        celery_queues.append(Queue(_q, Exchange(_q), routing_key=_q))
+except Exception:
+    pass
+
+configs["CELERY_QUEUES"] = celery_queues
 
 app.namespace = 'CELERY'
 app.conf.update(configs)
