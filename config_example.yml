@@ -7,6 +7,19 @@ SECRET_KEY:
 # 预共享Token coco和guacamole用来注册服务账号，不在使用原来的注册接受机制
 BOOTSTRAP_TOKEN:
 
+# 多端点日志物理共享（内置 log_sync 服务，rsync）
+# LOG_SYNC_TARGET: 非空 = 本节点是推送方(worker)，周期 rsync 把 CELERY_LOG_DIR 镜像到该地址；
+#                  留空 = 本节点是汇聚方(主节点/WS 所在节点)，只做批量日志聚合。
+# 例如 worker 节点: LOG_SYNC_TARGET: root@10.0.0.1:/opt/jumpserver/data/celery
+# LOG_SYNC_RSH: rsync 远程 shell 参数，走 SSH 时如 "ssh -i /opt/key -p 22"
+# LOG_SYNC_INTERVAL: 同步/聚合循环间隔秒数，默认 3
+# LOG_SYNC_ENABLE_AGGREGATE: 汇聚方是否执行批量聚合，默认 true
+# eg：
+# LOG_SYNC_TARGET: root@10.1.14.126:/data/jumpserver/core/data/celery
+# LOG_SYNC_RSH: "ssh -i /opt/jumpserver/data/logsync_key -p 22"
+# LOG_SYNC_INTERVAL: 3
+# LOG_SYNC_ENABLE_AGGREGATE: true
+
 # Development env open this, when error occur display the full process track, Production disable it
 # DEBUG 模式 开启DEBUG后遇到错误时可以看到更多日志
 # DEBUG: true

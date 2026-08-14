@@ -43,6 +43,14 @@ SECRET_KEY = CONFIG.SECRET_KEY
 # SECURITY WARNING: keep the token secret, remove it if all koko, lion ok
 BOOTSTRAP_TOKEN = CONFIG.BOOTSTRAP_TOKEN
 
+# 多端点日志物理共享（内置 log_sync 服务，rsync）
+# 支持两种配置来源：环境变量优先，其次 config.yml（config_example.yml 可写同名键）
+LOG_SYNC_TARGET = os.environ.get('LOG_SYNC_TARGET') or getattr(CONFIG, 'LOG_SYNC_TARGET', '') or ''
+LOG_SYNC_RSH = os.environ.get('LOG_SYNC_RSH') or getattr(CONFIG, 'LOG_SYNC_RSH', '') or ''
+LOG_SYNC_INTERVAL = os.environ.get('LOG_SYNC_INTERVAL') or getattr(CONFIG, 'LOG_SYNC_INTERVAL', 3) or 3
+LOG_SYNC_ENABLE_AGGREGATE = (os.environ.get('LOG_SYNC_ENABLE_AGGREGATE') or str(
+    getattr(CONFIG, 'LOG_SYNC_ENABLE_AGGREGATE', '1') or '1')) != '0'
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = CONFIG.DEBUG
 # SECURITY WARNING: If you run with debug turned on, more debug msg with be log

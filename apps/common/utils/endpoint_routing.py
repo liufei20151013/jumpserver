@@ -7,9 +7,41 @@ from collections import defaultdict
 
 from django.core.cache import cache
 
+from common.utils.connection import get_redis_client
 from common.utils.ip import contains_ip
 
 logger = logging.getLogger(__name__)
+
+# 分发时生成 batch_id 就 sadd 进去；主节点聚合循环按该集合逐个完成聚合后 srem。
+# 注意：必须用 get_redis_client()（raw redis client）做 Set 操作——
+# django-redis 的 cache 接口不暴露 sadd/smembers/srem，cache.sadd 会抛 AttributeError。
+BATCH_ACTIVE_SET_KEY = 'log_sync_active_batches'
+
+
+def mark_batch_active(batch_id):
+    """登记一个待聚合的批量任务，供主节点 log_sync 服务聚合循环扫描"""
+    try:
+        get_redis_client().sadd(BATCH_ACTIVE_SET_KEY, str(batch_id))
+    except Exception:
+        logger.exception('Failed to mark batch %s active', batch_id)
+
+
+def get_active_batch_ids():
+    """获取当前待聚合的批量任务 id 列表（聚合循环扫描用）"""
+    try:
+        return [b.decode('utf-8') if isinstance(b, bytes) else b
+                for b in (get_redis_client().smembers(BATCH_ACTIVE_SET_KEY) or [])]
+    except Exception:
+        logger.exception('Failed to fetch active batches')
+        return []
+
+
+def remove_active_batch(batch_id):
+    """批量任务聚合完成后从活跃集合移除"""
+    try:
+        get_redis_client().srem(BATCH_ACTIVE_SET_KEY, str(batch_id))
+    except Exception:
+        pass
 
 
 def is_endpoint_routing_enabled():
@@ -291,54 +323,28 @@ def split_assets_by_endpoint(asset_ids):
     return dict(result)
 
 
-def _get_dispatch_hostname():
-    # 用容器/主机唯一的主机名作为"归属节点"标识。
-    return socket.gethostname()
-
-
-def _mark_task_log_sync(task_id, hostname, batch_id=None):
-    """
-    为需要增量同步的任务（当前仅连通性测试）记录日志归属节点并开启 HTTP 同步。
-
-    - task_log_owner_{task_id}: 分发节点主机名，副节点据此判断是否本机执行（本地任务无需推送）
-    - task_log_http_sync_{task_id}: 标记该任务日志通过 HTTP 增量同步到主节点（而非 Redis）
-    - task_log_http_sync_{batch_id}: 批量任务同样标记（子任务日志聚合到 batch 聚合文件）
-    """
-    try:
-        cache.set(f'task_log_owner_{task_id}', hostname, 3600)
-        cache.set(f'task_log_http_sync_{task_id}', '1', 3600)
-        if batch_id:
-            cache.set(f'task_log_http_sync_{batch_id}', '1', 3600)
-    except Exception:
-        pass
-
-
 def dispatch_task_to_endpoints(task_func, asset_ids, extra_args=None,
-                                extra_kwargs=None, log_sync=False):
+                                extra_kwargs=None):
     """
     按端点规则拆分资产并分发任务到对应队列。
 
     路由未启用时等价于 task_func.delay(asset_ids, *extra_args, **extra_kwargs)。
 
     当有多个端点时，生成 batch_id 并建立 task_id -> batch_id 映射，
-    使 WebSocket 可以聚合所有子任务的日志。
+    供主节点 log_sync 服务聚合所有子任务的日志。
 
     Args:
         task_func: Celery 任务函数
         asset_ids: 资产 ID 列表
         extra_args: 额外的位置参数
         extra_kwargs: 额外的关键字参数
-        log_sync: 是否通过主节点增量同步日志（仅连通性测试启用）
 
     Returns:
         list: AsyncResult 列表（每个域一个）
     """
-    hostname = _get_dispatch_hostname()
     if not is_endpoint_routing_enabled():
         args = [asset_ids] + (extra_args or [])
         result = task_func.delay(*args, **(extra_kwargs or {}))
-        if log_sync:
-            _mark_task_log_sync(result.id, hostname)
         return [result]
 
     groups = split_assets_by_endpoint(asset_ids)
@@ -356,7 +362,7 @@ def dispatch_task_to_endpoints(task_func, asset_ids, extra_args=None,
         kwargs = dict(extra_kwargs or {})
         # 注意：不能把 batch_id 以 kwargs 传给任务 —— apply_async 会按任务签名校验参数，
         # 任务不接受 _batch_id 会抛 TypeError 导致请求 500。
-        # 批量聚合依赖下面的 cache 映射（logger 从 Redis 读取 task_batch_{task_id}）。
+        # 批量聚合依赖下面的 cache 映射（log_sync 服务从 Redis 读取 batch_tasks_{batch_id}）。
         result = task_func.apply_async(
             args=args,
             kwargs=kwargs,
@@ -368,26 +374,22 @@ def dispatch_task_to_endpoints(task_func, asset_ids, extra_args=None,
             f"with {len(domain_asset_ids)} assets"
         )
 
-        # 建立 task_id -> batch_id 映射，供 logger 实时流式推送时使用
+        # 建立 task_id -> batch_id 映射，供前端回显 batch_id 使用
         if batch_id:
             cache.set(f'task_batch_{result.id}', batch_id, 3600)
 
-        # 连通性测试：标记增量同步
-        if log_sync:
-            _mark_task_log_sync(result.id, hostname, batch_id)
-
-    # 存储 batch_id -> task_ids 映射，供 WebSocket 批量聚合
+    # 存储 batch_id -> task_ids 映射，供 WebSocket 批量判定 + log_sync 聚合循环
     if batch_id and len(results) > 1:
         task_ids = [r.id for r in results]
         cache.set(f'batch_tasks_{batch_id}', task_ids, 3600)
+        mark_batch_active(batch_id)
 
     return results
 
 
 def dispatch_task_to_endpoints_for_accounts(task_func, account_ids,
                                              extra_args=None,
-                                             extra_kwargs=None,
-                                             log_sync=False):
+                                             extra_kwargs=None):
     """
     按账号所属资产的端点规则分发任务。
 
@@ -398,17 +400,13 @@ def dispatch_task_to_endpoints_for_accounts(task_func, account_ids,
         account_ids: 账号 ID 列表
         extra_args: 额外的位置参数
         extra_kwargs: 额外的关键字参数
-        log_sync: 是否通过主节点增量同步日志（当前仅连通性测试启用）
 
     Returns:
         list: AsyncResult 列表
     """
-    hostname = _get_dispatch_hostname()
     if not is_endpoint_routing_enabled():
         args = [account_ids] + (extra_args or [])
         result = task_func.delay(*args, **(extra_kwargs or {}))
-        if log_sync:
-            _mark_task_log_sync(result.id, hostname)
         return [result]
 
     from accounts.models import Account
@@ -454,13 +452,10 @@ def dispatch_task_to_endpoints_for_accounts(task_func, account_ids,
         if batch_id:
             cache.set(f'task_batch_{result.id}', batch_id, 3600)
 
-        # 连通性测试：标记增量同步
-        if log_sync:
-            _mark_task_log_sync(result.id, hostname, batch_id)
-
     # 存储 batch_id -> task_ids 映射
     if batch_id and len(results) > 1:
         task_ids = [r.id for r in results]
         cache.set(f'batch_tasks_{batch_id}', task_ids, 3600)
+        mark_batch_active(batch_id)
 
     return results
