@@ -43,7 +43,6 @@ def test_assets_connectivity_manual(assets):
     return dispatch_task_to_endpoints(
         test_assets_connectivity_task, asset_ids,
         extra_args=[org_id, task_name],
-        log_sync=True  # 连通性测试：副节点增量同步日志到主节点
     )
 
 
@@ -56,5 +55,4 @@ def test_node_assets_connectivity_manual(node):
     return dispatch_task_to_endpoints(
         test_assets_connectivity_task, asset_ids,
         extra_args=[org_id, task_name],
-        log_sync=True  # 连通性测试：副节点增量同步日志到主节点
     )

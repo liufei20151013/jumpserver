@@ -12,6 +12,7 @@ class Services(TextChoices):
     celery_ansible = 'celery_ansible', 'celery_ansible'
     celery_default = 'celery_default', 'celery_default'
     beat = 'beat', 'beat'
+    log_sync = 'log_sync', 'log_sync'
     flower = 'flower', 'flower'
     ws = 'ws', 'ws'
     web = 'web', 'web'
@@ -28,6 +29,7 @@ class Services(TextChoices):
             cls.celery_default: services.CeleryDefaultService,
             cls.celery_ansible: services.CeleryAnsibleService,
             cls.beat: services.BeatService,
+            cls.log_sync: services.LogSyncService,
         }
         return services_map.get(name)
 
@@ -41,7 +43,7 @@ class Services(TextChoices):
 
     @classmethod
     def task_services(cls):
-        return cls.celery_services() + [cls.beat]
+        return cls.celery_services() + [cls.beat, cls.log_sync]
 
     @classmethod
     def all_services(cls):

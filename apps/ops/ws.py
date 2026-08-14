@@ -104,12 +104,12 @@ class TaskLogWebsocket(AsyncJsonWebsocketConsumer, OrgMixin):
         timeout = 0
         while not self.disconnected:
             if not os.path.exists(log_path):
-                if timeout >= 60:
+                if timeout >= 120:
                     await self.send_json({'message': '\r\n', 'task': task_id})
                     await self.send_json({'message': 'Task log was not found, the directory may not be shared.',
                          'task': task_id})
                     break
-                # 等待增量同步将日志推送到本节点
+                # 等待 rsync 将副节点日志镜像到本节点（存在 2~3s 同步延迟）
                 await self.send_json({'message': '.', 'task': task_id})
                 timeout += 0.5
                 await asyncio.sleep(0.5)
@@ -132,23 +132,61 @@ class TaskLogWebsocket(AsyncJsonWebsocketConsumer, OrgMixin):
 
     async def send_task_log(self, task_id, log_path):
         await self.send_json({'message': '\r\n'})
+        magic_len = len(CELERY_LOG_MAGIC_MARK)
+        # offset: 已读取的字节数。rsync 以 temp+rename 整文件替换日志文件，
+        # 长连接持有的旧 fd 会读到过期 inode，因此每次轮询都重新 open 并按 offset 续读；
+        # 子任务/批量日志均为 append-only，前缀字节稳定，offset 续读可跨整文件替换。
+        offset = 0
+        # 上一轮 chunk 末尾最多 magic_len-1 字节，用于检测跨 chunk 的 magic mark
+        tail = b''
         try:
             logger.debug('Task log path: {}'.format(log_path))
-            async with aiofiles.open(log_path, 'rb') as task_log_f:
-                while not self.disconnected:
-                    data = await task_log_f.read(4096)
-                    if data:
-                        data = data.replace(b'\n', b'\r\n')
-                        await self.send_json(
-                            {'message': data.decode(errors='ignore'), 'task': task_id}
-                        )
-                        if data.find(CELERY_LOG_MAGIC_MARK) != -1:
-                            await self.send_json(
-                                {'event': 'end', 'task': task_id, 'message': ''}
-                            )
-                            logger.debug("Task log file magic mark found")
-                            break
+            while not self.disconnected:
+                if not os.path.exists(log_path):
                     await asyncio.sleep(0.2)
+                    continue
+                size = os.path.getsize(log_path)
+                if size < offset:
+                    # 文件被替换后变小(异常)，从头重读并清空跨 chunk 缓冲
+                    offset = 0
+                    tail = b''
+                try:
+                    async with aiofiles.open(log_path, 'rb') as task_log_f:
+                        await task_log_f.seek(offset)
+                        data = await task_log_f.read(4096)
+                except OSError as e:
+                    logger.warning('Task log path open failed: {}'.format(e))
+                    await asyncio.sleep(0.2)
+                    continue
+                offset += len(data)
+                if not data:
+                    await asyncio.sleep(0.2)
+                    continue
+                pending = tail + data
+                tail_len = len(tail)
+                mark_idx = pending.find(CELERY_LOG_MAGIC_MARK)
+                if mark_idx != -1:
+                    # 任务结束：发送 magic mark 之前的剩余内容后发 end 事件
+                    chunk = pending[tail_len:mark_idx]
+                    if chunk:
+                        chunk = chunk.replace(b'\n', b'\r\n')
+                        await self.send_json(
+                            {'message': chunk.decode(errors='ignore'), 'task': task_id}
+                        )
+                    await self.send_json(
+                        {'event': 'end', 'task': task_id, 'message': ''}
+                    )
+                    logger.debug("Task log file magic mark found")
+                    break
+                # 保留末尾 magic_len-1 字节，供下一轮跨 chunk 检测
+                tail = pending[-(magic_len - 1):]
+                chunk = pending[tail_len:]
+                if chunk:
+                    chunk = chunk.replace(b'\n', b'\r\n')
+                    await self.send_json(
+                        {'message': chunk.decode(errors='ignore'), 'task': task_id}
+                    )
+                await asyncio.sleep(0.2)
         except OSError as e:
             logger.warning('Task log path open failed: {}'.format(e))
 
