@@ -11,6 +11,7 @@ from common.serializers.fields import LabeledChoiceField
 from common.serializers.fields import ObjectRelatedField
 from orgs.mixins.serializers import OrgResourceModelSerializerMixin
 from perms.serializers.permission import ActionChoicesField
+from terminal.connect_methods import WebMethod
 from users.models import User
 from ..models import ConnectionToken
 
@@ -171,6 +172,12 @@ class ConnectionTokenSecretSerializer(OrgResourceModelSerializerMixin):
     def get_gateway(self, instance):
         if instance.gateway:
             return _ConnectionTokenGatewaySerializer(instance.gateway).data
+        # Web 方式的连接（web_cli/web_sftp/web_gui）已被入口 nginx 按端点路由到
+        # 对应区域节点的 KoKo，该 KoKo 可直连资产，无需再注入伪网关多做一次转发；
+        # 非 Web 方式（如 SSH 命令行落在主节点 KoKo）才需要通过伪网关隧道把连接
+        # 转发到端点所在区域。这里恢复开发该功能前 Web 端的直连逻辑。
+        if instance.connect_method in WebMethod.values:
+            return None
         endpoint = instance.endpoint
         if endpoint and not endpoint.is_default() and endpoint.host:
             return {

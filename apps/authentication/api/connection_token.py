@@ -654,11 +654,13 @@ class SuperConnectionTokenViewSet(ConnectionTokenViewSet):
             expire_now = False
 
         # Endpoint 充当网关时，token 需要被两个 koko 实例使用
+        # Web 方式已恢复直连（不再注入伪网关），token 只被一个 koko 实例使用
         has_endpoint_gateway = (
             not token.gateway
             and token.endpoint
             and not token.endpoint.is_default()
             and token.endpoint.host
+            and token.connect_method not in WebMethod.values
         )
         if has_endpoint_gateway:
             expire_now = False
