@@ -18,6 +18,53 @@ logger = logging.getLogger(__name__)
 BATCH_ACTIVE_SET_KEY = 'log_sync_active_batches'
 
 
+# 父-子执行模型中"子执行 id"集合（Redis Set），用于 Job 列表隐藏子执行记录。
+#   - batch_tasks_{父id} = [子执行id, ...]（复用日志聚合）
+#   - task_batch_{子id} = 父id（复用日志聚合）
+#   - job_child_executions = {子执行id, ...}（本集合，供 get_queryset 排除子执行）
+CHILD_EXECUTIONS_SET = 'job_child_executions'
+
+
+def mark_child_executions(child_ids):
+    """登记子执行 id 到集合，供 Job 列表隐藏子执行"""
+    if not child_ids:
+        return
+    try:
+        get_redis_client().sadd(CHILD_EXECUTIONS_SET, *[str(i) for i in child_ids])
+    except Exception:
+        logger.exception('Failed to mark child executions %s', child_ids)
+
+
+def get_child_execution_ids():
+    """获取所有子执行 id（Job 列表隐藏用）"""
+    try:
+        members = get_redis_client().smembers(CHILD_EXECUTIONS_SET) or []
+        return [m.decode('utf-8') if isinstance(m, bytes) else str(m) for m in members]
+    except Exception:
+        logger.exception('Failed to fetch child execution ids')
+        return []
+
+
+def prune_child_execution_ids():
+    """清理集合中已不在 DB 的子执行 id（随执行记录清理任务周期调用）"""
+    try:
+        from ops.models import JobExecution
+        r = get_redis_client()
+        members = r.smembers(CHILD_EXECUTIONS_SET) or []
+        if not members:
+            return
+        ids = [m.decode('utf-8') if isinstance(m, bytes) else str(m) for m in members]
+        existing = {
+            str(i) for i in JobExecution.objects.filter(id__in=ids).values_list('id', flat=True)
+        }
+        stale = [i for i in ids if i not in existing]
+        if stale:
+            r.srem(CHILD_EXECUTIONS_SET, *stale)
+            logger.info('Pruned %d stale child execution ids', len(stale))
+    except Exception:
+        logger.exception('Failed to prune child execution ids')
+
+
 def mark_batch_active(batch_id):
     """登记一个待聚合的批量任务，供主节点 log_sync 服务聚合循环扫描"""
     try:

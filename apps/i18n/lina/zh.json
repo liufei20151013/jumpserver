@@ -627,6 +627,8 @@
     "FileTransferBootStepHelpTips2": "选择运行帐户并输入命令",
     "FileTransferBootStepHelpTips3": "传输，显示输出结果",
     "FileTransferNum": "文件传输数",
+    "FileTransferPreparing": "正在上传文件并提交任务...",
+    "FileTransferSubmitted": "任务已提交，等待执行日志...",
     "FileType": "文件类型",
     "Filename": "文件名",
     "FingerPrint": "指纹",

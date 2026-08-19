@@ -304,9 +304,12 @@ def get_file_md5(filepath):
     import hashlib
     # 创建md5对象
     m = hashlib.md5()
+    # 1MB 分块：大文件（上传文件/回放等）按 4KB 读会放大 read 系统调用数量级，
+    # 相同结果下大幅缩短大文件 md5 计算时间
+    chunk_size = 1024 * 1024
     with open(filepath, 'rb') as f:
         while True:
-            data = f.read(4096)
+            data = f.read(chunk_size)
             if not data:
                 break
             # 更新md5对象

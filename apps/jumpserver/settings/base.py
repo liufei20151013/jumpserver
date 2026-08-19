@@ -51,6 +51,12 @@ LOG_SYNC_INTERVAL = os.environ.get('LOG_SYNC_INTERVAL') or getattr(CONFIG, 'LOG_
 LOG_SYNC_ENABLE_AGGREGATE = (os.environ.get('LOG_SYNC_ENABLE_AGGREGATE') or str(
     getattr(CONFIG, 'LOG_SYNC_ENABLE_AGGREGATE', '1') or '1')) != '0'
 
+# ops 文件同步拉取源（upload 文件 / playbook 剧本）的主节点地址。
+# 多端点部署下，分布式节点用该地址从主节点拉取源文件。不能复用 SITE_URL/CORE_HOST，
+# 它们在本机指向自己节点的 Core（容器内是 http://core:8080）。
+# 未配置时不拉取（单机/共享存储场景本地已有文件，无需拉取）。
+OPS_FILE_SYNC_URL = os.environ.get('OPS_FILE_SYNC_URL') or getattr(CONFIG, 'OPS_FILE_SYNC_URL', '') or ''
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = CONFIG.DEBUG
 # SECURITY WARNING: If you run with debug turned on, more debug msg with be log
@@ -344,7 +350,14 @@ PRIVATE_STORAGE_AUTH_FUNCTION = 'jumpserver.rewriting.storage.permissions.allow_
 PRIVATE_STORAGE_INTERNAL_URL = '/private-media/'
 PRIVATE_STORAGE_SERVER = 'jumpserver.rewriting.storage.servers.StaticFileServer'
 
-FILE_UPLOAD_TEMP_DIR = CONFIG.FILE_UPLOAD_TEMP_DIR
+# 上传临时目录：默认放数据卷（与 SHARE_DIR 同盘），避免大文件 multipart 落盘到
+# 容器 /tmp（overlayfs 慢且容易撑满，导致上传大文件请求长时间不返回）。
+# 与最终上传目录同文件系统时，视图可用 os.replace 瞬时完成移动，省去整文件拷贝。
+FILE_UPLOAD_TEMP_DIR = CONFIG.FILE_UPLOAD_TEMP_DIR or os.path.join(DATA_DIR, 'tmp')
+try:
+    os.makedirs(FILE_UPLOAD_TEMP_DIR, exist_ok=True)
+except OSError:
+    pass
 
 # Use django-bootstrap-form to format template, input max width arg
 # BOOTSTRAP_COLUMN_COUNT = 11

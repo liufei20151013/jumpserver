@@ -86,6 +86,17 @@ class ServiceAccountSignaturePermission(permissions.BasePermission):
         return False
 
 
+class BootstrapTokenPermission(permissions.BasePermission):
+    """校验组件间文件同步请求的鉴权令牌（复用 BOOTSTRAP_TOKEN）"""
+
+    def has_permission(self, request, view):
+        authorization = request.META.get('HTTP_AUTHORIZATION', '')
+        if not authorization:
+            return False
+        request_bootstrap_token = authorization.split()[-1]
+        return settings.BOOTSTRAP_TOKEN == request_bootstrap_token
+
+
 class IsValidLicense(permissions.BasePermission):
 
     def has_permission(self, request, view):

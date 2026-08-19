@@ -22,7 +22,9 @@ from .celery.utils import (
     disable_celery_periodic_task, delete_celery_periodic_task
 )
 from .models import Job, JobExecution
+from .utils import ensure_local_dir
 from .notifications import ServerPerformanceCheckUtil
+from common.utils.endpoint_routing import prune_child_execution_ids
 
 logger = get_logger(__file__)
 
@@ -36,10 +38,40 @@ def job_task_activity_callback(self, job_id, *args, **kwargs):
     return resource_ids, org_id
 
 
-def _run_ops_job_execution(execution):
+def _ensure_local_files(execution):
+    """
+    端点执行 upload/playbook 前，从主节点拉取文件目录到本地。
+
+    仅 upload_file / playbook 类型需要文件输入；ensure_local_dir 对本地已存在
+    的目录幂等跳过（兼容共享存储与主节点自身执行）。拉取失败时抛异常中止任务，
+    避免在文件缺失的情况下继续执行 Ansible（否则报错会变成误导性的
+    "Could not find ... on the Ansible Controller"）。
+    """
+    try:
+        job = execution.current_job
+    except Exception:
+        raise RuntimeError('Failed to resolve job for file synchronization')
+    if execution.job_type == Types.upload_file:
+        ok = ensure_local_dir('job_upload_file/{}'.format(job.id))
+        if not ok:
+            raise RuntimeError(
+                'Failed to sync job upload files from core: job_upload_file/{}'.format(job.id)
+            )
+    elif execution.job_type == Types.playbook:
+        playbook = getattr(job, 'playbook', None)
+        if playbook:
+            ok = ensure_local_dir('ops/playbook/{}'.format(playbook.id))
+            if not ok:
+                raise RuntimeError(
+                    'Failed to sync playbook files from core: ops/playbook/{}'.format(playbook.id)
+                )
+
+
+def _run_ops_job_execution(execution, asset_ids=None):
     try:
         with tmp_to_org(execution.org):
-            execution.start()
+            _ensure_local_files(execution)
+            execution.start(asset_ids=asset_ids)
     except SoftTimeLimitExceeded:
         execution.set_error('Run timeout')
         logger.error("Run adhoc timeout")
@@ -92,6 +124,7 @@ def job_execution_task_activity_callback(self, execution_id, *args, **kwargs):
     )
 )
 def run_ops_job_execution(execution_id, **kwargs):
+    asset_ids = kwargs.get('asset_ids')
     with tmp_to_root_org():
         execution = get_object_or_none(JobExecution, id=execution_id)
     if not execution:
@@ -99,7 +132,7 @@ def run_ops_job_execution(execution_id, **kwargs):
         return
     if not settings.SECURITY_COMMAND_EXECUTION and execution.job.type != Types.upload_file:
         return
-    _run_ops_job_execution(execution)
+    _run_ops_job_execution(execution, asset_ids=asset_ids)
 
 
 @shared_task(
@@ -189,6 +222,8 @@ def clean_job_execution_period():
         del_res = JobExecution.objects.filter(date_created__lt=expired_day).delete()
         logger.info(
             f"clean job_execution db record success! delete {days} days {del_res[0]} records")
+    # 清理 Redis 子执行集合中已随记录一并删除的 id，避免列表过滤累积失效 id
+    prune_child_execution_ids()
 
 # 测试使用，注释隐藏
 # @shared_task
