@@ -318,8 +318,19 @@ class JobExecution(JMSOrgBaseModel):
 
         return module, shell
 
-    def get_runner(self):
-        inv = self.current_job.inventory
+    def get_inventory(self, asset_ids=None):
+        # 端点路由拆分子任务时，用资产子集构建 inventory，避免子节点访问非本端点资产
+        if asset_ids is not None:
+            assets = Asset.objects.filter(id__in=asset_ids)
+            return JMSPermedInventory(
+                assets, [],
+                self.current_job.runas_policy, self.current_job.runas,
+                user=self.creator, module=self.current_job.module,
+            )
+        return self.current_job.inventory
+
+    def get_runner(self, asset_ids=None):
+        inv = self.get_inventory(asset_ids)
         inv.write_to_file(self.inventory_path)
         self.summary = self.result = {"excludes": {}}
         if len(inv.exclude_hosts) > 0:
@@ -543,13 +554,13 @@ class JobExecution(JMSOrgBaseModel):
         self.check_assets_perms()
         self.check_assets_acls()
 
-    def start(self, **kwargs):
+    def start(self, asset_ids=None, **kwargs):
         self.date_start = timezone.now()
         self.set_celery_id()
         self.save()
         self.before_start()
 
-        runner = self.get_runner()
+        runner = self.get_runner(asset_ids=asset_ids)
         ssh_tunnel = SSHTunnelManager()
         ssh_tunnel.local_gateway_prepare(runner)
         try:

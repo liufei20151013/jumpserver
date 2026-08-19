@@ -635,6 +635,8 @@
     "FileTransferBootStepHelpTips2": "選擇執行帳戶並輸入命令",
     "FileTransferBootStepHelpTips3": "傳輸，顯示輸出結果",
     "FileTransferNum": "文件傳輸數",
+    "FileTransferPreparing": "正在上傳檔案並提交任務...",
+    "FileTransferSubmitted": "任務已提交，等待執行日誌...",
     "FileType": "文件類型",
     "Filename": "檔案名",
     "FingerPrint": "指紋",

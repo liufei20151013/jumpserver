@@ -143,10 +143,11 @@ class BatchLogTestCase(TestCase):
 
         with mock.patch('ops.batch_log.get_celery_task_log_path',
                         side_effect=path_for):
-            # 第一轮：只有 a 完成
+            # 第一轮：a 完成并入；b 未完成但其已同步内容也实时并入
             appended, done = batch_log.ensure_batch_log('batch', ['a', 'b'])
-            self.assertEqual(appended, ['a'])
+            self.assertEqual(appended, ['a', 'b'])
             self.assertFalse(done)
+            # 只有 a 完成被标记折叠；b 未完成不入折叠集合
             self.assertEqual(
                 self.fake_redis.sets.get('batch_folded_batch'), {'a'}
             )
@@ -169,3 +170,54 @@ class BatchLogTestCase(TestCase):
         self.assertIn('Summary:', text)
         # total_assets 两个子任务合并
         self.assertIn('- total_assets: 2', text)
+
+    def test_ensure_batch_log_realtime_incremental(self):
+        """执行中的子任务日志按偏移增量并入，完成后再写 Summary/magic mark，且不重复"""
+        paths = self._paths({'a': 'a.log', 'batch': 'batch.log'})
+        path = paths['a']
+
+        def path_for(task_id):
+            return paths.get(str(task_id))
+
+        def write_segment(segment='', done=False):
+            with open(path, 'ab') as f:
+                if segment:
+                    f.write(segment.encode('utf-8'))
+                if done:
+                    f.write(CELERY_LOG_MAGIC_MARK)
+
+        with mock.patch('ops.batch_log.get_celery_task_log_path',
+                        side_effect=path_for):
+            # ① 执行中：已同步了第一部分（无 magic mark）
+            write_segment('2026-08-05 10:00:00 >>> Task preparation phase\n')
+            write_segment('2026-08-05 10:00:01 transfer 40%\n')
+            appended, done = batch_log.ensure_batch_log('batch', ['a'])
+            self.assertIn('a', appended)
+            self.assertFalse(done)
+
+            # ② 执行中：追加第二部分（仍未完成）
+            write_segment('2026-08-05 10:00:02 transfer 80%\n')
+            write_segment('2026-08-05 10:00:03 Summary:\n')
+            write_segment('2026-08-05 10:00:03 \t - total_assets: 1\n')
+            write_segment('2026-08-05 10:00:03 \t - Using: 1.5s\n')
+            appended, done = batch_log.ensure_batch_log('batch', ['a'])
+            self.assertFalse(done)
+
+            # ③ 任务完成：写入 magic mark
+            write_segment(done=True)
+            appended, done = batch_log.ensure_batch_log('batch', ['a'])
+            self.assertTrue(done)
+            # 完成且全部并入后折叠集合被清理
+            self.assertNotIn('batch_folded_batch', self.fake_redis.sets)
+
+        with open(paths['batch'], 'rb') as f:
+            data = f.read()
+        self.assertTrue(data.endswith(CELERY_LOG_MAGIC_MARK))
+        text = data.decode('utf-8', errors='ignore')
+        # 执行中内容实时回显，且不重复
+        self.assertIn('transfer 40%', text)
+        self.assertIn('transfer 80%', text)
+        self.assertEqual(text.count('transfer 40%'), 1)
+        self.assertEqual(text.count('transfer 80%'), 1)
+        # Summary 只出现在最终合并段
+        self.assertIn('Summary:', text)
