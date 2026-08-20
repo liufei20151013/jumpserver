@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 
 from assets.models import Asset
+from .asset.asset import AssetsTaskMixin
 from common.api import SuggestionMixin
 from common.const.http import POST
 from common.const.signals import PRE_REMOVE, POST_REMOVE
@@ -182,7 +183,7 @@ class MoveAssetsToNodeApi(generics.UpdateAPIView):
             [sender(action=POST_REMOVE) for sender in senders]
 
 
-class NodeTaskCreateApi(generics.CreateAPIView):
+class NodeTaskCreateApi(AssetsTaskMixin, generics.CreateAPIView):
     perm_model = Asset
     model = Node
     serializer_class = serializers.NodeTaskSerializer
@@ -205,12 +206,6 @@ class NodeTaskCreateApi(generics.CreateAPIView):
         return node
 
     @staticmethod
-    def set_serializer_data(s, task):
-        data = getattr(s, '_data', {})
-        data["task"] = task.id
-        setattr(s, '_data', data)
-
-    @staticmethod
     def refresh_nodes_cache():
         Task = namedtuple('Task', ['id'])
         task = Task(id="0")
@@ -221,11 +216,11 @@ class NodeTaskCreateApi(generics.CreateAPIView):
         node = self.get_object()
         if action == "refresh_cache" and node is None:
             task = self.refresh_nodes_cache()
-            self.set_serializer_data(serializer, task)
+            self.set_task_to_serializer_data(serializer, task)
             return
 
         if action == "refresh":
             task = update_node_assets_hardware_info_manual(node)
         else:
             task = test_node_assets_connectivity_manual(node)
-        self.set_serializer_data(serializer, task)
+        self.set_task_to_serializer_data(serializer, task)
