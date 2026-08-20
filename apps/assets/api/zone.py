@@ -8,6 +8,7 @@ from assets.tasks import test_gateways_connectivity_manual
 from common.utils import get_logger
 from orgs.mixins.api import OrgBulkModelViewSet
 from .asset import HostViewSet
+from .asset.asset import AssetsTaskMixin
 from .. import serializers
 from ..models import Zone, Gateway
 
@@ -65,5 +66,15 @@ class GatewayTestConnectionApi(SingleObjectMixin, APIView):
             local_port = int(local_port)
         except ValueError:
             raise ValidationError({'port': _('Number required')})
-        task = test_gateways_connectivity_manual([gateway.id], local_port)
-        return Response({'task': task.id})
+        tasks = test_gateways_connectivity_manual([gateway.id], local_port)
+        # 端点路由启用后 dispatch 返回的是 list[AsyncResult]（每个端点队列一个任务）
+        if isinstance(tasks, list):
+            if len(tasks) > 1:
+                # 多端点批量任务：优先返回 batch_id，前端订阅聚合日志
+                batch_id = AssetsTaskMixin._get_batch_id_for_tasks(tasks)
+                task_id = batch_id or tasks[0].id
+            else:
+                task_id = tasks[0].id
+        else:
+            task_id = tasks.id
+        return Response({'task': task_id})
