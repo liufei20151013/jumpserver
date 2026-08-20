@@ -235,7 +235,11 @@ def resolve_endpoint_for_asset(asset):
 
     # 方式 1: 资产标签 endpoint 指定端点（优先）
     endpoint = Endpoint.match_by_instance_label(asset, 'ssh')
-    if endpoint and not endpoint.is_default():
+    if endpoint:
+        # 标签命中 Default 端点 = 资产归属主节点（默认端点），直接回 None 归默认 ansible 队列，
+        # 不再落到 IP 规则（否则可能被全匹配的分布式规则抢走），与批量解析保持一致
+        if endpoint.is_default():
+            return None
         return endpoint
 
     # 方式 2: IP 规则匹配（补充）
@@ -295,13 +299,21 @@ def _resolve_queues_for_assets(assets):
         .exclude(id=Endpoint.default_id)
     }
 
-    # 3) 活跃规则（仅含活跃非默认端点），排序与 EndpointRule.match 一致
+    # 3) 活跃规则（含指向 Default 端点的规则——Default 端点即主节点，命中后归 'ansible' 队列）。
+    #    排序与 EndpointRule.match 一致；不能排除 Default 规则，否则资产标签为 Default / 无标签
+    #    的资产会被其它全匹配规则（如 ip_group=['*'] 的分布式规则）抢走，无法落到主节点。
     rules = list(
         EndpointRule.objects.filter(
             is_active=True, endpoint__is_active=True,
-        ).exclude(endpoint=None).exclude(endpoint__id=Endpoint.default_id)
+        ).exclude(endpoint=None)
         .order_by('priority', 'is_active', 'name')
     )
+
+    # Default 端点名称（按 ID 取，兼容改名）：endpoint=Default 标签表示资产归属默认端点（主节点），
+    # 应短路路由到默认 'ansible' 队列，且不再落入 IP 规则兜底——否则可能被全匹配的 IP 规则
+    # 误分配到分布式端点（见 get_or_create_default 的 name='Default'，作为兜底字面量）。
+    default_endpoint = Endpoint.objects.filter(id=Endpoint.default_id).first()
+    default_endpoint_name = (default_endpoint.name if default_endpoint else None) or 'Default'
 
     queues = {}
     for asset_id, asset in asset_map.items():
@@ -310,22 +322,31 @@ def _resolve_queues_for_assets(assets):
         # 方式 1: 资产标签指定端点（优先，IP 段可能冲突）
         # 多个标签命中多个端点时，取 date_updated 最新的（与 match_by_instance_label 一致）
         label_endpoint = None
+        has_default_label = False
         for ep_name in tag_asset_map.get(asset_id, []):
+            if ep_name == default_endpoint_name:
+                has_default_label = True
+                continue
             endpoint = endpoints_by_name.get(ep_name)
             if endpoint and endpoint.is_valid_for(asset, 'ssh'):
                 if label_endpoint is None or endpoint.date_updated > label_endpoint.date_updated:
                     label_endpoint = endpoint
         if label_endpoint:
             queue = endpoint_to_queue_name(label_endpoint)
+        elif has_default_label:
+            # endpoint=Default 标签短路：资产明确归属默认端点（主节点），
+            # 不参与 IP 规则兜底，直接进默认 ansible 队列
+            queue = 'ansible'
 
-        # 方式 2: IP 规则兜底
+        # 方式 2: IP 规则兜底（仅未命中任何标签端点 / Default 标签时）
         if queue is None:
             target_ip = asset.address or ''
             for rule in rules:
                 if not contains_ip(target_ip, rule.ip_group):
                     continue
                 if rule.endpoint.is_valid_for(asset, 'ssh'):
-                    queue = endpoint_to_queue_name(rule.endpoint)
+                    # 命中 Default 端点的规则 = 归主节点，走默认 ansible 队列
+                    queue = 'ansible' if rule.endpoint.is_default() else endpoint_to_queue_name(rule.endpoint)
                     break
 
         queues[asset_id] = queue or 'ansible'
