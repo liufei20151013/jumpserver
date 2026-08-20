@@ -20,6 +20,14 @@ RUN set -ex \
 
 WORKDIR /opt/jumpserver
 
+ARG PIP_MIRROR=https://mirrors.ustc.edu.cn/pypi/simple/
+
+# 添加新的依赖 uv pip install -i${PIP_MIRROR} oracledb==1.4.0
+RUN set -ex \
+    && uv pip install -i${PIP_MIRROR} --group xpack \
+    && uv pip install -i${PIP_MIRROR} oracledb==1.4.0 \
+    && playwright install chromium --with-deps --only-shell
+
 ADD . .
 
 RUN echo > /opt/jumpserver/config.yml \
