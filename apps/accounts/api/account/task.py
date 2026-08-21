@@ -53,11 +53,43 @@ class AccountsTaskCreateAPI(CreateAPIView):
         elif action == 'remove':
             task = remove_accounts_task.delay(ids)
         elif action == 'verify':
-            task = verify_accounts_connectivity_task.delay(ids)
+            # 【端点路由】账号按所属资产端点拆分，投递各端点队列就近执行（对齐 asset.py test_account）
+            from common.utils.endpoint_routing import dispatch_task_to_endpoints_for_accounts
+            task = dispatch_task_to_endpoints_for_accounts(
+                verify_accounts_connectivity_task, ids
+            )
         else:
             raise ValueError(f"Invalid action: {action}")
 
-        data = getattr(serializer, '_data', {})
-        data["task"] = task.id
-        setattr(serializer, '_data', data)
+        self._set_task_to_serializer_data(serializer, task)
         return task
+
+    def _set_task_to_serializer_data(self, serializer, task):
+        data = getattr(serializer, '_data', {})
+        if isinstance(task, list):
+            if len(task) == 1:
+                data["task"] = task[0].id
+            elif len(task) > 1:
+                # 多端点批量任务：检查是否有 batch_id 用于日志聚合
+                batch_id = self._get_batch_id_for_tasks(task)
+                if batch_id:
+                    data["task"] = batch_id  # 前端用 batch_id 订阅聚合日志
+                else:
+                    data["task"] = task[0].id  # 回退到第一个任务 ID
+                data["tasks"] = [t.id for t in task]  # 所有子任务 ID
+        elif task:
+            data["task"] = task.id
+        setattr(serializer, '_data', data)
+
+    @staticmethod
+    def _get_batch_id_for_tasks(tasks):
+        """从 Redis 获取批量任务的 batch_id"""
+        try:
+            from django.core.cache import cache
+            for t in tasks:
+                batch_id = cache.get(f'task_batch_{t.id}')
+                if batch_id:
+                    return batch_id
+        except Exception:
+            pass
+        return None
