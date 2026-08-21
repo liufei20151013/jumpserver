@@ -30,6 +30,11 @@ def process_data(isFullSync):
         print('当前 CMDB 同步功能未开启, 不需要处理')
         return
 
+    bk_token = Login(username=settings.CMDB_USERNAME, password=settings.CMDB_PASSWORD).login()
+    if not bk_token:
+        print("获取bk_token失败.")
+        return
+
     old_asset_org_dict = {}
     if isFullSync:
         print("获取堡垒机上原始资产数据 Start.")
@@ -53,7 +58,7 @@ def process_data(isFullSync):
     org_data_map = defaultdict(lambda: {"node": []})
 
     print("查询所有主机资产 Start.")
-    result = search_host_asset()
+    result = search_host_asset(bk_token)
     if result['code'] != 0:
         print("查询 CMDB 主机数据失败，code: {}, requestId: {}".format(result['code'], result['request_id']))
         return
@@ -61,7 +66,7 @@ def process_data(isFullSync):
     host_data = result['data']['list']
     print("查询 CMDB 主机数据成功，total: {} 条".format(len(host_data)))
 
-    save_host_asset(host_data, asset_org_dict, user_org_dict, isFullSync, org_data_map, new_assets)
+    save_host_asset(host_data, asset_org_dict, user_org_dict, isFullSync, org_data_map, new_assets, bk_token)
     print("查询所有主机资产 End.")
 
     print("查询PC机 Start.")
@@ -70,7 +75,7 @@ def process_data(isFullSync):
     }
     for bk_obj_id, bk_obj_name in objects.items():
         print("查询 bk_obj_id: {}, bk_obj_name: {}".format(bk_obj_id, bk_obj_name))
-        result = search_other_asset_no_region(bk_obj_id)
+        result = search_other_asset_no_region(bk_obj_id, bk_token)
         if result['code'] != 0:
             print("查询 CMDB PC机数据失败，code: {}, requestId: {}".format(result['code'], result['request_id']))
             return
@@ -93,7 +98,7 @@ def process_data(isFullSync):
     for bk_obj_id, bk_obj_name in objects.items():
         for region in regions:
             print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}".format(bk_obj_id, bk_obj_name, region))
-            result = search_other_asset(bk_obj_id, region)
+            result = search_other_asset(bk_obj_id, region, bk_token)
             if result['code'] != 0:
                 print("查询 CMDB 中间件数据失败，code: {}, requestId: {}".format(result['code'], result['request_id']))
                 return
@@ -112,7 +117,7 @@ def process_data(isFullSync):
     }
     for bk_obj_id, bk_obj_name in objects.items():
         print("查询 bk_obj_id: {}, bk_obj_name: {}".format(bk_obj_id, bk_obj_name))
-        result = search_other_asset_no_region(bk_obj_id)
+        result = search_other_asset_no_region(bk_obj_id, bk_token)
         if result['code'] != 0:
             print("查询 CMDB {}数据失败，code: {}, requestId: {}".format(bk_obj_name, result['code'], result['request_id']))
             return
@@ -132,7 +137,7 @@ def process_data(isFullSync):
         for load_balance_region in load_balance_regions:
             print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}"
                   .format(bk_obj_id, bk_obj_name, load_balance_region))
-            result = search_other_asset(bk_obj_id, load_balance_region)
+            result = search_other_asset(bk_obj_id, load_balance_region, bk_token)
             if result['code'] != 0:
                 print("查询 CMDB {}数据失败，code: {}, requestId: {}".format(bk_obj_name, result['code'],
                                                                             result['request_id']))
@@ -156,7 +161,7 @@ def process_data(isFullSync):
     for bk_obj_id, bk_obj_name in objects.items():
         for storage_region in storage_regions:
             print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}".format(bk_obj_id, bk_obj_name, storage_region))
-            result = search_other_asset(bk_obj_id, storage_region)
+            result = search_other_asset(bk_obj_id, storage_region, bk_token)
             if result['code'] != 0:
                 print("查询 CMDB 存储设备数据失败，code: {}, requestId: {}".format(result['code'], result['request_id']))
                 return
@@ -190,7 +195,7 @@ def process_data(isFullSync):
     for bk_obj_id, bk_obj_name in objects.items():
         for region in regions:
             print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}".format(bk_obj_id, bk_obj_name, region))
-            result = search_other_asset(bk_obj_id, region)
+            result = search_other_asset(bk_obj_id, region, bk_token)
             if result['code'] != 0:
                 print(
                     "查询 CMDB 数据库资产数据失败，code: {}, requestId: {}".format(result['code'], result['request_id']))
@@ -210,7 +215,7 @@ def process_data(isFullSync):
     for bk_obj_id, bk_obj_name in objects.items():
         for desk_support in desk_support_regions:
             print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}".format(bk_obj_id, bk_obj_name, desk_support))
-            result = search_other_asset(bk_obj_id, desk_support)
+            result = search_other_asset(bk_obj_id, desk_support, bk_token)
             if result['code'] != 0:
                 print("查询 CMDB {}数据失败，code: {}, requestId: {}".format(bk_obj_name, result['code'],
                                                                             result['request_id']))
@@ -231,7 +236,7 @@ def process_data(isFullSync):
     for bk_obj_id, bk_obj_name in objects.items():
         for region in regions:
             print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}".format(bk_obj_id, bk_obj_name, region))
-            result = search_other_asset(bk_obj_id, region)
+            result = search_other_asset(bk_obj_id, region, bk_token)
             if result['code'] != 0:
                 print("查询 CMDB 数据库控制台数据失败，code: {}, requestId: {}".format(result['code'], result['request_id']))
                 return
@@ -1317,7 +1322,7 @@ def extract_ip_from_url(haddr_ip_address):
     return match.group(1) if match else None
 
 
-def save_host_asset(assets, asset_org_dict, user_org_dict, isFullSync, org_data_map, new_assets):
+def save_host_asset(assets, asset_org_dict, user_org_dict, isFullSync, org_data_map, new_assets, bk_token):
     for asset in assets:
         update_time = asset.get('last_time') or asset.get('create_time')
         if not isFullSync:
@@ -1333,7 +1338,7 @@ def save_host_asset(assets, asset_org_dict, user_org_dict, isFullSync, org_data_
         # 运维人员组织架构  获取的是[1290]  根据id查询用户归属组织名称
         user_org_id = asset.get('user_org', '')
         default_user_org_name = '系统管理室'
-        user_org_name = search_user_org_name(user_org_id, user_org_dict, default_user_org_name)
+        user_org_name = search_user_org_name(user_org_id, user_org_dict, default_user_org_name, bk_token)
 
         if asset_name:
             asset_name = asset_name + '_' + address
@@ -1571,12 +1576,7 @@ def relate_app_office_org(app_office, dept_name, orgs, org_asset_comment_dict, u
             org_asset_comment_dict.update({org.id: user_org_name})
 
 
-def search_other_asset(bk_obj_id, region):
-    bk_token = Login(username=settings.CMDB_USERNAME, password=settings.CMDB_PASSWORD).login()
-    if not bk_token:
-        print("获取bk_token失败.")
-        return
-
+def search_other_asset(bk_obj_id, region, bk_token):
     limit = 500
     CMDB_HEADERS = {
         'Accept': 'application/json',
@@ -1645,12 +1645,7 @@ def search_other_asset(bk_obj_id, region):
     return result
 
 
-def search_other_asset_no_region(bk_obj_id):
-    bk_token = Login(username=settings.CMDB_USERNAME, password=settings.CMDB_PASSWORD).login()
-    if not bk_token:
-        print("获取bk_token失败.")
-        return
-
+def search_other_asset_no_region(bk_obj_id, bk_token):
     limit = 500
     CMDB_HEADERS = {
         'Accept': 'application/json',
@@ -1710,12 +1705,7 @@ def search_other_asset_no_region(bk_obj_id):
     return result
 
 
-def search_host_asset():
-    bk_token = Login(username=settings.CMDB_USERNAME, password=settings.CMDB_PASSWORD).login()
-    if not bk_token:
-        print("获取bk_token失败.")
-        return
-
+def search_host_asset(bk_token):
     limit = 500
     CMDB_HEADERS = {
         'Accept': 'application/json',
@@ -1786,7 +1776,7 @@ def search_host_asset():
     return result
 
 
-def search_user_org_name(id, user_org_dict, default_user_org_name):
+def search_user_org_name(id, user_org_dict, default_user_org_name, bk_token):
     # 如果 id 是列表，就取第一个元素
     if isinstance(id, list):
         # 列表为空也返回默认值
@@ -1799,11 +1789,6 @@ def search_user_org_name(id, user_org_dict, default_user_org_name):
 
     if id in user_org_dict:
         return user_org_dict[id]
-
-    bk_token = Login(username=settings.CMDB_USERNAME, password=settings.CMDB_PASSWORD).login()
-    if not bk_token:
-        print("获取bk_token失败.")
-        return
 
     CMDB_HEADERS = {
         'Accept': 'application/json',

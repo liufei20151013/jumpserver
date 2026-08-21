@@ -142,7 +142,7 @@ class TestTaskCase(TestCase):
             }
             host_data.append(data)
             i += 1
-        save_host_asset(host_data, user_org_dict, False, org_data_map)
+        save_host_asset(host_data, user_org_dict, False, org_data_map, '')
         end_time = time.time()
         total_seconds = end_time - start_time
 
