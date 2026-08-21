@@ -1,5 +1,8 @@
 import base64
 import io
+import logging
+import os
+import tempfile
 import urllib.parse
 from io import BytesIO
 from urllib.parse import urlparse
@@ -14,6 +17,11 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from pdf2image import convert_from_bytes
 from playwright.sync_api import sync_playwright
+
+from common.tasks import send_mail_attachment_async
+from common.utils.endpoint_routing import is_master_node
+
+logger = logging.getLogger(__name__)
 
 charts_map = {
     "UserLoginReport": {
@@ -169,11 +177,31 @@ class SendMailView(View):
 
         # 4. 发送邮件
         subject = f"{title} 报表"
+        filename = f"{title}-{timezone.now().strftime('%Y%m%d%H%M%S')}.pdf"
+
+        if not is_master_node():
+            # 多节点部署：非主节点把报表邮件转发到主节点 email 队列发送，
+            # 同步等待结果回给前端（用户无感，分布式节点无需开放 SMTP 出网）。
+            fd, pdf_path = tempfile.mkstemp(suffix='.pdf')
+            with os.fdopen(fd, 'wb') as f:
+                f.write(pdf_bytes)
+            result = send_mail_attachment_async(
+                subject, html_content, [email],
+                attachment_list=[pdf_path], html_message=html_content,
+            )
+            try:
+                send_result = result.get(timeout=60)
+            except Exception as e:
+                logger.error(e)
+                return JsonResponse({"error": _('报表邮件发送失败，请稍后重试')})
+            if not send_result:
+                return JsonResponse({"error": _('Failed to send email')})
+            return JsonResponse({"message": _('Email sent successfully to ') + email})
+
         from_email = settings.EMAIL_FROM or settings.EMAIL_HOST_USER
         to = [email]
         msg = EmailMultiAlternatives(subject, '', from_email, to)
         msg.attach_alternative(html_content, "text/html")
-        filename = f"{title}-{timezone.now().strftime('%Y%m%d%H%M%S')}.pdf"
         msg.attach(filename, pdf_bytes, "application/pdf")
         try:
             msg.send()

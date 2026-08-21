@@ -1,5 +1,6 @@
 from .base import BaseService
 from ..hands import *
+from common.utils.endpoint_routing import is_master_node
 
 
 class CeleryBaseService(BaseService):
@@ -23,6 +24,11 @@ class CeleryBaseService(BaseService):
         if not server_hostname:
             server_hostname = '%h'
 
+        # 主节点（集控节点）额外监听 email 队列，统一接收各节点的邮件发送任务
+        queues = self.queue
+        if is_master_node():
+            queues = '{},{}'.format(queues, settings.EMAIL_QUEUE)
+
         cmd = [
             'celery',
             '-A', 'ops',
@@ -30,7 +36,7 @@ class CeleryBaseService(BaseService):
             '-P', 'threads',
             '-l', 'INFO',
             '-c', str(self.num),
-            '-Q', self.queue,
+            '-Q', queues,
             '--heartbeat-interval', '10',
             '-n', f'{self.queue}@{server_hostname}',
             '--without-mingle',

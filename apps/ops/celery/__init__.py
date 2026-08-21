@@ -37,6 +37,10 @@ try:
 except Exception:
     pass
 
+# 邮件专用队列（仅主节点 worker 监听，由主节点集中发送 SMTP）
+_email_queue = getattr(settings, 'EMAIL_QUEUE', 'email') or 'email'
+celery_queues.append(Queue(_email_queue, Exchange(_email_queue), routing_key=_email_queue))
+
 configs["CELERY_QUEUES"] = celery_queues
 
 app.namespace = 'CELERY'
