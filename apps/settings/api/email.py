@@ -10,6 +10,7 @@ from rest_framework.views import Response, APIView
 
 from common.tasks import get_email_connection as get_connection
 from common.utils import get_logger
+from common.utils.endpoint_routing import is_master_node
 from .. import serializers
 
 logger = get_logger(__file__)
@@ -37,16 +38,39 @@ class MailTestingAPI(APIView):
         email_use_ssl = settings.EMAIL_USE_SSL
         email_use_tls = settings.EMAIL_USE_TLS
         email_recipient = serializer.validated_data.get('EMAIL_RECIPIENT')
+        email_from = email_from or email_host_user
+        email_recipient = email_recipient or email_from
 
-        # 设置 settings 的值，会导致动态配置在当前进程失效
-        # for k, v in serializer.validated_data.items():
-        #     if k.startswith('EMAIL'):
-        #         setattr(settings, k, v)
+        if not is_master_node():
+            # 多节点部署：非主节点把测试邮件转发到主节点 email 队列发送，
+            # 同步等待结果回给前端（用户无感，分布式节点无需开放 SMTP 出网）。
+            from common.tasks import send_test_mail_async
+            task_kwargs = {
+                'host': email_host,
+                'port': email_port,
+                'username': email_host_user,
+                'password': email_host_password,
+                'use_tls': email_use_tls,
+                'use_ssl': email_use_ssl,
+            }
+            result = send_test_mail_async.apply_async(
+                args=(email_from, email_recipient), kwargs=task_kwargs,
+                queue=settings.EMAIL_QUEUE,
+            )
+            try:
+                send_result = result.get(timeout=60) or {}
+            except Exception as e:
+                logger.error(e)
+                return Response(
+                    {"error": _('主节点邮件服务暂时不可用，请稍后重试')}, status=400
+                )
+            if not send_result.get('ok'):
+                return Response({"error": send_result.get('error', '')}, status=400)
+            return Response({"msg": self.success_message.format(email_recipient)})
+
         try:
             subject = settings.EMAIL_SUBJECT_PREFIX or '' + "Test"
             message = _("Test smtp setting")
-            email_from = email_from or email_host_user
-            email_recipient = email_recipient or email_from
             connection = get_connection(
                 host=email_host, port=email_port,
                 username=email_host_user, password=email_host_password,

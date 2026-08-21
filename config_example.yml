@@ -20,6 +20,22 @@ BOOTSTRAP_TOKEN:
 # LOG_SYNC_INTERVAL: 3
 # LOG_SYNC_ENABLE_AGGREGATE: true
 
+# 多节点邮件集中发送：标识本节点是否主节点（集控节点）。
+# 只有主节点的 Celery worker 监听 email 队列，所有 SMTP 邮件（通知/验证码/报表/自动化结果）
+# 统一由主节点发送，分布式节点无需开放 SMTP 出网。
+# 判定规则：
+#   - JMS_MASTER_NODE: true   → 本节点为主节点（可配置一台或多台），且把标记写入共享 Redis；
+#                               集群中其他未配置节点查到标记即判非主，所有邮件统一走主节点。
+#   - JMS_MASTER_NODE: false  → 本节点显式非主节点。
+#   - 空/未配置               → 集群已有节点配 true 则判非主；否则回退老逻辑
+#                               （LOG_SYNC_TARGET 非空=分布式节点；均无则默认主节点，单节点行为不变）。
+# 注意：主节点可配置多台，email 队列由它们共同消费（负载均衡，任务不重复发送）；
+#       分布式节点一律不配置该字段。移除全部主节点配置后标记约 1 天后过期回退老逻辑，
+#       可 `redis-cli del email_master_node` 立即生效。
+# 也支持环境变量 JMS_MASTER_NODE 优先（优先级高于 config.yml）。
+# eg:
+# JMS_MASTER_NODE: true
+
 # Development env open this, when error occur display the full process track, Production disable it
 # DEBUG 模式 开启DEBUG后遇到错误时可以看到更多日志
 # DEBUG: true

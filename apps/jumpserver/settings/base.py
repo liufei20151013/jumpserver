@@ -57,6 +57,13 @@ LOG_SYNC_ENABLE_AGGREGATE = (os.environ.get('LOG_SYNC_ENABLE_AGGREGATE') or str(
 # 未配置时不拉取（单机/共享存储场景本地已有文件，无需拉取）。
 OPS_FILE_SYNC_URL = os.environ.get('OPS_FILE_SYNC_URL') or getattr(CONFIG, 'OPS_FILE_SYNC_URL', '') or ''
 
+# 多节点邮件集中发送：标识本节点是否主节点（集控节点）。
+# 只有主节点的 Celery worker 监听 email 队列，所有 SMTP 邮件统一由主节点发送，
+# 分布式节点无需开放 SMTP 出网。空/未配置 = 主节点（单节点老部署行为不变）。
+# 支持环境变量优先，其次 config.yml。
+JMS_MASTER_NODE = os.environ.get('JMS_MASTER_NODE') or getattr(CONFIG, 'JMS_MASTER_NODE', '') or ''
+EMAIL_QUEUE = os.environ.get('EMAIL_QUEUE') or getattr(CONFIG, 'EMAIL_QUEUE', '') or 'email'
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = CONFIG.DEBUG
 # SECURITY WARNING: If you run with debug turned on, more debug msg with be log

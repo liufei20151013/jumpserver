@@ -5,6 +5,7 @@ import socket
 import uuid
 from collections import defaultdict
 
+from django.conf import settings
 from django.core.cache import cache
 
 from common.utils.connection import get_redis_client
@@ -217,6 +218,52 @@ def detect_local_queue():
         )
         return queue
     return 'ansible'
+
+
+# 显式主节点标记（Redis）：集群中只要有节点配置 JMS_MASTER_NODE: true，
+# 该节点判定为主节点时写入此键，其余未配置节点查到标记即判非主——
+# 保证"所有邮件统一由显式配置的主节点发送"。
+EMAIL_MASTER_NODE_KEY = 'email_master_node'
+# 标记 TTL：显式主节点每次判定时刷新；主节点失联超过 TTL 后键过期，
+# 集群回退到老判定逻辑（见 is_master_node 说明）。运维移除主节点配置时可
+# `redis-cli del email_master_node` 立即恢复老逻辑。
+EMAIL_MASTER_NODE_TTL = 86400
+
+
+def is_master_node():
+    """
+    是否主节点（集控节点）。主节点集中发送所有 SMTP 邮件。
+
+    判定优先级：
+    1. 显式配置 JMS_MASTER_NODE（环境变量优先，其次 config.yml / settings）：
+       true/1/yes/on → 主节点，并把标记写入共享 Redis（TTL 内持续，供其他节点感知）；
+       false/0/no/off → 非主节点（显式否定，直接短路）。
+    2. 未显式配置，但集群中已有节点声明为主节点（Redis 标记存在）→ 非主节点。
+    3. 集群无任何显式主节点：复用 log_sync 主从语义——LOG_SYNC_TARGET 非空
+       （日志同步推送方）判非主；否则默认视为主节点（单节点 / 老部署行为不变）。
+    """
+    flag = str(getattr(settings, 'JMS_MASTER_NODE', '') or '').strip()
+    if flag:
+        is_master = flag.lower() in ('1', 'true', 'yes', 'on')
+        if is_master:
+            try:
+                get_redis_client().setex(
+                    EMAIL_MASTER_NODE_KEY, EMAIL_MASTER_NODE_TTL,
+                    socket.gethostname()
+                )
+            except Exception:
+                logger.warning('Failed to mark email master node in redis')
+        return is_master
+    # 未显式配置：集群中已有节点声明为主节点，则本节点不是主节点
+    try:
+        if get_redis_client().exists(EMAIL_MASTER_NODE_KEY):
+            return False
+    except Exception:
+        logger.warning('Failed to check email master node mark in redis')
+    # 无显式主节点：回退老逻辑（日志同步推送方 = 分布式节点）
+    if getattr(settings, 'LOG_SYNC_TARGET', ''):
+        return False
+    return True
 
 
 def endpoint_to_queue_name(endpoint):
