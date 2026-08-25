@@ -30,6 +30,7 @@ django.setup()
 import redis_lock
 from django.conf import settings
 from django.core.cache import cache
+from django.utils import timezone
 
 from common.utils import get_logger
 from common.utils.connection import get_redis_client
@@ -110,6 +111,71 @@ def aggregate_batches():
             logger.warning('Aggregate batch %s failed: %s', batch_id, e)
 
 
+def _update_parent_execution_status(batch_id, task_ids):
+    """
+    聚合完成时把父执行状态落为子执行聚合结果。
+
+    多端点批量分发时父执行是纯聚合节点，不投递 Celery 任务，DB status
+    从创建起永远 running；且聚合完成后 `batch_tasks_{batch_id}` 缓存会被删除，
+    `JobExecutionTaskDetail` 查询因此回退到父执行自身状态，前端一直显示"执行中"。
+    这里在删除缓存前用子执行最新状态聚合出父执行状态写入 DB，保证缓存缺失/
+    过期后的回退路径也能返回正确结果。
+
+    ensure_batch_log 判定 done 依赖子任务日志尾部 magic mark（task_postrun 写入），
+    此时子执行 DB 状态（任务函数内 set_result/set_error）必然已更新，顺序可靠。
+    """
+    try:
+        from ops.models import JobExecution
+        from ops.const import JobStatus
+
+        parent = JobExecution.objects.filter(id=batch_id).first()
+        if not parent:
+            return
+        children = list(JobExecution.objects.filter(
+            id__in=[str(t) for t in task_ids]
+        ))
+        if not children:
+            return
+        statuses = [c.status for c in children]
+        if all(s == JobStatus.success for s in statuses):
+            status = JobStatus.success
+        elif any(s == JobStatus.failed for s in statuses):
+            status = JobStatus.failed
+        elif any(s == JobStatus.timeout for s in statuses):
+            status = JobStatus.timeout
+        else:
+            # 仍有子执行处于 running，只补时间字段不重算状态，等下一轮
+            status = None
+
+        starts = [c.date_start for c in children if c.date_start]
+        finishes = [c.date_finished for c in children if c.date_finished]
+        update_fields = []
+        # 父执行不投递 Celery 任务，status/date_start/date_finished 从创建起均为空，
+        # 这里用子执行结果补全（幂等：已填字段不重复覆盖），保证 batch_tasks_ 缓存删除后
+        # 详情接口回退父执行时 status 与 time_cost 都正确
+        if status and status != parent.status:
+            parent.status = status
+            update_fields.append('status')
+        if starts and parent.date_start is None:
+            parent.date_start = min(starts)
+            update_fields.append('date_start')
+        if finishes:
+            if parent.date_finished != max(finishes):
+                parent.date_finished = max(finishes)
+                update_fields.append('date_finished')
+        elif parent.date_finished is None:
+            parent.date_finished = timezone.now()
+            update_fields.append('date_finished')
+        if update_fields:
+            parent.save(update_fields=update_fields)
+            logger.info(
+                'Parent execution %s updated (fields=%s): status=%s start=%s finished=%s',
+                batch_id, update_fields, parent.status, parent.date_start, parent.date_finished
+            )
+    except Exception as e:
+        logger.warning('Update parent execution %s status failed: %s', batch_id, e)
+
+
 def _aggregate_batch(batch_id, r):
     task_ids = cache.get(f'batch_tasks_{batch_id}')
     if not task_ids:
@@ -127,6 +193,8 @@ def _aggregate_batch(batch_id, r):
     with lock:
         _appended, done = batch_log.ensure_batch_log(batch_id, task_ids)
     if done:
+        # 先落库父执行状态，再删父-子关系缓存（缓存删除后详情查询会回退到父执行）
+        _update_parent_execution_status(batch_id, task_ids)
         remove_active_batch(batch_id)
         cache.delete(f'batch_tasks_{batch_id}')
         logger.info('Batch %s fully aggregated, removed from active set', batch_id)

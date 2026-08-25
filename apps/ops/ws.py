@@ -126,7 +126,16 @@ class TaskLogWebsocket(AsyncJsonWebsocketConsumer, OrgMixin):
             # 直接用 get_redis_client().exists 查的是无前缀的裸键，永远查不到，
             # 导致批量任务被误判为普通 celery 任务而返回 "Task not found"。
             from django.core.cache import cache
-            return bool(cache.get(f'batch_tasks_{task_id}'))
+            if cache.get(f'batch_tasks_{task_id}'):
+                return True
+            # 兜底：聚合完成后 log_sync 会删除 batch_tasks_ 缓存。批量父执行（JobExecution）
+            # 不投递 Celery 任务，不在 CeleryTaskExecution 表；而普通单任务 execution.id 同时
+            # 存在于 JobExecution 与 CeleryTaskExecution。据此识别父执行，避免缓存删除后
+            # 被误判为普通 celery 任务而返回 "Task not found"。
+            from ops.models import JobExecution, CeleryTaskExecution
+            is_job_execution = JobExecution.objects.filter(id=task_id).exists()
+            is_celery_execution = CeleryTaskExecution.objects.filter(id=task_id).exists()
+            return is_job_execution and not is_celery_execution
         except Exception:
             return False
 
