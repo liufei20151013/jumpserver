@@ -653,11 +653,10 @@ class SuperConnectionTokenViewSet(ConnectionTokenViewSet):
         if asset_type in ['k8s', 'kubernetes']:
             expire_now = False
 
-        # Endpoint 充当网关时，token 需要被两个 koko 实例使用
-        # Web 方式已恢复直连（不再注入伪网关），token 只被一个 koko 实例使用
+        # SSH 命令行（非 Web）+ 端点路由时，token 需要被入口 KoKo 和区域 KoKo
+        # 两个实例依次使用（伪网关隧道 + 真实网关两级跳板），不能立即过期。
         has_endpoint_gateway = (
-            not token.gateway
-            and token.endpoint
+            token.endpoint
             and not token.endpoint.is_default()
             and token.endpoint.host
             and token.connect_method not in WebMethod.values

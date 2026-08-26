@@ -145,6 +145,7 @@ class ConnectionTokenSecretSerializer(OrgResourceModelSerializerMixin):
     asset = _ConnectionTokenAssetSerializer(read_only=True)
     account = _ConnectionTokenAccountSerializer(read_only=True, source='account_object')
     gateway = serializers.SerializerMethodField()
+    domain = serializers.SerializerMethodField()
     platform = _ConnectionTokenPlatformSerializer(read_only=True)
     zone = ObjectRelatedField(queryset=Zone.objects, required=False, label=_('Domain'))
     command_filter_acls = _ConnectionTokenCommandFilterACLSerializer(read_only=True, many=True)
@@ -160,7 +161,7 @@ class ConnectionTokenSecretSerializer(OrgResourceModelSerializerMixin):
         fields = [
             'id', 'value', 'user', 'asset', 'account',
             'platform', 'command_filter_acls', 'data_masking_rules', 'protocol',
-            'zone', 'gateway', 'actions', 'expire_at',
+            'zone', 'gateway', 'domain', 'actions', 'expire_at',
             'from_ticket', 'expire_now', 'connect_method',
             'connect_options', 'face_monitor_token'
         ]
@@ -170,29 +171,51 @@ class ConnectionTokenSecretSerializer(OrgResourceModelSerializerMixin):
         }
 
     def get_gateway(self, instance):
+        endpoint = instance.endpoint
+        is_web = instance.connect_method in WebMethod.values
+        has_endpoint = bool(endpoint and not endpoint.is_default() and endpoint.host)
+
+        # SSH 命令行（非 Web）落在入口 KoKo：先经伪网关隧道到端点所在区域，
+        # 再由区域 KoKo 走真实网关（真实网关在 domain 字段下发）。因此该场景
+        # 伪网关优先于真实网关，引导入口 KoKo 隧道到区域 KoKo。
+        if not is_web and has_endpoint:
+            return self._endpoint_gateway(endpoint, instance)
         if instance.gateway:
             return _ConnectionTokenGatewaySerializer(instance.gateway).data
         # Web 方式的连接（web_cli/web_sftp/web_gui）已被入口 nginx 按端点路由到
         # 对应区域节点的 KoKo，该 KoKo 可直连资产，无需再注入伪网关多做一次转发；
-        # 非 Web 方式（如 SSH 命令行落在主节点 KoKo）才需要通过伪网关隧道把连接
-        # 转发到端点所在区域。这里恢复开发该功能前 Web 端的直连逻辑。
-        if instance.connect_method in WebMethod.values:
+        # 这里恢复开发该功能前 Web 端的直连逻辑。
+        if is_web:
             return None
-        endpoint = instance.endpoint
-        if endpoint and not endpoint.is_default() and endpoint.host:
-            return {
-                'id': str(endpoint.id),
-                'name': f'endpoint-{endpoint.name}',
-                'address': endpoint.host,
-                'protocols': [{'name': 'ssh', 'port': endpoint.ssh_port}],
-                'account': {
-                    'name': '@TOKEN',
-                    'username': f'JMS-{instance.value}',
-                    'secret_type': {'value': 'password', 'label': 'Password'},
-                    'secret': instance.value,
-                },
-            }
+        # 非 Web 且无端点标签：无真实网关则不注入（真实网关分支在上面已优先）
         return None
+
+    @staticmethod
+    def _endpoint_gateway(endpoint, instance):
+        return {
+            'id': str(endpoint.id),
+            'name': f'endpoint-{endpoint.name}',
+            'address': endpoint.host,
+            'protocols': [{'name': 'ssh', 'port': endpoint.ssh_port}],
+            'account': {
+                'name': '@TOKEN',
+                'username': f'JMS-{instance.value}',
+                'secret_type': {'value': 'password', 'label': 'Password'},
+                'secret': instance.value,
+            },
+        }
+
+    def get_domain(self, instance):
+        """真实网关（Zone 选中的网关）下发给区域 KoKo，供 SSH 命令行两级跳板
+        的最后一段（区域 KoKo → 真实网关 → 目标资产）使用。复用 SDK 已有的
+        ConnectToken.Domain 结构，无需改动 SDK。"""
+        zone = instance.zone
+        if not zone:
+            return None
+        gateways = []
+        if instance.gateway:
+            gateways.append(_ConnectionTokenGatewaySerializer(instance.gateway).data)
+        return {'id': str(zone.id), 'name': zone.name, 'gateways': gateways}
 
 
 class ConnectTokenAppletOptionSerializer(serializers.Serializer):
