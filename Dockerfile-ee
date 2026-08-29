@@ -1,7 +1,7 @@
 ARG VERSION=v4.10.16
 
 FROM registry.fit2cloud.com/jumpserver/xpack:${VERSION} AS build-xpack
-FROM jumpserver/core:${VERSION}-ce
+FROM registry.fit2cloud.com/jumpserver/core:${VERSION}-ce
 
 COPY --from=build-xpack /opt/xpack /opt/jumpserver/apps/xpack
 
@@ -28,7 +28,7 @@ RUN set -ex \
 
 WORKDIR /opt/jumpserver
 
-ARG PIP_MIRROR=https://pypi.tuna.tsinghua.edu.cn/simple
+ARG PIP_MIRROR=https://mirrors.aliyun.com/pypi/simple/
 
 RUN set -ex \
     && UV_HTTP_TIMEOUT=300 uv pip install -i${PIP_MIRROR} --group xpack \

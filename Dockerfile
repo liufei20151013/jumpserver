@@ -20,7 +20,7 @@ RUN set -ex \
 
 WORKDIR /opt/jumpserver
 
-ARG PIP_MIRROR=https://mirrors.ustc.edu.cn/pypi/simple/
+ARG PIP_MIRROR=https://mirrors.aliyun.com/pypi/simple/
 
 # 添加新的依赖 uv pip install -i${PIP_MIRROR} oracledb==1.4.0
 RUN set -ex \
@@ -67,7 +67,7 @@ ARG TOOLS="                           \
         telnet                        \
         postgresql-client"
 
-ARG APT_MIRROR=https://mirrors.ustc.edu.cn
+ARG APT_MIRROR=https://mirrors.aliyun.com
 
 RUN set -ex \
     && sed -i "s@http://.*.debian.org@${APT_MIRROR}@g" /etc/apt/sources.list.d/debian.sources \
