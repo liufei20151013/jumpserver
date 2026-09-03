@@ -20,6 +20,7 @@ from common.api import JMSModelViewSet
 from common.exceptions import JMSException
 from common.utils import random_string, get_logger, get_request_ip_or_data
 from common.utils.django import get_request_os
+from common.utils.endpoint_routing import get_client_connect_port
 from common.utils.http import is_true, is_false
 from orgs.mixins.api import RootOrgViewMixin
 from orgs.utils import tmp_to_org
@@ -233,6 +234,12 @@ class RDPFileClientProtocolURLMixin:
                 protocol=endpoint_protocol,
                 asset=asset
             )
+            # SSH 客户端连接端口统一走集控入口端口（客户端先连集控 KoKo，
+            # 经伪网关隧道到区域 KoKo），未命中替换条件时保持端点原端口
+            port = endpoint.get_port(token.asset, token_protocol)
+            master_port = get_client_connect_port(endpoint, token.asset, token_protocol)
+            if master_port:
+                port = master_port
             data.update({
                 'asset': {
                     'id': str(asset.id),
@@ -246,7 +253,7 @@ class RDPFileClientProtocolURLMixin:
                 },
                 'endpoint': {
                     'host': endpoint.host,
-                    'port': endpoint.get_port(token.asset, token_protocol),
+                    'port': port,
                 }
             })
         return data

@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from assets.models import Asset
 from authentication.permissions import IsValidUserOrConnectionToken
 from common.api import JMSBulkModelViewSet
+from common.utils.endpoint_routing import get_client_connect_port
 from orgs.utils import tmp_to_root_org
 from terminal import serializers
 from terminal.models import Session, Endpoint, EndpointRule
@@ -33,7 +34,18 @@ class SmartEndpointViewMixin:
             return Response(data={'error': error}, status=status.HTTP_404_NOT_FOUND)
         endpoint = self.match_endpoint()
         serializer = self.get_serializer(endpoint)
-        return Response(serializer.data)
+        data = serializer.data
+        # 客户端 / 向导展示的连接端口统一为集控入口端口（SSH 先连集控 KoKo 经
+        # 伪网关隧道到区域 KoKo；DB 先连集控 magnus 经伪网关隧道连库），
+        # 未命中替换条件时保持端点原端口
+        master_port = get_client_connect_port(endpoint, self.target_instance, self.target_protocol)
+        if master_port:
+            # ssh/telnet/sftp 的端口字段统一为 ssh_port，DB 协议为 {protocol}_port
+            if self.target_protocol in ('ssh', 'telnet', 'sftp'):
+                data['ssh_port'] = master_port
+            else:
+                data[f'{self.target_protocol}_port'] = master_port
+        return Response(data)
 
     def match_endpoint(self):
         endpoint = self.match_endpoint_by_label()

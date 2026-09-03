@@ -266,6 +266,67 @@ def is_master_node():
     return True
 
 
+def get_master_endpoint_port(protocol='ssh'):
+    """
+    集控节点（统一入口）对外暴露的协议端口。
+
+    Default 端点即集控入口的语义载体（host 为空 = 与访问域名一致，
+    端口为 LB / 集控组件映射出的统一入口端口）。端口配置为 0（禁用）
+    或查询异常时返回 0，调用方应保持原有端口不变。
+    """
+    try:
+        from terminal.models import Endpoint
+        endpoint = Endpoint.get_or_create_default()
+        return endpoint.get_port(None, protocol)
+    except Exception:
+        return 0
+
+
+# 客户端连接统一改走集控入口端口的协议白名单：
+# - koko SSH 系：ssh/telnet/sftp（Endpoint.get_port 均映射为 ssh_port）
+# - magnus DB 系：各数据库协议（magnus 经伪网关 SSH 隧道到区域 koko 再连库）
+# web 类协议（http/https/rdp/vnc/k8s 等）不在列——Web 入口仍按端点分流
+CLIENT_CONNECT_MASTER_PROTOCOLS = {
+    'ssh', 'telnet', 'sftp',
+    'mysql', 'mariadb', 'postgresql', 'redis', 'sqlserver', 'oracle', 'mongodb',
+}
+
+
+def get_client_connect_port(endpoint, target_instance, protocol):
+    """
+    SSH 客户端 / 向导 / DB 客户端 / DB 向导连接端点资产时实际使用的端口。
+
+    端点资产原本下发匹配端点自己的协议端口（区域节点映射端口），客户端直连
+    区域节点的 koko / magnus。多节点部署下统一改为集控节点的对应协议入口端口，
+    客户端只需访问集控统一入口，区域端点无需对客户端暴露服务端口：
+    - SSH 系：客户端先连集控 koko，经伪网关隧道到区域 koko（两级跳板）
+    - DB 系：客户端先连集控 magnus，由 magnus 经伪网关 SSH 隧道
+      （connect_token_secret.get_gateway 下发的伪网关）到区域 koko 再连库
+
+    返回 0 / None 表示不替换，调用方保持原有端口行为：
+    - 端点路由未启用（单端点 / 老部署行为不变）
+    - 协议不在白名单（web / rdp / vnc 等仍按端点分流）
+    - 匹配到的就是 Default 端点（本来就是集控入口）
+    - 端点或集控的对应协议端口未配置（0）
+    """
+    if not is_endpoint_routing_enabled():
+        return None
+    if protocol not in CLIENT_CONNECT_MASTER_PROTOCOLS:
+        return None
+    try:
+        if endpoint is None or endpoint.is_default():
+            return None
+        endpoint_port = endpoint.get_port(target_instance, protocol)
+        if not endpoint_port:
+            return None
+        master_port = get_master_endpoint_port(protocol)
+        if not master_port or master_port == endpoint_port:
+            return None
+        return master_port
+    except Exception:
+        return None
+
+
 def endpoint_to_queue_name(endpoint):
     """将 Endpoint 名称转为 Celery 队列名"""
     safe_name = endpoint.name.lower().replace(' ', '_').replace('-', '_')
