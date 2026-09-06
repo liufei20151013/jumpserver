@@ -107,7 +107,7 @@ def process_data(isFullSync):
             print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}, total: {} 条"
                   .format(bk_obj_id, bk_obj_name, region, len(middleware_data)))
 
-            save_middleware_asset(middleware_data, asset_org_dict, isFullSync, bk_obj_id, org_data_map, new_assets)
+            save_middleware_asset(middleware_data, asset_org_dict, isFullSync, bk_obj_id, org_data_map, new_assets, user_org_dict, bk_token)
     print("查询所有中间件 End.")
 
     print("查询网络安全设备 Start.")
@@ -204,7 +204,7 @@ def process_data(isFullSync):
             db_data = result['data']['list']
             print("查询 bk_obj_id: {}, bk_obj_name: {}, region: {}, total: {}条".format(bk_obj_id, bk_obj_name, region, len(db_data)))
 
-            save_db_asset(db_data, asset_org_dict, bk_obj_id, isFullSync, org_data_map, new_assets)
+            save_db_asset(db_data, asset_org_dict, bk_obj_id, isFullSync, org_data_map, new_assets, user_org_dict, bk_token)
     print("查询所有数据库资产 End.")
 
     print("查询桌面办公 Start.")
@@ -291,7 +291,7 @@ def process_data(isFullSync):
 
 # 专业公司的数据库资产不在CMDB管理，所有数据库资产归属 系统运行部-系统管理室和应用开发部门 管理
 # 所有的数据库资产都同步到太平金科的 系统运行部-系统管理室 组织下
-def save_db_asset(assets, asset_org_dict, bk_obj_id, isFullSync, org_data_map, new_assets):
+def save_db_asset(assets, asset_org_dict, bk_obj_id, isFullSync, org_data_map, new_assets, user_org_dict, bk_token):
     for asset in assets:
         update_time = asset.get('last_time') or asset.get('create_time')
         if not isFullSync:
@@ -303,7 +303,10 @@ def save_db_asset(assets, asset_org_dict, bk_obj_id, isFullSync, org_data_map, n
         asset_name = asset.get('bk_inst_name', 'ip_addr')
         ip_addr = asset.get('ip_addr', '')
         db_port = asset.get('port', '')
-        org_name = asset.get('app_department', '')
+        db_user_org_id = asset.get('db_user_org', '')
+        default_user_org_name = '系统管理室'
+        org_name = search_user_org_name(db_user_org_id, user_org_dict, default_user_org_name, bk_token)
+
         # 未维护信息过滤掉
         if not ip_addr or not db_port or not org_name:
             print(f"There exist null parameter situations, asset: {json.dumps(asset)}, skip.")
@@ -742,7 +745,7 @@ def save_network_device_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org
             raise e
 
 
-def save_middleware_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map, new_assets):
+def save_middleware_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_data_map, new_assets, user_org_dict, bk_token):
     for asset in assets:
         update_time = asset.get('last_time') or asset.get('create_time')
         if not isFullSync:
@@ -754,7 +757,10 @@ def save_middleware_asset(assets, asset_org_dict, isFullSync, bk_obj_id, org_dat
         asset_name = asset.get('bk_inst_name', '')
         address = asset.get('control_addr', '')
         listen_port = asset.get('listen_port', '')
-        org_name = asset.get('app_department', '')
+        db_user_org_id = asset.get('db_user_org', '')
+        default_user_org_name = '系统管理室'
+        org_name = search_user_org_name(db_user_org_id, user_org_dict, default_user_org_name, bk_token)
+
         if not address or not listen_port or not org_name:
             print(f"There exist null parameter situations, asset: {json.dumps(asset)}, skip.")
             continue
