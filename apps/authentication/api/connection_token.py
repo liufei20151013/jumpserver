@@ -118,7 +118,11 @@ class RDPFileClientProtocolURLMixin:
 
         # 设置 RDP Server 地址
         endpoint = self.get_smart_endpoint(protocol='rdp', asset=token.asset)
-        rdp_options['full address:s'] = f'{endpoint.host}:{endpoint.rdp_port}'
+        rdp_port = endpoint.rdp_port
+        master_port = get_client_connect_port(endpoint, token.asset, 'rdp')
+        if master_port:
+            rdp_port = master_port
+        rdp_options['full address:s'] = f'{endpoint.host}:{rdp_port}'
 
         # 设置用户名
         rdp_options['username:s'] = '{}|{}'.format(token.user.username, str(token.id))

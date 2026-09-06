@@ -287,8 +287,8 @@ def get_master_endpoint_port(protocol='ssh'):
 # - magnus DB 系：各数据库协议（magnus 经伪网关 SSH 隧道到区域 koko 再连库）
 # web 类协议（http/https/rdp/vnc/k8s 等）不在列——Web 入口仍按端点分流
 CLIENT_CONNECT_MASTER_PROTOCOLS = {
-    'ssh', 'telnet', 'sftp',
-    'mysql', 'mariadb', 'postgresql', 'redis', 'sqlserver', 'oracle', 'mongodb',
+    'ssh', 'rdp', 'vnc', 'telnet', 'sftp',
+    'mysql', 'mariadb', 'postgresql', 'redis', 'sqlserver', 'oracle', 'mongodb', 'dameng', 'db2', 'clickhouse',
 }
 
 
