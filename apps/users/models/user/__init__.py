@@ -63,8 +63,8 @@ class User(
     """
     id = models.UUIDField(default=uuid.uuid4, primary_key=True)
     username = models.CharField(max_length=128, unique=True, verbose_name=_("Username"))
-    name = models.CharField(max_length=128, verbose_name=_("Name"))
-    email = models.EmailField(max_length=128, unique=True, verbose_name=_("Email"))
+    name = fields.EncryptCharField(max_length=128, verbose_name=_("Name"))
+    email = fields.EncryptCharField(max_length=128, unique=True, verbose_name=_("Email"))
     groups = models.ManyToManyField(
         "users.UserGroup",
         related_name="users",

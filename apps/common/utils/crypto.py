@@ -2,6 +2,7 @@ import base64
 import logging
 import re
 
+import requests
 from Cryptodome import Random
 from Cryptodome.Cipher import AES, PKCS1_v1_5
 from Cryptodome.PublicKey import RSA
@@ -45,24 +46,67 @@ class BaseCrypto:
             base64.urlsafe_b64decode(bytes(text, encoding='utf8'))
         ).decode('utf8')
 
+
     def _decrypt(self, data: bytes) -> bytes:
         raise NotImplementedError
 
-
 class GMSM4EcbCrypto(BaseCrypto):
+    JAVA_API_BASE = "http://localhost:8088/jnky"  # 实际地址，可配置
+    AUTH_TOKEN = "Bearer fit2cloud"
+
     def __init__(self, key):
         self.key = padding_key(key, 16)
         self.sm4_encryptor = CryptSM4()
-        self.sm4_encryptor.set_key(self.key, SM4_ENCRYPT)
+        # self.sm4_encryptor.set_key(self.key, SM4_ENCRYPT)
 
         self.sm4_decryptor = CryptSM4()
-        self.sm4_decryptor.set_key(self.key, SM4_DECRYPT)
+        # self.sm4_decryptor.set_key(self.key, SM4_DECRYPT)
 
     def _encrypt(self, data: bytes) -> bytes:
-        return self.sm4_encryptor.crypt_ecb(data)
+        # return self.sm4_encryptor.crypt_ecb(data)
+
+        if not data:
+            return data
+
+        url = f"{self.JAVA_API_BASE}/encrypt/"
+        headers = {
+            "Authorization": self.AUTH_TOKEN,
+            "Content-Type": "text/plain"
+        }
+        try:
+            response = requests.post(url, data=data, headers=headers, timeout=100, verify=False)
+            response.raise_for_status()
+            result = response.json()
+            if result.get("code") == 200:
+                cipher_base64 = result["data"]  # Base64 密文
+                return base64.b64decode(cipher_base64)  # 返回密文字节
+            else:
+                raise Exception(f"Java encrypt error: {result.get('msg')}")
+        except Exception as e:
+            raise RuntimeError(f"Failed to call encrypt service: {e}")
 
     def _decrypt(self, data: bytes) -> bytes:
-        return self.sm4_decryptor.crypt_ecb(data)
+        # return self.sm4_decryptor.crypt_ecb(data)
+
+        if not data:
+            return data
+
+        url = f"{self.JAVA_API_BASE}/decrypt/"
+        headers = {
+            "Authorization": self.AUTH_TOKEN,
+            "Content-Type": "text/plain"
+        }
+        try:
+            response = requests.post(url, data=data, headers=headers, timeout=100, verify=False)
+            response.raise_for_status()
+            result = response.json()
+            if result.get("code") == 200:
+                cipher_base64 = result["data"]  # Base64 明文
+                return base64.b64decode(cipher_base64)  # 返回密文字节
+            else:
+                raise Exception(f"Java decrypt error: {result.get('msg')}")
+        except Exception as e:
+            raise RuntimeError(f"Failed to call decrypt service: {e}")
 
 
 class PiicoSM4EcbCrypto(BaseCrypto):
@@ -197,10 +241,10 @@ gm_sm4_ecb_crypto = get_gm_sm4_ecb_crypto()
 
 class Crypto:
     cryptor_map = {
-        'aes_ecb': aes_ecb_crypto,
-        'aes_gcm': aes_crypto,
-        'aes': aes_crypto,
-        'gm_sm4_ecb': gm_sm4_ecb_crypto,
+        # 'aes_ecb': aes_ecb_crypto,
+        # 'aes_gcm': aes_crypto,
+        # 'aes': aes_crypto,
+        # 'gm_sm4_ecb': gm_sm4_ecb_crypto,
         'gm': gm_sm4_ecb_crypto,
     }
     cryptos = []
@@ -245,6 +289,7 @@ class Crypto:
                     return origin_text
             except Exception:
                 continue
+        return None
 
 
 def gen_key_pair(length=2048):
@@ -298,7 +343,6 @@ def rsa_decrypt_by_session_pkey(value):
     except Exception as e:
         logging.error('Decrypt field error: {}'.format(e))
     return value
-
 
 def decrypt_password(value):
     cipher = value.split(':')

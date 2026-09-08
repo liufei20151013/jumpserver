@@ -54,7 +54,7 @@ class WithBootstrapToken(permissions.BasePermission):
 class ServiceAccountSignaturePermission(permissions.BasePermission):
     def has_permission(self, request, view):
         from authentication.models import AccessKey
-        from common.utils.crypto import get_aes_crypto
+        from common.utils.crypto import get_gm_sm4_ecb_crypto
         signature = request.META.get('HTTP_X_JMS_SVC', '')
         if not signature or not signature.startswith('Sign'):
             return False
@@ -69,9 +69,9 @@ class ServiceAccountSignaturePermission(permissions.BasePermission):
             return False
         if not ak.user or not ak.user.is_active or not ak.user.is_service_account:
             return False
-        aes = get_aes_crypto(str(ak.secret).replace('-', ''), mode='ECB')
+        gm = get_gm_sm4_ecb_crypto(str(ak.secret).replace('-', ''))
         try:
-            timestamp = aes.decrypt(time_sign)
+            timestamp = gm.decrypt(time_sign)
             if not timestamp or not timestamp.isdigit():
                 return False
             timestamp = int(timestamp)
