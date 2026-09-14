@@ -179,7 +179,6 @@ class RDPFileClientProtocolURLMixin:
 
     def get_connect_filename(self, prefix_name):
         filename = f'{prefix_name}-jumpserver'
-        filename = self.escape_name(filename)
         return filename
 
     @staticmethod
@@ -198,13 +197,14 @@ class RDPFileClientProtocolURLMixin:
             raise ValueError('Connect method not support: {}'.format(connect_method_name))
 
         account = token.account or token.input_username
-        datetime = timezone.localtime(timezone.now()).strftime('%Y-%m-%d_%H:%M:%S')
-        name = account + '@' + asset.name + '[' + datetime + ']'
+        # datetime = timezone.localtime(timezone.now()).strftime('%Y-%m-%d_%H:%M:%S')
+        # name = account + '@' + asset.name + '[' + datetime + ']'
+        name = account + '@' + asset.address
         data = {
             'version': 2,
             'id': str(token.id),  # 兼容老的，未来几个版本删掉
             'value': token.value,  # 兼容老的，未来几个版本删掉
-            'name': self.escape_name(name),
+            'name': name,
             'protocol': token.protocol,
             'token': {
                 'id': str(token.id),
