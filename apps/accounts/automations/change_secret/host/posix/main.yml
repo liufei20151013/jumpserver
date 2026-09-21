@@ -108,6 +108,10 @@
        - account.secret_type == "password"
        - check_conn_after_change or change_secret_result.failed | default(false)
       delegate_to: localhost
+      vars:
+        ansible_python_interpreter: "{{ local_python_interpreter }}"
+      environment:
+        PYTHONPATH: "/opt/jumpserver/apps"
 
     - name: "Verify {{ account.username }} SSH KEY (paramiko)"
       ssh_ping:
@@ -121,3 +125,7 @@
        - account.secret_type == "ssh_key"
        - check_conn_after_change or change_secret_result.failed | default(false)
       delegate_to: localhost
+      vars:
+        ansible_python_interpreter: "{{ local_python_interpreter }}"
+      environment:
+        PYTHONPATH: "/opt/jumpserver/apps"
