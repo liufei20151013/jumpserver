@@ -283,29 +283,39 @@ def get_master_endpoint_port(protocol='ssh'):
 
 
 # 客户端连接统一改走集控入口端口的协议白名单：
-# - koko SSH 系：ssh/telnet/sftp（Endpoint.get_port 均映射为 ssh_port）
-# - magnus DB 系：各数据库协议（magnus 经伪网关 SSH 隧道到区域 koko 再连库）
-# web 类协议（http/https/rdp/vnc/k8s 等）不在列——Web 入口仍按端点分流
+# - koko SSH 系：ssh/telnet/sftp（Endpoint.get_port 均映射为 ssh_port）。客户端先连
+#   集控 koko，经伪网关隧道到区域 koko（两级跳板），区域端点无需对客户端暴露端口。
+# 不在列的协议一律按资产所挂端点自己的端口分流：
+# - razor mstsc（rdp，RDP 文件入口）/ nec vnc_client（vnc）：客户端直连端点自己的
+#   razor / nec 端口。若统一到集控入口，客户端只会连到集控节点的 razor，跨区域资产
+#   （只有区域 razor 能连通目标资产 / 真实网关）会连不上。
+# - DB 协议（mysql/mariadb/postgresql/redis/sqlserver/oracle/mongodb）：magnus 侧的 DB
+#   客户端不消费端点伪网关（见 terminal.connect_methods.NO_ENDPOINT_GATEWAY_METHODS），
+#   统一到集控入口会导致「集控 magnus 直连库」或「magnus 报 no available domain」，
+#   因此保持连接资产所挂端点自己的端口（即对应区域的 magnus 端口）。
+# - dameng/db2/clickhouse 无原生客户端方式（走 Chen / koko 的 Web 入口，按端点分流），
+#   若上游将来提供原生方式，需先给 Endpoint 增加对应端口字段再考虑入列。
+# - web 类协议（http/https/k8s 等）不在列——Web 入口始终按端点分流。
 CLIENT_CONNECT_MASTER_PROTOCOLS = {
-    'ssh', 'rdp', 'vnc', 'telnet', 'sftp',
-    'mysql', 'mariadb', 'postgresql', 'redis', 'sqlserver', 'oracle', 'mongodb', 'dameng', 'db2', 'clickhouse',
+    'ssh', 'telnet', 'sftp',
 }
 
 
 def get_client_connect_port(endpoint, target_instance, protocol):
     """
-    SSH 客户端 / 向导 / DB 客户端 / DB 向导连接端点资产时实际使用的端口。
+    SSH 客户端 / 向导连接端点资产时实际使用的端口。
 
     端点资产原本下发匹配端点自己的协议端口（区域节点映射端口），客户端直连
-    区域节点的 koko / magnus。多节点部署下统一改为集控节点的对应协议入口端口，
-    客户端只需访问集控统一入口，区域端点无需对客户端暴露服务端口：
-    - SSH 系：客户端先连集控 koko，经伪网关隧道到区域 koko（两级跳板）
-    - DB 系：客户端先连集控 magnus，由 magnus 经伪网关 SSH 隧道
-      （connect_token_secret.get_gateway 下发的伪网关）到区域 koko 再连库
+    区域节点的 koko。多节点部署下 SSH 系客户端统一改为集控节点的 ssh 入口端口，
+    客户端只需访问集控统一入口，区域端点无需对客户端暴露服务端口：客户端先连
+    集控 koko，经伪网关隧道到区域 koko（两级跳板）。
+
+    其余协议（RDP / VNC / DB 系等）不在白名单，保持连接资产所挂端点自己的端口，
+    详见 CLIENT_CONNECT_MASTER_PROTOCOLS。
 
     返回 0 / None 表示不替换，调用方保持原有端口行为：
     - 端点路由未启用（单端点 / 老部署行为不变）
-    - 协议不在白名单（web / rdp / vnc 等仍按端点分流）
+    - 协议不在白名单（RDP / VNC / DB 系 / web 类等仍按端点自己的端口分流）
     - 匹配到的就是 Default 端点（本来就是集控入口）
     - 端点或集控的对应协议端口未配置（0）
     """

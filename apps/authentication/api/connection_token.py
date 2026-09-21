@@ -25,7 +25,9 @@ from common.utils.http import is_true, is_false
 from orgs.mixins.api import RootOrgViewMixin
 from orgs.utils import tmp_to_org
 from perms.models import ActionChoices
-from terminal.connect_methods import NativeClient, ConnectMethodUtil, WebMethod
+from terminal.connect_methods import (
+    NativeClient, ConnectMethodUtil, NO_ENDPOINT_GATEWAY_METHODS, WebMethod
+)
 from terminal.models import EndpointRule, Endpoint
 from users.const import FileNameConflictResolution
 from users.const import RDPSmartSize, RDPColorQuality
@@ -116,13 +118,10 @@ class RDPFileClientProtocolURLMixin:
         full_screen = is_true(self.request.query_params.get('full_screen'))
         rdp_options['screen mode id:i'] = '2' if full_screen else '1'
 
-        # 设置 RDP Server 地址
+        # 设置 RDP Server 地址（连资产所挂端点自己的 razor 端口，不统一到集控入口，
+        # 否则跨区域资产会被送到集控节点的 razor 而连不上）
         endpoint = self.get_smart_endpoint(protocol='rdp', asset=token.asset)
-        rdp_port = endpoint.rdp_port
-        master_port = get_client_connect_port(endpoint, token.asset, 'rdp')
-        if master_port:
-            rdp_port = master_port
-        rdp_options['full address:s'] = f'{endpoint.host}:{rdp_port}'
+        rdp_options['full address:s'] = f'{endpoint.host}:{endpoint.rdp_port}'
 
         # 设置用户名
         rdp_options['username:s'] = '{}|{}'.format(token.user.username, str(token.id))
@@ -245,8 +244,8 @@ class RDPFileClientProtocolURLMixin:
                 protocol=endpoint_protocol,
                 asset=asset
             )
-            # SSH 客户端连接端口统一走集控入口端口（客户端先连集控 KoKo，
-            # 经伪网关隧道到区域 KoKo），未命中替换条件时保持端点原端口
+            # SSH 系（ssh_client / ssh_guide）统一走集控入口端口：客户端先连集控
+            # KoKo，经伪网关隧道到区域 KoKo；其余协议（DB 客户端等）保持端点原端口
             port = endpoint.get_port(token.asset, token_protocol)
             master_port = get_client_connect_port(endpoint, token.asset, token_protocol)
             if master_port:
@@ -671,13 +670,16 @@ class SuperConnectionTokenViewSet(ConnectionTokenViewSet):
         if asset_type in ['k8s', 'kubernetes']:
             expire_now = False
 
-        # SSH 命令行（非 Web）+ 端点路由时，token 需要被入口 KoKo 和区域 KoKo
-        # 两个实例依次使用（伪网关隧道 + 真实网关两级跳板），不能立即过期。
+        # koko 承接的连接 + 端点路由时，token 需要被入口 KoKo 和区域 KoKo 两个实例
+        # 依次使用（伪网关隧道 + 真实网关两级跳板），不能立即过期。
+        # 不注入伪网关的连接方式（NO_ENDPOINT_GATEWAY_METHODS：magnus 的 DB 客户端、
+        # razor/nec 的 RDP/VNC 客户端）恢复用完即失效。
         has_endpoint_gateway = (
             token.endpoint
             and not token.endpoint.is_default()
             and token.endpoint.host
             and token.connect_method not in WebMethod.values
+            and token.connect_method not in NO_ENDPOINT_GATEWAY_METHODS
         )
         if has_endpoint_gateway:
             expire_now = False

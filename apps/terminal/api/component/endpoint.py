@@ -35,12 +35,10 @@ class SmartEndpointViewMixin:
         endpoint = self.match_endpoint()
         serializer = self.get_serializer(endpoint)
         data = serializer.data
-        # 客户端 / 向导展示的连接端口统一为集控入口端口（SSH 先连集控 KoKo 经
-        # 伪网关隧道到区域 KoKo；DB 先连集控 magnus 经伪网关隧道连库），
-        # 未命中替换条件时保持端点原端口
         master_port = get_client_connect_port(endpoint, self.target_instance, self.target_protocol)
         if master_port:
-            # ssh/telnet/sftp 的端口字段统一为 ssh_port，DB 协议为 {protocol}_port
+            # 目前只有 ssh/telnet/sftp 会命中（Endpoint.get_port 把这三个都映射为 ssh_port）；
+            # 其余协议保持端点自己的端口，不会被替换
             if self.target_protocol in ('ssh', 'telnet', 'sftp'):
                 data['ssh_port'] = master_port
             else:

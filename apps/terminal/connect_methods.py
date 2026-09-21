@@ -99,6 +99,29 @@ class NativeClient(TextChoices):
         return methods
 
 
+# 不注入端点伪网关（Endpoint Gateway）的连接方式。
+#
+# 端点伪网关只服务于 koko 的 SSH 系代理：koko 以 JMS-<token> 身份 dial 伪网关
+# （= 区域 koko 的 ssh 端口）隧道到端点所在区域，再由区域 koko 连资产。因此只有
+# koko 承接的连接方式能消费它；其余消费者拿到伪网关会直接失败：
+#
+# - magnus（db_client / db_guide）：magnus 不消费伪网关，它需要 Zone 下发的
+#   domain 网关（真实网关），拿不到时报 `启动数据库网关失败 no available domain`，
+#   客户端侧表现为 ORA-17410 / `unexpected pre-login response` 之类的协议层错误。
+# - razor（mstsc / rdp_guide）/ nec（vnc_client / vnc_guide）：它们会尝试用伪网关
+#   建立 SSH 隧道，但 token 协议不是 ssh，区域 koko 按
+#   `not ssh asset connection token` 拒绝，客户端表现为连上即秒断开。
+#
+# 未列入的连接方式保持伪网关注入行为不变（koko 命令行的 ssh/telnet/sftp、SSH
+# 客户端/向导、koko 自建令牌），SSH 命令行两级跳板不受影响。
+NO_ENDPOINT_GATEWAY_METHODS = {
+    # magnus DB 客户端
+    'db_client', 'db_guide',
+    # razor RDP 客户端 / nec VNC 客户端
+    'mstsc', 'rdp_guide', 'vnc_client', 'vnc_guide',
+}
+
+
 class AppletMethod:
     @classmethod
     def get_methods(cls):
