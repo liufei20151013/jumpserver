@@ -1,5 +1,6 @@
 import json
 import re
+from sys import platform
 
 from django.conf import settings
 from django.core.cache import cache
@@ -7,8 +8,8 @@ from django.db.models import Q
 from django.utils.translation import get_language
 from rest_framework.utils.encoders import JSONEncoder
 
-from assets.const import AllTypes
-from assets.models import FavoriteAsset, Asset, Node
+from assets.const import AllTypes, Category
+from assets.models import FavoriteAsset, Asset, Node, Platform
 from common.utils.common import timeit, get_logger
 from orgs.utils import current_org, get_current_org_id
 from perms.models import PermNode, UserAssetGrantedTreeNodeRelation, AssetPermission
@@ -69,6 +70,14 @@ class UserPermAssetUtil(AssetPermissionPermAssetUtil):
     @timeit
     def get_favorite_assets(self):
         assets = Asset.objects.all().valid()
+        asset_ids = FavoriteAsset.objects.filter(user=self.user).values_list('asset_id', flat=True)
+        assets = assets.filter(id__in=list(asset_ids))
+        return assets
+
+    @timeit
+    def get_favorite_assets_no_web(self):
+        platform_ids = Platform.objects.filter(category=Category.WEB.value).values_list('id', flat=True)
+        assets = Asset.objects.exclude(platform_id__in=platform_ids)
         asset_ids = FavoriteAsset.objects.filter(user=self.user).values_list('asset_id', flat=True)
         assets = assets.filter(id__in=list(asset_ids))
         return assets

@@ -96,6 +96,10 @@ class UserFavoriteAssetsApi(BaseUserPermedAssetsApi):
     def get_assets(self):
         return self.query_asset_util.get_favorite_assets()
 
+class UserFavoriteAssetsNoWebApi(BaseUserPermedAssetsApi):
+    def get_assets(self):
+        return self.query_asset_util.get_favorite_assets_no_web()
+
 
 class UserPermedNodeAssetsApi(BaseUserPermedAssetsApi):
     pagination_class = NodePermedAssetPagination

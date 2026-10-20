@@ -106,6 +106,7 @@ user_accessible_urls = known_unauth_urls + [
     "/api/v1/tickets/apply-asset-tickets/",
     "/api/v1/ops/celery/task/00000000-0000-0000-0000-000000000000/task-execution/00000000-0000-0000-0000-000000000000/log/",
     "/api/v1/assets/favorite-assets/", 
+    "/api/v1/assets/favorite-assets-no-web/",
     "/api/v1/authentication/connection-token/",
     "/api/v1/ops/jobs/",
     "/api/v1/assets/categories/",

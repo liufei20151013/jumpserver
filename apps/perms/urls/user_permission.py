@@ -14,6 +14,8 @@ user_permission_urlpatterns = [
          name='user-direct-assets'),
     path('<str:user>/nodes/favorite/assets/', api.UserFavoriteAssetsApi.as_view(),
          name='user-favorite-assets'),
+    path('<str:user>/nodes/favorite/assets/no-web/', api.UserFavoriteAssetsNoWebApi.as_view(),
+         name='user-favorite-assets'),
     path('<str:user>/nodes/<uuid:node_id>/assets/', api.UserPermedNodeAssetsApi.as_view(),
          name='user-node-assets'),
 
