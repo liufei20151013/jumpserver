@@ -19,6 +19,7 @@ __all__ = [
     'UserAllPermedAssetsApi',
     'UserDirectPermedAssetsApi',
     'UserFavoriteAssetsApi',
+    'UserFavoriteAssetsNoWebApi',
     'UserPermedNodeAssetsApi',
     'UserPermedAssetRetrieveApi',
 ]
