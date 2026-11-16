@@ -1,0 +1,76 @@
+# 立邦定制版 JumpServer core 镜像（v3.10.21 EE + 2026-11 安全加固）
+#
+# 源码：liufei20151013/jumpserver 分支 v3.10.17_libang（代码版本 3.10.21，企业版定制）
+# 底镜像：registry.fit2cloud.com/jumpserver/core-ee:v3.10.21（官方企业版离线包提供）
+#
+# 构建策略说明：
+#   1. 客户现网镜像由同事用本仓库代码构建，源码拿不到 → 用本仓库重建
+#   2. 仓库不含 apps/xpack（企业版专有代码）→ 从官方 core-ee:v3.10.21 镜像提取
+#      (GITSHA e180c38c，镜像内 VERSION=v3.10.21，与代码版本严格对应)
+#   3. 官方镜像的系统库、工具已齐备且含安全补丁，直接复用为底，
+#      避免 Debian 11 EOL 引发的 apt 源大面积 404 问题
+#   4. 同事 poetry.lock 与官方镜像基线差异较大（90 个版本不同 + 14 个缺失），
+#      且含 5 个 GitHub 源码依赖（构建机访问不了）→ 用 pip 按 lock 精确重装，
+#      源码包已本地预置在 wheels/
+#   5. 官方 apps 目录整体删除后再覆盖，避免官方遗留文件（多出的 migration、
+#      静态资源等）与定制代码冲突
+
+# ---------- stage-1: 收集定制代码 ----------
+FROM python:3.11-slim-bullseye AS stage-1
+ARG TARGETARCH
+ARG VERSION
+ENV VERSION=$VERSION
+
+WORKDIR /opt/jumpserver
+ADD . .
+RUN echo > /opt/jumpserver/config.yml \
+    && cd utils && bash -ixeu build.sh \
+    && rm -rf /opt/jumpserver/release/jumpserver/wheels \
+              /opt/jumpserver/release/jumpserver/debs \
+              /opt/jumpserver/release/jumpserver/receptor_bin.tar.gz \
+              /opt/jumpserver/release/jumpserver/Dockerfile-libang
+
+# ---------- 最终镜像 ----------
+# upstream 仅用于回填 Git LFS 二进制资源（见下方说明），与最终基础镜像同一层，不额外占空间
+FROM registry.fit2cloud.com/jumpserver/core-ee:v3.10.21 AS upstream
+
+FROM registry.fit2cloud.com/jumpserver/core-ee:v3.10.21
+
+ARG PIP_MIRROR=https://mirrors.aliyun.com/pypi/simple/
+
+COPY pip-req.txt /tmp/pip-req.txt
+COPY wheels/ /tmp/wheels/
+
+# 按同事 lock 精确重装 Python 依赖（--no-deps：lock 已是完整闭包，避免解析漂移）
+# --find-links：镜像源缺失的少数版本（如 alibabacloud-credentials==0.3.4）由本地预置文件补齐
+RUN /opt/py3/bin/pip install --no-deps -i ${PIP_MIRROR} \
+         --find-links /tmp/wheels -r /tmp/pip-req.txt \
+    && /opt/py3/bin/pip install --no-deps --no-build-isolation -i ${PIP_MIRROR} \
+         --find-links /tmp/wheels /tmp/wheels/*.zip \
+    && rm -rf /tmp/wheels /tmp/pip-req.txt
+
+# 清掉官方 apps，整体替换为定制版本（含 xpack 与安全加固补丁）
+RUN rm -rf /opt/jumpserver/apps
+COPY --from=stage-1 /opt/jumpserver/release/jumpserver /opt/jumpserver
+COPY --from=stage-1 /opt/jumpserver/release/jumpserver/apps/libs/ansible/ansible.cfg /etc/ansible/
+
+# 仓库用 Git LFS 管理 *.mo / *.mmdb / *.ipdb，以 tar 方式取代码时会退化成指针文本。
+# *.mo 已用 git lfs checkout 还原为实体文件（sha256 与 LFS oid 逐一比对一致）；
+# 下面 3 个二进制库与官方镜像完全相同（sha256 比对一致），直接从 upstream 回填，
+# 避免 76MB 大文件在构建上下文里来回传输。
+COPY --from=upstream /opt/jumpserver/apps/common/utils/geoip/GeoLite2-City.mmdb /opt/jumpserver/apps/common/utils/geoip/GeoLite2-City.mmdb
+COPY --from=upstream /opt/jumpserver/apps/common/utils/ip/geoip/GeoLite2-City.mmdb /opt/jumpserver/apps/common/utils/ip/geoip/GeoLite2-City.mmdb
+COPY --from=upstream /opt/jumpserver/apps/common/utils/ip/ipip/ipipfree.ipdb /opt/jumpserver/apps/common/utils/ip/ipip/ipipfree.ipdb
+
+# 构建期资源自检：.mo 解析失败或 LFS 指针残留则构建失败，避免带病镜像上线
+COPY check_assets.py /tmp/check_assets.py
+RUN /opt/py3/bin/python /tmp/check_assets.py && rm -f /tmp/check_assets.py
+
+WORKDIR /opt/jumpserver
+
+ARG VERSION=v3.10.21
+ENV VERSION=$VERSION
+
+EXPOSE 8080
+
+# 官方镜像已定义 VOLUME /opt/jumpserver/data、logs 与 ENTRYPOINT ./entrypoint.sh，此处沿用
