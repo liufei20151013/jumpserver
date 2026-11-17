@@ -148,8 +148,8 @@ def task_sent_handler(headers=None, body=None, **kwargs):
         'name': task,
         'state': 'PENDING',
         'is_finished': False,
-        'args': args,
-        'kwargs': kwargs
+        'args': [],  # JMS-AUTH-HOTFIX (was: args)
+        'kwargs': {},  # JMS-AUTH-HOTFIX (was: kwargs)
     }
     request = get_current_request()
     if request and request.user.is_authenticated:
